@@ -138,7 +138,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="card-title"><i class="ti ti-circle-plus"></i>Adicionar produto</div>
     <div class="alert alert-info"><i class="ti ti-info-circle"></i>
       <span><strong>Col. 1 — Nome do produto:</strong> deve ser idêntico ao que aparece na coluna 2 do relatório de vendas.<br>
-      <strong>Col. 2 — Setor:</strong> área do parque à qual esse produto pertence.</span>
+      <strong>Col. 2 — Setor:</strong> área do parque. Os setores <strong>Carona</strong> e <strong>Direção</strong> são automaticamente somados como <strong>Passeios</strong> no dashboard.</span>
     </div>
     <div class="g2">
       <div class="field"><label>Nome do produto (col. 1)</label><input id="inNome" placeholder="Ex: Hambúrguer artesanal" onkeydown="if(event.key==='Enter')addProd()"></div>
@@ -153,7 +153,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="card" id="classImp" style="display:none">
     <div class="card-title"><i class="ti ti-table-import"></i>Importar lista do Excel</div>
     <div class="alert alert-info"><i class="ti ti-info-circle"></i>
-      <span>Cole a tabela copiada do Excel com <strong>2 colunas</strong> e cabeçalho na linha 1 (será ignorado):<br>
+      <span>Cole com cabeçalho na linha 1 (será ignorado automaticamente):<br>
       <span class="mono">Nome do produto [tab] Setor</span></span>
     </div>
     <div class="field"><label>Tabela copiada</label>
@@ -188,14 +188,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="alert alert-info"><i class="ti ti-info-circle"></i>
       <span>Formato esperado — 9 colunas com cabeçalho na linha 1:<br>
       <span class="mono">Col1: Data · Col2: Nome produto · Col3: Qtd Vendas · Col4: Quantidade · Col5: Valor Bruto · Col6: Acréscimo · Col7: Desconto% · Col8: Desconto R$ · Col9: Valor Líquido</span><br>
-      O sistema usa o <strong>Valor Líquido (col. 9)</strong> como faturamento.</span>
-    </div>
-    <div class="g2">
-      <div class="field"><label>Data do relatório</label><input type="date" id="dataVenda"></div>
-      <div></div>
+      A <strong>data é lida automaticamente</strong> da coluna 1. A <strong>quantidade usada é a coluna 4</strong>. O faturamento é o <strong>Valor Líquido (col. 9)</strong>.</span>
     </div>
     <div class="field"><label>Tabela copiada do Excel (com cabeçalho na 1ª linha)</label>
-      <textarea id="vendaTxt" placeholder="Data	Nome produto	Qtd Vendas	Quantidade	Valor Bruto	Acréscimo	Desconto %	Desconto R$	Valor Líquido&#10;01/01/2025	Hambúrguer artesanal	45	45	1125.00	0	0	0	1125.00"></textarea>
+      <textarea id="vendaTxt" placeholder="Data	Nome produto	Qtd Vendas	Quantidade	Valor Bruto	Acréscimo	Desconto %	Desconto R$	Valor Líquido&#10;01/01/2025	Hambúrguer artesanal	45	90	1125.00	0	0	0	1125.00"></textarea>
     </div>
     <div class="act">
       <button class="btn btn-p" onclick="procVendas()"><i class="ti ti-cpu"></i>Processar relatório</button>
@@ -208,13 +204,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div id="prevAlerta"></div>
     <div class="tbl-wrap">
       <table class="tbl">
-        <thead><tr><th>Produto</th><th>Setor</th><th>Qtd</th><th>Valor bruto</th><th>Acréscimo</th><th>Desc. %</th><th>Desc. R$</th><th>Valor líquido</th></tr></thead>
+        <thead><tr><th>Produto</th><th>Setor</th><th>Quantidade</th><th>Valor bruto</th><th>Acréscimo</th><th>Desc. %</th><th>Desc. R$</th><th>Valor líquido</th></tr></thead>
         <tbody id="prevBody"></tbody>
       </table>
     </div>
     <div class="sep"></div>
     <div class="act">
-      <button class="btn btn-p" onclick="confirmarVendas()"><i class="ti ti-device-floppy"></i>Salvar este dia</button>
+      <button class="btn btn-p" onclick="confirmarVendas()"><i class="ti ti-device-floppy"></i>Salvar</button>
       <button class="btn" onclick="document.getElementById('prevCard').style.display='none'">Cancelar</button>
     </div>
   </div>
@@ -244,8 +240,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="card-title"><i class="ti ti-table-import"></i>Importar tabela de visitantes</div>
     <div class="alert alert-info"><i class="ti ti-info-circle"></i>
       <span>Cole com cabeçalho na linha 1 (será ignorado):<br>
-      <span class="mono">Col1: Data · Col2: Visitantes · Col3: Entradas · Col4: Vale Retorno</span><br>
-      Visitantes válidos = Entradas − Vale Retorno.</span>
+      <span class="mono">Col1: Data · Col2: Visitantes · Col3: Entradas · Col4: Vale Retorno</span></span>
     </div>
     <div class="field"><label>Tabela copiada do Excel (com cabeçalho)</label>
       <textarea id="visitTxt" placeholder="Data	Visitantes	Entradas	Vale Retorno&#10;01/01/2025	500	520	20&#10;02/01/2025	430	450	20"></textarea>
@@ -287,11 +282,18 @@ const CORES=['#1a6ef5','#0e7d55','#e67e22','#c0392b','#7f4fc0','#b45309','#0891b
 const CM={};
 function cor(s){if(!CM[s]){const k=Object.keys(CM).length;CM[s]=CORES[k%CORES.length];}return CM[s];}
 
+// Setores que devem ser agrupados no dashboard
+const GRUPOS_SETOR = {
+  'Carona': 'Passeios',
+  'Direção': 'Passeios'
+};
+function setorDash(s){return GRUPOS_SETOR[s]||s;}
+
 function save(){try{localStorage.setItem('bip',JSON.stringify(P));localStorage.setItem('biv',JSON.stringify(V));localStorage.setItem('bivi',JSON.stringify(VI));}catch(e){}}
 function load(){try{const p=localStorage.getItem('bip'),v=localStorage.getItem('biv'),vi=localStorage.getItem('bivi');if(p)P=JSON.parse(p);if(v)V=JSON.parse(v);if(vi)VI=JSON.parse(vi);}catch(e){}}
 
 function exportar(){
-  const b=new Blob([JSON.stringify({P,V,VI,ver:4,at:new Date().toISOString()},null,2)],{type:'application/json'});
+  const b=new Blob([JSON.stringify({P,V,VI,ver:5,at:new Date().toISOString()},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='bi-parque-'+hoje()+'.json';a.click();
   toast('Backup exportado!','ok');
 }
@@ -311,13 +313,19 @@ function hoje(){return new Date().toISOString().slice(0,10);}
 function parseN(s){return parseFloat((s||'0').toString().replace(/\s/g,'').replace(/\./g,'').replace(',','.'))||0;}
 function fR(v){if(v>=1e6)return'R$ '+(v/1e6).toFixed(2).replace('.',',')+' M';if(v>=1e3)return'R$ '+(v/1e3).toFixed(1).replace('.',',')+' k';return'R$ '+v.toFixed(2).replace('.',',');}
 function fRF(v){return'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+// Converte qualquer formato de data para yyyy-mm-dd
 function parseData(s){
   s=(s||'').trim();
   if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
   const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if(m)return`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  // tenta dd/mm/aa
+  const m2=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+  if(m2)return`20${m2[3]}-${m2[2].padStart(2,'0')}-${m2[1].padStart(2,'0')}`;
   return s;
 }
+
 function toast(msg,t){
   const el=document.getElementById('toast');
   el.textContent=msg;el.style.background=t==='err'?'#c0392b':t==='warn'?'#b45309':'#0e7d55';
@@ -353,12 +361,11 @@ function delProd(k){
 function procImpClass(){
   const lines=document.getElementById('classImpTxt').value.trim().split('\n');
   let ok=0;
-  lines.forEach((l,i)=>{
+  lines.forEach(l=>{
     const p=l.split('\t');
     if(p.length<2)return;
     const nome=(p[0]||'').trim();
     const setor=(p[1]||'').trim();
-    // pula linha de cabeçalho se não tiver setor reconhecível ou for primeira linha sem dados
     if(!nome||!setor)return;
     P[normNome(nome)]={nome,setor};ok++;
   });
@@ -373,18 +380,23 @@ function renderProds(){
   em.style.display='none';wr.style.display='block';
   const tb=document.getElementById('prodBody');tb.innerHTML='';
   arr.forEach(p=>{
-    const c=cor(p.setor);const k=normNome(p.nome);const tr=document.createElement('tr');
+    const seторDisplay=setorDash(p.setor);
+    const c=cor(seторDisplay);const k=normNome(p.nome);const tr=document.createElement('tr');
     tr.innerHTML=`<td>${p.nome}</td>
-      <td><span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}28">${p.setor}</span></td>
+      <td><span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}28">${p.setor}${GRUPOS_SETOR[p.setor]?' <span style="opacity:.6;font-size:10px">→ Passeios</span>':''}</span></td>
       <td><button class="del-btn" onclick="delProd('${k.replace(/'/g,"\\'")}')">×</button></td>`;
     tb.appendChild(tr);
   });
   updSetores();
 }
 function updSetores(){
-  const ss=[...new Set(Object.values(P).map(p=>p.setor))].sort();
+  // setores do dashboard (já com agrupamentos)
+  const ss=[...new Set(Object.values(P).map(p=>setorDash(p.setor)))].sort();
   const dl=document.getElementById('setDL');dl.innerHTML='';
-  ss.forEach(s=>{const o=document.createElement('option');o.value=s;dl.appendChild(o);});
+  // sugestões no datalist são os setores brutos
+  [...new Set(Object.values(P).map(p=>p.setor))].sort().forEach(s=>{
+    const o=document.createElement('option');o.value=s;dl.appendChild(o);
+  });
   const sel=document.getElementById('fSetor'),cur=sel.value;
   sel.innerHTML='<option value="">Todos os setores</option>';
   ss.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
@@ -394,47 +406,78 @@ function updSetores(){
 /* ── VENDAS ── */
 function procVendas(){
   const raw=document.getElementById('vendaTxt').value.trim();
-  const data=document.getElementById('dataVenda').value;
   if(!raw){toast('Cole o relatório primeiro','err');return;}
-  if(!data){toast('Selecione a data','err');return;}
+
   const lines=raw.split('\n').map(l=>l.split('\t'));
+  // pula cabeçalho (linha 1)
   const dados=lines.slice(1).filter(c=>c.length>=9&&(c[1]||'').trim());
   if(!dados.length){toast('Nenhuma linha encontrada após o cabeçalho','err');return;}
-  const itens=[],naoEnc=[];
+
+  // agrupa por data (pode haver múltiplas datas no mesmo relatório)
+  const porData={};
+  const naoEnc=[];
+
   dados.forEach(c=>{
+    const dataRaw=(c[0]||'').trim();
+    const data=parseData(dataRaw);
+    if(!data||data.length!==10){return;} // ignora linhas sem data válida
+
     const nomeRaw=(c[1]||'').trim();
     if(!nomeRaw)return;
     const nomeKey=normNome(nomeRaw);
-    const qtd=parseN(c[2]);
+
+    // col4 = quantidade (índice 3)
+    const qtd=parseN(c[3]);
     const vBruto=parseN(c[4]);
     const acrescimo=parseN(c[5]);
     const descPct=parseN(c[6]);
     const descR=parseN(c[7]);
     const vLiq=parseN(c[8]);
+
     const prod=P[nomeKey];
-    if(!prod){naoEnc.push(nomeRaw);itens.push({nome:nomeRaw,setor:'(não classificado)',qtd,vBruto,acrescimo,descPct,descR,vLiq});return;}
-    itens.push({nome:prod.nome,setor:prod.setor,qtd,vBruto,acrescimo,descPct,descR,vLiq});
+    const setor=prod?prod.setor:'(não classificado)';
+    const nomeDisplay=prod?prod.nome:nomeRaw;
+    if(!prod)naoEnc.push(nomeRaw);
+
+    if(!porData[data])porData[data]=[];
+    porData[data].push({nome:nomeDisplay,setor,qtd,vBruto,acrescimo,descPct,descR,vLiq});
   });
-  pending={data,itens};
+
+  const datas=Object.keys(porData).sort();
+  if(!datas.length){toast('Nenhuma data válida encontrada. Verifique o formato (dd/mm/aaaa)','err');return;}
+
+  pending={porData};
+
+  // monta preview
   const tb=document.getElementById('prevBody');tb.innerHTML='';
   let tB=0,tA=0,tD=0,tL=0,tQ=0;
-  itens.forEach(i=>{
-    tB+=i.vBruto;tA+=i.acrescimo;tD+=i.descR;tL+=i.vLiq;tQ+=i.qtd;
-    const c=i.setor==='(não classificado)'?'var(--red)':cor(i.setor);
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${i.nome}</td>
-      <td><span class="badge" style="background:${c}18;color:${c}">${i.setor}</span></td>
-      <td>${i.qtd}</td>
-      <td>${fRF(i.vBruto)}</td>
-      <td>${i.acrescimo?fRF(i.acrescimo):'—'}</td>
-      <td>${i.descPct?i.descPct.toFixed(1)+'%':'—'}</td>
-      <td>${i.descR?fRF(i.descR):'—'}</td>
-      <td style="font-weight:600">${fRF(i.vLiq)}</td>`;
-    tb.appendChild(tr);
+
+  datas.forEach(data=>{
+    // linha separadora de data
+    const th=document.createElement('tr');
+    th.innerHTML=`<td colspan="8" style="background:var(--surface2);font-weight:600;font-size:11px;color:var(--text2);padding:6px 10px;letter-spacing:.3px">${data}</td>`;
+    tb.appendChild(th);
+
+    porData[data].forEach(i=>{
+      tB+=i.vBruto;tA+=i.acrescimo;tD+=i.descR;tL+=i.vLiq;tQ+=i.qtd;
+      const seтorD=setorDash(i.setor);
+      const c=i.setor==='(não classificado)'?'var(--red)':cor(seтorD);
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${i.nome}</td>
+        <td><span class="badge" style="background:${c}18;color:${c}">${i.setor}</span></td>
+        <td>${i.qtd}</td>
+        <td>${fRF(i.vBruto)}</td>
+        <td>${i.acrescimo?fRF(i.acrescimo):'—'}</td>
+        <td>${i.descPct?i.descPct.toFixed(1)+'%':'—'}</td>
+        <td>${i.descR?fRF(i.descR):'—'}</td>
+        <td style="font-weight:600">${fRF(i.vLiq)}</td>`;
+      tb.appendChild(tr);
+    });
   });
+
   const tf=document.createElement('tr');
   tf.style.background='var(--surface2)';
-  tf.innerHTML=`<td colspan="2" style="font-weight:600;font-size:12px;color:var(--text2)">Total (${tQ} itens)</td>
+  tf.innerHTML=`<td colspan="2" style="font-weight:600;font-size:12px;color:var(--text2)">${datas.length} dia(s) · ${tQ} itens</td>
     <td style="font-weight:600">${tQ}</td>
     <td style="font-weight:600">${fRF(tB)}</td>
     <td style="font-weight:600;color:var(--green)">${tA?fRF(tA):'—'}</td>
@@ -442,25 +485,29 @@ function procVendas(){
     <td style="font-weight:600;color:var(--red)">${tD?fRF(tD):'—'}</td>
     <td style="font-weight:600;color:var(--green)">${fRF(tL)}</td>`;
   tb.appendChild(tf);
-  document.getElementById('prevLbl').textContent=data;
+
+  document.getElementById('prevLbl').textContent=datas.length===1?datas[0]:`${datas[0]} → ${datas[datas.length-1]} (${datas.length} dias)`;
+
   const al=document.getElementById('prevAlerta');
   if(naoEnc.length){
     const uniq=[...new Set(naoEnc)];
-    al.innerHTML=`<div class="alert alert-warn"><i class="ti ti-alert-triangle"></i><span><strong>${uniq.length} produto(s) não encontrado(s)</strong> no cadastro: ${uniq.slice(0,6).join(', ')}${uniq.length>6?'…':''}.<br>Cadastre-os na aba Classificação para alocá-los ao setor correto.</span></div>`;
+    al.innerHTML=`<div class="alert alert-warn"><i class="ti ti-alert-triangle"></i><span><strong>${uniq.length} produto(s) não encontrado(s)</strong> no cadastro: ${uniq.slice(0,6).join(', ')}${uniq.length>6?'…':''}.<br>Cadastre-os na aba Classificação.</span></div>`;
   } else {
-    al.innerHTML=`<div class="alert alert-ok"><i class="ti ti-circle-check"></i><span>Todos os ${itens.length} produto(s) classificados com sucesso.</span></div>`;
+    al.innerHTML=`<div class="alert alert-ok"><i class="ti ti-circle-check"></i><span>Todos os produtos classificados. ${datas.length} dia(s) detectado(s): ${datas.join(', ')}.</span></div>`;
   }
   document.getElementById('prevCard').style.display='block';
   document.getElementById('prevCard').scrollIntoView({behavior:'smooth',block:'start'});
 }
+
 function confirmarVendas(){
   if(!pending)return;
-  V[pending.data]=pending.itens;pending=null;
+  Object.assign(V, pending.porData);
+  pending=null;
   document.getElementById('prevCard').style.display='none';
   document.getElementById('vendaTxt').value='';
   save();renderHistV();updFiltros();
   document.getElementById('btnPpt').style.display='flex';
-  toast('Dia salvo!','ok');
+  toast('Salvo com sucesso!','ok');
 }
 function delDia(d){
   if(!confirm('Remover o dia '+d+'?'))return;
@@ -485,34 +532,34 @@ function renderHistV(){
   });
   html+='</tbody></table></div>';el.innerHTML=html;
 }
+
 function loadEx(){
   const ex={
     'HAMBURGUER ARTESANAL':{nome:'Hambúrguer artesanal',setor:'Alimentação'},
     'REFRIGERANTE LATA':{nome:'Refrigerante lata',setor:'Alimentação'},
     'AGUA MINERAL':{nome:'Água mineral',setor:'Alimentação'},
-    'PORCAO FRITAS':{nome:'Porção de batata frita',setor:'Alimentação'},
     'INGRESSO KIDS':{nome:'Ingresso Kids',setor:'Entretenimento'},
     'INGRESSO ADULTO':{nome:'Ingresso Adulto',setor:'Entretenimento'},
+    'CARONA DUPLA':{nome:'Carona Dupla',setor:'Carona'},
+    'CARONA SIMPLES':{nome:'Carona Simples',setor:'Carona'},
+    'DIRECAO BASICA':{nome:'Direção Básica',setor:'Direção'},
     'SOUVENIR CANECA':{nome:'Souvenir Caneca',setor:'Loja'},
     'BONE PARQUE':{nome:'Boné Parque',setor:'Loja'},
-    'CAMISETA PARQUE':{nome:'Camiseta Parque',setor:'Loja'},
-    'PROTETOR SOLAR':{nome:'Protetor Solar FPS50',setor:'Farmácia'},
   };
   Object.assign(P,ex);save();renderProds();
-  const d=hoje();
+  const d='01/05/2025';
   document.getElementById('vendaTxt').value=
 `Data\tNome produto\tQtd Vendas\tQuantidade\tValor Bruto\tAcréscimo\tDesconto %\tDesconto R$\tValor Líquido
-${d}\tHambúrguer artesanal\t45\t45\t1125.00\t0\t0\t0\t1125.00
+${d}\tHambúrguer artesanal\t45\t90\t1125.00\t0\t0\t0\t1125.00
 ${d}\tRefrigerante lata\t120\t120\t960.00\t0\t5\t48.00\t912.00
 ${d}\tÁgua mineral\t80\t80\t400.00\t0\t0\t0\t400.00
-${d}\tPorção de batata frita\t38\t38\t684.00\t0\t0\t0\t684.00
 ${d}\tIngresso Kids\t30\t30\t1350.00\t0\t0\t0\t1350.00
 ${d}\tIngresso Adulto\t55\t55\t3575.00\t0\t10\t357.50\t3217.50
+${d}\tCarona Dupla\t40\t80\t2000.00\t0\t0\t0\t2000.00
+${d}\tCarona Simples\t25\t25\t875.00\t0\t0\t0\t875.00
+${d}\tDireção Básica\t20\t20\t1200.00\t0\t0\t0\t1200.00
 ${d}\tSouvenir Caneca\t22\t22\t770.00\t0\t0\t0\t770.00
-${d}\tBoné Parque\t18\t18\t720.00\t0\t0\t0\t720.00
-${d}\tCamiseta Parque\t12\t12\t780.00\t0\t0\t0\t780.00
-${d}\tProtetor Solar FPS50\t25\t25\t700.00\t0\t0\t0\t700.00`;
-  document.getElementById('dataVenda').value=d;
+${d}\tBoné Parque\t18\t18\t720.00\t0\t0\t0\t720.00`;
   toast('Exemplo carregado!','ok');
 }
 
@@ -536,7 +583,7 @@ function impVisit(){
     const d=parseData(c[0]);
     const ent=parseInt((c[2]||'0').replace(/\D/g,''))||0;
     const ret=parseInt((c[3]||'0').replace(/\D/g,''))||0;
-    if(d&&ent){VI[d]={entradas:ent,retorno:ret,valido:Math.max(0,ent-ret)};ok++;}
+    if(d&&d.length===10&&ent){VI[d]={entradas:ent,retorno:ret,valido:Math.max(0,ent-ret)};ok++;}
   });
   save();renderHistVI();document.getElementById('visitTxt').value='';
   toast(ok+' dia(s) importado(s)!','ok');
@@ -587,7 +634,10 @@ function getFiltered(){
     return true;
   }).sort();
   const itens=[];
-  diasKey.forEach(d=>V[d].forEach(i=>{if(!setF||i.setor===setF)itens.push({...i,data:d});}));
+  diasKey.forEach(d=>V[d].forEach(i=>{
+    const sD=setorDash(i.setor);
+    if(!setF||sD===setF)itens.push({...i,setorDash:sD,data:d});
+  }));
   return{diasKey,itens};
 }
 function killCharts(){charts.forEach(c=>c.destroy());charts=[];}
@@ -606,13 +656,16 @@ function renderDash(){
   const tVisit=diasKey.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);
   const ticket=tVisit?tLiq/tVisit:0;
 
+  // agrupa por setorDash (já com Carona+Direção = Passeios)
   const bySe={};
   itens.forEach(i=>{
-    if(!bySe[i.setor])bySe[i.setor]={liq:0,bruto:0,desc:0,qtd:0};
-    bySe[i.setor].liq+=i.vLiq;bySe[i.setor].bruto+=i.vBruto;
-    bySe[i.setor].desc+=i.descR;bySe[i.setor].qtd+=i.qtd;
+    const s=i.setorDash;
+    if(!bySe[s])bySe[s]={liq:0,bruto:0,desc:0,qtd:0};
+    bySe[s].liq+=i.vLiq;bySe[s].bruto+=i.vBruto;
+    bySe[s].desc+=i.descR;bySe[s].qtd+=i.qtd;
   });
   const setores=Object.keys(bySe).sort((a,b)=>bySe[b].liq-bySe[a].liq);
+
   const byDia={};
   itens.forEach(i=>{if(!byDia[i.data])byDia[i.data]=0;byDia[i.data]+=i.vLiq;});
 
@@ -708,7 +761,7 @@ function gerarApres(){
   const tBruto=itens.reduce((a,i)=>a+i.vBruto,0);
   const tDesc=itens.reduce((a,i)=>a+i.descR,0);
   const tVisit=diasKey.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);
-  const bySe={};itens.forEach(i=>{if(!bySe[i.setor])bySe[i.setor]=0;bySe[i.setor]+=i.vLiq;});
+  const bySe={};itens.forEach(i=>{const s=i.setorDash;if(!bySe[s])bySe[s]=0;bySe[s]+=i.vLiq;});
   const setores=Object.entries(bySe).sort((a,b)=>b[1]-a[1]);
   const txt=`Gere uma apresentação executiva em PowerPoint (.pptx) com os resultados do parque:\n\nPeríodo: ${diasKey[0]||'—'} a ${diasKey[diasKey.length-1]||'—'} (${diasKey.length} dia(s))\nFaturamento líquido: ${fRF(tLiq)}\nFaturamento bruto: ${fRF(tBruto)}\nTotal de descontos: ${fRF(tDesc)} (${tBruto?(tDesc/tBruto*100).toFixed(1):0}% do bruto)\nVisitantes: ${tVisit.toLocaleString()}\nTicket médio/visitante: ${tVisit?fRF(tLiq/tVisit):'—'}\n\nFaturamento líquido por setor:\n${setores.map(([s,v])=>`- ${s}: ${fRF(v)} (${tLiq?(v/tLiq*100).toFixed(1):0}%) — ticket/visitante: ${tVisit?fRF(v/tVisit):'—'}`).join('\n')}\n\nSlides: capa, resumo executivo com KPIs, faturamento por setor (gráfico de barras), ticket médio por setor/visitante, evolução diária (se múltiplos dias), e conclusão com destaques. Design moderno e corporativo.`;
   navigator.clipboard.writeText(txt)
@@ -719,7 +772,6 @@ function gerarApres(){
 /* ── INIT ── */
 function renderAll(){renderProds();renderHistV();renderHistVI();updFiltros();}
 load();
-document.getElementById('dataVenda').value=hoje();
 document.getElementById('dataVisit').value=hoje();
 renderAll();
 if(Object.keys(V).length){document.getElementById('btnPpt').style.display='flex';}
