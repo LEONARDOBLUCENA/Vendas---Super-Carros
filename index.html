@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BI Parque</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --surface2: #f2f1ef;
+  --border: rgba(0,0,0,0.08);
+  --border-strong: rgba(0,0,0,0.14);
+  --text: #1a1a18;
+  --text2: #6b6b67;
+  --text3: #9e9e99;
+  --accent: #1a6ef5;
+  --accent-bg: #eaf1ff;
+  --success: #0e7d55;
+  --success-bg: #e6f7f1;
+  --warn: #b45309;
+  --warn-bg: #fef3e2;
+  --danger: #c0392b;
+  --danger-bg: #fdecea;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141413;
+    --surface: #1e1e1c;
+    --surface2: #272725;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.14);
+    --text: #f0efe8;
+    --text2: #9e9d96;
+    --text3: #6b6a64;
+    --accent: #4d8fff;
+    --accent-bg: #1a2840;
+    --success: #2dd4a0;
+    --success-bg: #0d2e22;
+    --warn: #f5a623;
+    --warn-bg: #2a1f0a;
+    --danger: #f07070;
+    --danger-bg: #2e1212;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* LAYOUT */
+.sidebar{position:fixed;top:0;left:0;width:220px;height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+.main{margin-left:220px;min-height:100vh;padding:28px 32px}
+
+/* SIDEBAR */
+.brand{padding:22px 20px 18px;border-bottom:1px solid var(--border)}
+.brand-name{font-size:16px;font-weight:600;color:var(--text);letter-spacing:-.3px}
+.brand-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.nav{padding:12px 10px;flex:1;overflow-y:auto}
+.nav-section{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;padding:8px 10px 4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);cursor:pointer;font-size:13px;color:var(--text2);transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-bg);color:var(--accent);font-weight:500}
+.nav-item i{font-size:16px;flex-shrink:0}
+.sidebar-bottom{padding:12px 10px;border-top:1px solid var(--border)}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.page-title{font-size:20px;font-weight:600;letter-spacing:-.4px;color:var(--text)}
+.page-sub{font-size:13px;color:var(--text2);margin-top:3px}
+
+/* SCREENS */
+.screen{display:none}.screen.on{display:block}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card-title i{font-size:16px;color:var(--text2)}
+
+/* FORMS */
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.field input,.field select,.field textarea{
+  padding:8px 12px;font-size:13px;font-family:'DM Sans',sans-serif;
+  border:1px solid var(--border-strong);border-radius:var(--radius);
+  background:var(--surface2);color:var(--text);outline:none;
+  transition:border-color .15s,box-shadow .15s
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,110,245,.12)}
+.field textarea{resize:vertical;min-height:100px;font-family:'DM Mono',monospace;font-size:12px;line-height:1.6}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.row4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+/* BUTTONS */
+.btn{padding:8px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border-strong);background:var(--surface2);color:var(--text);display:inline-flex;align-items:center;gap:7px;transition:all .15s;font-family:'DM Sans',sans-serif}
+.btn:hover{background:var(--bg);border-color:var(--border-strong)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{opacity:.88;background:var(--accent)}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border-color:transparent}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-xs{padding:4px 9px;font-size:11px}
+.act-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+table.tbl th{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+table.tbl td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+table.tbl tr:last-child td{border-bottom:none}
+table.tbl tbody tr:hover td{background:var(--surface2)}
+table.tbl td input,table.tbl td select{width:100%;border:none;background:transparent;color:var(--text);font-size:13px;padding:2px 4px;border-radius:4px;font-family:'DM Sans',sans-serif}
+table.tbl td input:focus,table.tbl td select:focus{outline:1px solid var(--accent);background:var(--surface2)}
+
+/* BADGES */
+.badge{display:inline-block;font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px}
+
+/* KPIs */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi-lbl{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.kpi-val{font-size:24px;font-weight:600;color:var(--text);line-height:1;letter-spacing:-.5px}
+.kpi-sub{font-size:12px;color:var(--text2);margin-top:5px}
+.kpi-up{color:var(--success)}.kpi-down{color:var(--danger)}
+
+/* ALERTS */
+.alert{padding:11px 14px;border-radius:var(--radius);font-size:13px;display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;line-height:1.5}
+.alert i{font-size:16px;flex-shrink:0;margin-top:1px}
+.alert-info{background:var(--accent-bg);color:var(--accent);border:1px solid rgba(26,110,245,.2)}
+.alert-warn{background:var(--warn-bg);color:var(--warn);border:1px solid rgba(180,83,9,.2)}
+.alert-success{background:var(--success-bg);color:var(--success);border:1px solid rgba(14,125,85,.2)}
+
+/* CHARTS */
+.chart-box{position:relative;width:100%}
+
+/* FILTERS */
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.filter-bar select,.filter-bar input{padding:7px 10px;font-size:12px;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;cursor:pointer}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 20px;color:var(--text3)}
+.empty i{font-size:36px;display:block;margin-bottom:10px;opacity:.4}
+.empty p{font-size:13px}
+
+/* DEL BUTTON */
+.del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:0 4px;line-height:1;transition:color .1s}
+.del-btn:hover{color:var(--danger)}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;padding:11px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;color:#fff;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;box-shadow:var(--shadow)}
+
+/* DIVIDER */
+.sep{height:1px;background:var(--border);margin:16px 0}
+
+/* LEGEND */
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)}
+.leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* CHIPS */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border)}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .sidebar{width:100%;height:auto;position:relative;border-right:none;border-bottom:1px solid var(--border);flex-direction:row;flex-wrap:wrap}
+  .main{margin-left:0;padding:16px}
+  .nav{display:flex;flex-wrap:wrap;padding:8px}
+  .nav-section{display:none}
+  .row2,.row3,.row4{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-name"><i class="ti ti-building-store" style="font-size:15px;vertical-align:-2px;margin-right:5px"></i>BI Parque</div>
+    <div class="brand-sub" id="brandSub">Sistema de gestão</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Cadastro</div>
+    <button class="nav-item active" onclick="goTab('classificacao')"><i class="ti ti-tag"></i>Classificação</button>
+    <div class="nav-section">Operação diária</div>
+    <button class="nav-item" onclick="goTab('vendas')"><i class="ti ti-clipboard-list"></i>Relatório de vendas</button>
+    <button class="nav-item" onclick="goTab('visitantes')"><i class="ti ti-users"></i>Visitantes</button>
+    <div class="nav-section">Resultados</div>
+    <button class="nav-item" onclick="goTab('dashboard')"><i class="ti ti-chart-bar"></i>Dashboard</button>
+  </nav>
+  <div class="sidebar-bottom">
+    <button class="btn btn-sm" style="width:100%;justify-content:center;margin-bottom:6px" onclick="exportarDados()"><i class="ti ti-download"></i>Backup dos dados</button>
+    <button class="btn btn-sm" style="width:100%;justify-content:center" onclick="document.getElementById('importFile').click()"><i class="ti ti-upload"></i>Restaurar backup</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importarDados(event)">
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- CLASSIFICAÇÃO -->
+  <div id="sc-classificacao" class="screen on">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Classificação de produtos</div>
+        <div class="page-sub">Cadastre os produtos e associe cada um ao seu setor</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-circle-plus"></i>Adicionar produto</div>
+      <div class="row3">
+        <div class="field"><label>Código / nome do produto</label><input id="inProd" placeholder="Ex: HAMBURGUER ou LANCHE01" onkeydown="if(event.key==='Enter')addProduto()"></div>
+        <div class="field"><label>Setor</label><input id="inSetor" placeholder="Ex: Alimentação" list="setoresList"><datalist id="setoresList"></datalist></div>
+        <div class="field"><label>Preço unitário (R$)</label><input id="inPreco" type="number" step="0.01" placeholder="0,00" onkeydown="if(event.key==='Enter')addProduto()"></div>
+      </div>
+      <div class="act-row">
+        <button class="btn btn-primary btn-sm" onclick="addProduto()"><i class="ti ti-plus"></i>Adicionar</button>
+        <button class="btn btn-sm" onclick="toggleImport()"><i class="ti ti-table-import"></i>Importar lista do Excel</button>
+      </div>
+    </div>
+
+    <div class="card" id="importCard" style="display:none">
+      <div class="card-title"><i class="ti ti-table-import"></i>Importar lista</div>
+      <div class="alert alert-info"><i class="ti ti-info-circle"></i><span>Cole aqui uma tabela com 3 colunas copiadas do Excel:<br><strong>Produto [tab] Setor [tab] Preço</strong><br>Não precisa de cabeçalho.</span></div>
+      <div class="field"><label>Tabela copiada (produto — setor — preço)</label><textarea id="importTxt" placeholder="HAMBURGUER	Alimentação	25.00&#10;REFRIGERANTE	Alimentação	8.00&#10;INGRESSO KIDS	Entretenimento	45.00"></textarea></div>
+      <div class="act-row">
+        <button class="btn btn-primary btn-sm" onclick="processarImport()"><i class="ti ti-check"></i>Importar</button>
+        <button class="btn btn-sm" onclick="toggleImport()">Cancelar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-list"></i>Produtos cadastrados <span id="countProd" style="color:var(--text3);font-weight:400;font-size:12px;margin-left:4px"></span></div>
+      <div id="prodTabWrap">
+        <div class="empty" id="prodEmpty"><i class="ti ti-tag"></i><p>Nenhum produto cadastrado ainda.<br>Adicione acima ou importe do Excel.</p></div>
+        <div class="tbl-wrap" id="prodTableWrap" style="display:none">
+          <table class="tbl">
+            <thead><tr><th>Produto / código</th><th>Setor</th><th>Preço</th><th style="width:40px"></th></tr></thead>
+            <tbody id="prodTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VENDAS -->
+  <div id="sc-vendas" class="screen">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Relatório diário de vendas</div>
+        <div class="page-sub">Cole o relatório exportado do sistema a cada dia</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-clipboard-data"></i>Colar relatório do dia</div>
+      <div class="alert alert-info"><i class="ti ti-info-circle"></i><span>Formato esperado: <strong>Produto [tab] Quantidade [tab] Valor total</strong> — copie direto do Excel/sistema. Se não tiver valor total, deixe a coluna como 0 e o sistema calcula pelo preço cadastrado.</span></div>
+      <div class="row4">
+        <div class="field"><label>Data do relatório</label><input type="date" id="dataVenda"></div>
+        <div class="field"><label>Coluna do produto (nº)</label><input type="number" id="colProd" value="1" min="1"></div>
+        <div class="field"><label>Coluna da quantidade</label><input type="number" id="colQtd" value="2" min="1"></div>
+        <div class="field"><label>Coluna do valor (0 = calc.)</label><input type="number" id="colVal" value="3" min="0"></div>
+      </div>
+      <div class="field"><label>Tabela copiada do Excel</label><textarea id="vendaTxt" placeholder="HAMBURGUER	45	1125.00&#10;REFRIGERANTE	120	960.00&#10;INGRESSO KIDS	30	1350.00"></textarea></div>
+      <div class="act-row">
+        <button class="btn btn-primary" onclick="processarVendas()"><i class="ti ti-cpu"></i>Processar relatório</button>
+        <button class="btn" onclick="carregarExVendas()"><i class="ti ti-sparkles"></i>Carregar exemplo</button>
+      </div>
+    </div>
+
+    <div class="card" id="previewCard" style="display:none">
+      <div class="card-title"><i class="ti ti-eye"></i>Pré-visualização — <span id="previewDataLbl" style="color:var(--accent)"></span></div>
+      <div id="alertNaoEncontrado"></div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Produto</th><th>Setor</th><th>Qtd</th><th>Valor total</th></tr></thead>
+          <tbody id="tbodyPreview"></tbody>
+        </table>
+      </div>
+      <div class="sep"></div>
+      <div class="act-row">
+        <button class="btn btn-primary" onclick="confirmarVendas()"><i class="ti ti-device-floppy"></i>Salvar este dia</button>
+        <button class="btn" onclick="document.getElementById('previewCard').style.display='none'">Cancelar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-history"></i>Dias registrados</div>
+      <div id="historicoVendas"><div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum dia registrado ainda.</p></div></div>
+    </div>
+  </div>
+
+  <!-- VISITANTES -->
+  <div id="sc-visitantes" class="screen">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Visitantes diários</div>
+        <div class="page-sub">Registre o número de visitantes por dia para calcular o ticket médio</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-user-plus"></i>Registrar visitantes</div>
+      <div class="row3" style="align-items:flex-end">
+        <div class="field" style="margin:0"><label>Data</label><input type="date" id="dataVisit"></div>
+        <div class="field" style="margin:0"><label>Número de visitantes</label><input type="number" id="nVisit" placeholder="0" min="0"></div>
+        <div><button class="btn btn-primary" onclick="addVisitante()" style="width:100%"><i class="ti ti-plus"></i>Registrar</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-calendar-stats"></i>Histórico de visitantes</div>
+      <div id="histVisit"><div class="empty"><i class="ti ti-users"></i><p>Nenhum registro ainda.</p></div></div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="sc-dashboard" class="screen">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub" id="dashSub">Visão geral dos resultados</div>
+      </div>
+      <button class="btn btn-primary" id="btnPpt" style="display:none" onclick="gerarApresentacao()"><i class="ti ti-presentation"></i>Gerar apresentação</button>
+    </div>
+
+    <div class="filter-bar">
+      <select id="filtroTipo" onchange="renderDash()">
+        <option value="mes">Por mês</option>
+        <option value="dia">Por dia (todos)</option>
+        <option value="ano">Por ano</option>
+      </select>
+      <select id="filtroMes" onchange="renderDash()"></select>
+      <select id="filtroAno" onchange="renderDash()"></select>
+      <select id="filtroSetor" onchange="renderDash()"><option value="">Todos os setores</option></select>
+    </div>
+
+    <div id="dashContent">
+      <div class="empty"><i class="ti ti-chart-bar"></i><p>Registre vendas e visitantes para ver o dashboard</p></div>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────
+let produtos = {};
+let vendas = {};
+let visitantes = {};
+let pendingVendas = null;
+let chartInst = [];
+
+const COLORS = ['#1a6ef5','#0e7d55','#e67e22','#c0392b','#7f4fc0','#c0397a','#2e8b57','#b45309','#0891b2','#dc6829'];
+const setorColors = {};
+function getColor(setor) {
+  if (!setorColors[setor]) {
+    const keys = Object.keys(setorColors).length;
+    setorColors[setor] = COLORS[keys % COLORS.length];
+  }
+  return setorColors[setor];
+}
+
+// ── PERSIST ────────────────────────────────────────
+function save() {
+  try {
+    localStorage.setItem('bi_produtos', JSON.stringify(produtos));
+    localStorage.setItem('bi_vendas', JSON.stringify(vendas));
+    localStorage.setItem('bi_visitantes', JSON.stringify(visitantes));
+  } catch(e) {}
+}
+function load() {
+  try {
+    const p = localStorage.getItem('bi_produtos');
+    const v = localStorage.getItem('bi_vendas');
+    const vi = localStorage.getItem('bi_visitantes');
+    if (p) produtos = JSON.parse(p);
+    if (v) vendas = JSON.parse(v);
+    if (vi) visitantes = JSON.parse(vi);
+  } catch(e) {}
+}
+
+// ── BACKUP / RESTORE ───────────────────────────────
+function exportarDados() {
+  const data = { produtos, vendas, visitantes, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'bi-parque-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Backup exportado!', 'success');
+}
+function importarDados(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.produtos) produtos = data.produtos;
+      if (data.vendas) vendas = data.vendas;
+      if (data.visitantes) visitantes = data.visitantes;
+      save();
+      renderProdTable(); renderHistorico(); renderHistVisit(); updateFiltros(); renderDash();
+      toast('Backup restaurado com sucesso!', 'success');
+    } catch(err) {
+      toast('Arquivo inválido', 'error');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ── NAV ────────────────────────────────────────────
+function goTab(t) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('sc-' + t).classList.add('on');
+  const idx = { classificacao: 0, vendas: 1, visitantes: 2, dashboard: 3 }[t];
+  document.querySelectorAll('.nav-item')[idx].classList.add('active');
+  if (t === 'dashboard') { updateFiltros(); renderDash(); }
+}
+
+// ── TOAST ──────────────────────────────────────────
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  const colors = { success: '#0e7d55', error: '#c0392b', info: '#1a6ef5' };
+  el.textContent = msg;
+  el.style.background = colors[type] || colors.success;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.style.opacity = '0', 2800);
+}
+
+// ── UTILS ──────────────────────────────────────────
+function today() { return new Date().toISOString().slice(0,10); }
+function fmtR(v) {
+  if (v >= 1e6) return 'R$ ' + (v/1e6).toFixed(2).replace('.',',') + ' M';
+  if (v >= 1e3) return 'R$ ' + (v/1e3).toFixed(1).replace('.',',') + ' k';
+  return 'R$ ' + v.toFixed(2).replace('.',',');
+}
+function fmtRFull(v) {
+  return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ── PRODUTOS ───────────────────────────────────────
+function renderProdTable() {
+  const prods = Object.values(produtos);
+  document.getElementById('countProd').textContent = prods.length ? `(${prods.length})` : '';
+  const empty = document.getElementById('prodEmpty');
+  const wrap = document.getElementById('prodTableWrap');
+  if (!prods.length) { empty.style.display = 'block'; wrap.style.display = 'none'; return; }
+  empty.style.display = 'none'; wrap.style.display = 'block';
+  const tbody = document.getElementById('prodTbody');
+  tbody.innerHTML = '';
+  prods.sort((a,b) => a.setor.localeCompare(b.setor) || a.nome.localeCompare(b.nome)).forEach(p => {
+    const c = getColor(p.setor);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="font-family:'DM Mono',monospace;font-size:12px">${p.nome}</td>
+      <td><span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}30">${p.setor}</span></td>
+      <td>${fmtRFull(+p.preco)}</td>
+      <td><button class="del-btn" onclick="delProd('${p.nome.replace(/'/g,"\\'")}')" title="Remover">×</button></td>`;
+    tbody.appendChild(tr);
+  });
+  updateSetoresList();
+}
+function updateSetoresList() {
+  const setores = [...new Set(Object.values(produtos).map(p => p.setor))].sort();
+  const dl = document.getElementById('setoresList'); dl.innerHTML = '';
+  setores.forEach(s => { const o = document.createElement('option'); o.value = s; dl.appendChild(o); });
+  const sel = document.getElementById('filtroSetor');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos os setores</option>';
+  setores.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
+  if (cur) sel.value = cur;
+}
+function addProduto() {
+  const nome = document.getElementById('inProd').value.trim().toUpperCase();
+  const setor = document.getElementById('inSetor').value.trim();
+  const preco = parseFloat(document.getElementById('inPreco').value) || 0;
+  if (!nome || !setor) { toast('Preencha produto e setor', 'error'); return; }
+  produtos[nome] = { nome, setor, preco };
+  document.getElementById('inProd').value = '';
+  document.getElementById('inPreco').value = '';
+  document.getElementById('inProd').focus();
+  save(); renderProdTable();
+  toast(`"${nome}" adicionado!`);
+}
+function delProd(nome) {
+  if (!confirm(`Remover "${nome}"?`)) return;
+  delete produtos[nome]; save(); renderProdTable();
+  toast('Produto removido');
+}
+function toggleImport() {
+  const c = document.getElementById('importCard');
+  c.style.display = c.style.display === 'none' ? 'block' : 'none';
+}
+function processarImport() {
+  const lines = document.getElementById('importTxt').value.trim().split('\n');
+  let ok = 0;
+  lines.forEach(l => {
+    const p = l.split('\t');
+    if (p.length >= 2) {
+      const nome = (p[0] || '').trim().toUpperCase();
+      const setor = (p[1] || '').trim();
+      const preco = parseFloat((p[2] || '0').replace(',', '.')) || 0;
+      if (nome && setor) { produtos[nome] = { nome, setor, preco }; ok++; }
+    }
+  });
+  save(); renderProdTable();
+  document.getElementById('importCard').style.display = 'none';
+  document.getElementById('importTxt').value = '';
+  toast(`${ok} produto(s) importado(s)!`);
+}
+
+// ── VENDAS ─────────────────────────────────────────
+function processarVendas() {
+  const raw = document.getElementById('vendaTxt').value.trim();
+  const data = document.getElementById('dataVenda').value;
+  if (!raw) { toast('Cole o relatório primeiro', 'error'); return; }
+  if (!data) { toast('Selecione a data', 'error'); return; }
+  const cP = parseInt(document.getElementById('colProd').value) - 1;
+  const cQ = parseInt(document.getElementById('colQtd').value) - 1;
+  const cV = parseInt(document.getElementById('colVal').value) - 1;
+  const lines = raw.split('\n').filter(l => l.trim());
+  const itens = [], naoEnc = [];
+  lines.forEach(l => {
+    const cols = l.split('\t');
+    const nome = (cols[cP] || '').trim().toUpperCase();
+    const qtd = parseFloat((cols[cQ] || '0').replace(',', '.')) || 0;
+    let valor = cV >= 0 ? parseFloat((cols[cV] || '0').replace(',', '.')) || 0 : 0;
+    if (!nome || !qtd) return;
+    const prod = produtos[nome];
+    if (!prod) { naoEnc.push(nome); itens.push({ nome, setor: '(não classificado)', qtd, valor: valor || 0 }); return; }
+    if (!valor) valor = qtd * prod.preco;
+    itens.push({ nome, setor: prod.setor, qtd, valor });
+  });
+  pendingVendas = { data, itens };
+  const tbody = document.getElementById('tbodyPreview');
+  tbody.innerHTML = '';
+  let total = 0;
+  itens.forEach(i => {
+    total += i.valor;
+    const c = i.setor === '(não classificado)' ? 'var(--danger)' : getColor(i.setor);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="font-family:'DM Mono',monospace;font-size:12px">${i.nome}</td>
+      <td><span class="badge" style="background:${c}18;color:${c}">${i.setor}</span></td>
+      <td>${i.qtd}</td><td>${fmtRFull(i.valor)}</td>`;
+    tbody.appendChild(tr);
+  });
+  const totRow = document.createElement('tr');
+  totRow.innerHTML = `<td colspan="3" style="font-weight:600;text-align:right;color:var(--text2);font-size:12px">Total do dia</td><td style="font-weight:600">${fmtRFull(total)}</td>`;
+  tbody.appendChild(totRow);
+  document.getElementById('previewDataLbl').textContent = data;
+  const alerta = document.getElementById('alertNaoEncontrado');
+  if (naoEnc.length) {
+    alerta.innerHTML = `<div class="alert alert-warn"><i class="ti ti-alert-triangle"></i><span><strong>${naoEnc.length} produto(s) não encontrado(s)</strong> no cadastro: ${naoEnc.slice(0,8).join(', ')}${naoEnc.length > 8 ? '…' : ''}.<br>Cadastre-os na aba Classificação para que sejam alocados ao setor correto.</span></div>`;
+  } else { alerta.innerHTML = `<div class="alert alert-success"><i class="ti ti-circle-check"></i><span>Todos os produtos foram classificados com sucesso.</span></div>`; }
+  document.getElementById('previewCard').style.display = 'block';
+  document.getElementById('previewCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function confirmarVendas() {
+  if (!pendingVendas) return;
+  vendas[pendingVendas.data] = pendingVendas.itens;
+  pendingVendas = null;
+  document.getElementById('previewCard').style.display = 'none';
+  document.getElementById('vendaTxt').value = '';
+  save(); renderHistorico(); updateFiltros();
+  document.getElementById('btnPpt').style.display = 'flex';
+  toast('Dia salvo com sucesso!', 'success');
+}
+function carregarExVendas() {
+  const ex = {
+    'HAMBURGUER': { nome:'HAMBURGUER', setor:'Alimentação', preco:25 },
+    'REFRIGERANTE': { nome:'REFRIGERANTE', setor:'Alimentação', preco:8 },
+    'AGUA': { nome:'AGUA', setor:'Alimentação', preco:5 },
+    'PORCAO FRITAS': { nome:'PORCAO FRITAS', setor:'Alimentação', preco:18 },
+    'INGRESSO KIDS': { nome:'INGRESSO KIDS', setor:'Entretenimento', preco:45 },
+    'INGRESSO ADULTO': { nome:'INGRESSO ADULTO', setor:'Entretenimento', preco:65 },
+    'SOUVENIR CANECA': { nome:'SOUVENIR CANECA', setor:'Loja', preco:35 },
+    'BONE': { nome:'BONE', setor:'Loja', preco:40 },
+    'CAMISETA': { nome:'CAMISETA', setor:'Loja', preco:65 },
+    'PROTETOR SOLAR': { nome:'PROTETOR SOLAR', setor:'Farmácia', preco:28 },
+  };
+  Object.assign(produtos, ex);
+  save(); renderProdTable();
+  document.getElementById('vendaTxt').value =
+    'HAMBURGUER\t45\t1125.00\nREFRIGERANTE\t120\t960.00\nAGUA\t80\t400.00\nPORCAO FRITAS\t38\t684.00\nINGRESSO KIDS\t30\t1350.00\nINGRESSO ADULTO\t55\t3575.00\nSOUVENIR CANECA\t22\t770.00\nBONE\t18\t720.00\nCAMISETA\t12\t780.00\nPROTETOR SOLAR\t25\t700.00';
+  document.getElementById('dataVenda').value = today();
+  toast('Exemplo carregado!', 'info');
+}
+function renderHistorico() {
+  const dias = Object.keys(vendas).sort().reverse();
+  const el = document.getElementById('historicoVendas');
+  if (!dias.length) { el.innerHTML = '<div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum dia registrado ainda.</p></div>'; return; }
+  let html = `<table class="tbl"><thead><tr><th>Data</th><th>Itens distintos</th><th>Total faturado</th><th style="width:40px"></th></tr></thead><tbody>`;
+  dias.forEach(d => {
+    const total = vendas[d].reduce((a,i) => a+i.valor, 0);
+    const nVisit = visitantes[d];
+    const ticket = nVisit ? ` · ticket/visit: ${fmtR(total/nVisit)}` : '';
+    html += `<tr>
+      <td><strong>${d}</strong>${nVisit ? `<span style="font-size:11px;color:var(--text2);margin-left:8px">${nVisit.toLocaleString()} visitantes${ticket}</span>` : ''}</td>
+      <td>${vendas[d].length}</td>
+      <td>${fmtRFull(total)}</td>
+      <td><button class="del-btn" onclick="delDia('${d}')" title="Remover">×</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+function delDia(d) {
+  if (!confirm(`Remover o dia ${d}?`)) return;
+  delete vendas[d]; save(); renderHistorico(); updateFiltros(); renderDash();
+  toast('Dia removido');
+}
+
+// ── VISITANTES ─────────────────────────────────────
+function addVisitante() {
+  const d = document.getElementById('dataVisit').value;
+  const n = parseInt(document.getElementById('nVisit').value) || 0;
+  if (!d || !n) { toast('Preencha data e número', 'error'); return; }
+  visitantes[d] = n;
+  document.getElementById('nVisit').value = '';
+  save(); renderHistVisit();
+  toast('Visitantes registrados!', 'success');
+}
+function renderHistVisit() {
+  const dias = Object.keys(visitantes).sort().reverse();
+  const el = document.getElementById('histVisit');
+  if (!dias.length) { el.innerHTML = '<div class="empty"><i class="ti ti-users"></i><p>Nenhum registro ainda.</p></div>'; return; }
+  let html = `<table class="tbl"><thead><tr><th>Data</th><th>Visitantes</th><th>Faturamento do dia</th><th>Ticket médio</th><th style="width:40px"></th></tr></thead><tbody>`;
+  dias.forEach(d => {
+    const fat = vendas[d] ? vendas[d].reduce((a,i)=>a+i.valor,0) : null;
+    html += `<tr>
+      <td>${d}</td>
+      <td><strong>${visitantes[d].toLocaleString()}</strong></td>
+      <td>${fat !== null ? fmtRFull(fat) : '<span style="color:var(--text3)">sem vendas</span>'}</td>
+      <td>${fat !== null && visitantes[d] ? fmtRFull(fat/visitantes[d]) : '—'}</td>
+      <td><button class="del-btn" onclick="delVisit('${d}')" title="Remover">×</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+function delVisit(d) {
+  if (!confirm(`Remover visitantes do dia ${d}?`)) return;
+  delete visitantes[d]; save(); renderHistVisit(); renderDash();
+  toast('Registro removido');
+}
+
+// ── DASHBOARD ──────────────────────────────────────
+function updateFiltros() {
+  const dias = Object.keys(vendas).sort();
+  if (!dias.length) return;
+  const anos = [...new Set(dias.map(d => d.slice(0,4)))];
+  const meses = [...new Set(dias.map(d => d.slice(0,7)))];
+  const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const sA = document.getElementById('filtroAno');
+  const sM = document.getElementById('filtroMes');
+  const curA = sA.value, curM = sM.value;
+  sA.innerHTML = anos.map(a => `<option value="${a}">${a}</option>`).join('');
+  if (anos.includes(curA)) sA.value = curA; else sA.value = anos[anos.length-1];
+  sM.innerHTML = meses.map(m => `<option value="${m}">${MESES[parseInt(m.slice(5))-1]} ${m.slice(0,4)}</option>`).join('');
+  if (meses.includes(curM)) sM.value = curM; else sM.value = meses[meses.length-1];
+  updateSetoresList();
+}
+function getFilteredData() {
+  const tipo = document.getElementById('filtroTipo').value;
+  const mes = document.getElementById('filtroMes').value;
+  const ano = document.getElementById('filtroAno').value;
+  const setorF = document.getElementById('filtroSetor').value;
+  let diasKey = Object.keys(vendas).filter(d => {
+    if (tipo === 'mes') return d.startsWith(mes);
+    if (tipo === 'ano') return d.startsWith(ano);
+    return true;
+  }).sort();
+  const itens = [];
+  diasKey.forEach(d => vendas[d].forEach(i => {
+    if (!setorF || i.setor === setorF) itens.push({ ...i, data: d });
+  }));
+  return { diasKey, itens, tipo };
+}
+function destroyCharts() { chartInst.forEach(c => c.destroy()); chartInst = []; }
+
+function renderDash() {
+  const dias = Object.keys(vendas);
+  if (!dias.length) return;
+  updateFiltros();
+  destroyCharts();
+  const { diasKey, itens, tipo } = getFilteredData();
+  if (!itens.length) {
+    document.getElementById('dashContent').innerHTML = '<div class="empty"><i class="ti ti-filter-off"></i><p>Nenhum dado para o filtro selecionado</p></div>';
+    return;
+  }
+  const totalFat = itens.reduce((a,i) => a+i.valor, 0);
+  const totalQtd = itens.reduce((a,i) => a+i.qtd, 0);
+  const totalVisit = diasKey.reduce((a,d) => a+(visitantes[d]||0), 0);
+  const ticketGeral = totalVisit ? totalFat/totalVisit : 0;
+  const bySetor = {};
+  itens.forEach(i => {
+    if (!bySetor[i.setor]) bySetor[i.setor] = { fat: 0, qtd: 0 };
+    bySetor[i.setor].fat += i.valor;
+    bySetor[i.setor].qtd += i.qtd;
+  });
+  const setores = Object.keys(bySetor).sort((a,b) => bySetor[b].fat - bySetor[a].fat);
+  const byDia = {};
+  itens.forEach(i => { if (!byDia[i.data]) byDia[i.data] = 0; byDia[i.data] += i.valor; });
+  const MESES = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const isDark = matchMedia('(prefers-color-scheme:dark)').matches;
+  const gc = isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)';
+  const tc = isDark ? '#888' : '#999';
+  const baseOpts = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: gc }, ticks: { color: tc, font: { size: 11, family: "'DM Sans'" } } },
+      y: { grid: { color: gc }, ticks: { color: tc, font: { size: 11, family: "'DM Sans'" } } }
+    }
+  };
+  // build html
+  const setorRows = setores.map(s => {
+    const sf = bySetor[s].fat;
+    const pct = totalFat ? (sf/totalFat*100).toFixed(1) : 0;
+    const tck = totalVisit ? fmtRFull(sf/totalVisit) : '—';
+    const c = getColor(s);
+    return `<tr>
+      <td><span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}30">${s}</span></td>
+      <td>${fmtRFull(sf)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1;height:6px;background:var(--surface2);border-radius:3px">
+            <div style="width:${pct}%;height:100%;background:${c};border-radius:3px"></div>
+          </div>
+          <span style="font-size:12px;color:var(--text2);min-width:36px">${pct}%</span>
+        </div>
+      </td>
+      <td>${tck}</td>
+    </tr>`;
+  }).join('');
+  const periodoLabel = tipo==='mes'
+    ? `${MESES[parseInt(document.getElementById('filtroMes').value.slice(5))]} ${document.getElementById('filtroMes').value.slice(0,4)}`
+    : tipo==='ano' ? document.getElementById('filtroAno').value
+    : `${diasKey[0]} → ${diasKey[diasKey.length-1]}`;
+  document.getElementById('dashSub').textContent = `${periodoLabel} · ${diasKey.length} dia(s)`;
+  document.getElementById('dashContent').innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-lbl">Faturamento total</div><div class="kpi-val">${fmtR(totalFat)}</div><div class="kpi-sub">${diasKey.length} dia(s) no período</div></div>
+      <div class="kpi"><div class="kpi-lbl">Visitantes</div><div class="kpi-val">${totalVisit ? totalVisit.toLocaleString() : '—'}</div><div class="kpi-sub">no período</div></div>
+      <div class="kpi"><div class="kpi-lbl">Ticket médio / visitante</div><div class="kpi-val">${totalVisit ? fmtR(ticketGeral) : '—'}</div><div class="kpi-sub">faturamento ÷ visitantes</div></div>
+      <div class="kpi"><div class="kpi-lbl">Itens vendidos</div><div class="kpi-val">${totalQtd.toLocaleString()}</div><div class="kpi-sub">total de unidades</div></div>
+      <div class="kpi"><div class="kpi-lbl">Ticket médio / item</div><div class="kpi-val">${totalQtd ? fmtR(totalFat/totalQtd) : '—'}</div><div class="kpi-sub">por item vendido</div></div>
+      <div class="kpi"><div class="kpi-lbl">Setores ativos</div><div class="kpi-val">${setores.length}</div><div class="kpi-sub">&nbsp;</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="card" style="margin:0">
+        <div class="card-title"><i class="ti ti-chart-bar"></i>Faturamento por setor</div>
+        <div class="legend">${setores.map(s=>`<span class="leg-item"><span class="leg-dot" style="background:${getColor(s)}"></span>${s}</span>`).join('')}</div>
+        <div class="chart-box" style="height:${Math.max(160,setores.length*38+50)}px"><canvas id="cSetor" role="img" aria-label="Faturamento por setor">Faturamento por setor.</canvas></div>
+      </div>
+      <div class="card" style="margin:0">
+        <div class="card-title"><i class="ti ti-users"></i>Ticket médio / visitante por setor</div>
+        <div class="legend">${setores.map(s=>`<span class="leg-item"><span class="leg-dot" style="background:${getColor(s)}80"></span>${s}</span>`).join('')}</div>
+        <div class="chart-box" style="height:${Math.max(160,setores.length*38+50)}px"><canvas id="cTicket" role="img" aria-label="Ticket por setor">Ticket médio por setor.</canvas></div>
+      </div>
+    </div>
+
+    ${diasKey.length > 1 ? `<div class="card">
+      <div class="card-title"><i class="ti ti-trending-up"></i>Evolução do faturamento diário</div>
+      <div class="chart-box" style="height:220px"><canvas id="cDia" role="img" aria-label="Faturamento diário">Faturamento diário.</canvas></div>
+    </div>` : ''}
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-table"></i>Detalhamento por setor</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Setor</th><th>Faturamento</th><th>Participação</th><th>Ticket / visitante</th></tr></thead>
+        <tbody>${setorRows}</tbody>
+      </table></div>
+    </div>
+  `;
+  document.getElementById('btnPpt').style.display = 'flex';
+  // charts
+  const cSetor = new Chart(document.getElementById('cSetor'), {
+    type: 'bar', indexAxis: 'y',
+    data: { labels: setores, datasets: [{ data: setores.map(s=>+bySetor[s].fat.toFixed(2)), backgroundColor: setores.map(s=>getColor(s)), borderRadius: 4 }] },
+    options: { ...baseOpts, scales: { x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, callback: v => fmtR(v) } }, y: baseOpts.scales.y } }
+  }); chartInst.push(cSetor);
+  const cTicket = new Chart(document.getElementById('cTicket'), {
+    type: 'bar', indexAxis: 'y',
+    data: { labels: setores, datasets: [{ data: setores.map(s=>totalVisit?+(bySetor[s].fat/totalVisit).toFixed(2):0), backgroundColor: setores.map(s=>getColor(s)+'99'), borderRadius: 4 }] },
+    options: { ...baseOpts, scales: { x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, callback: v => fmtR(v) } }, y: baseOpts.scales.y } }
+  }); chartInst.push(cTicket);
+  if (diasKey.length > 1) {
+    const cDia = new Chart(document.getElementById('cDia'), {
+      type: 'line',
+      data: { labels: diasKey.map(d=>d.slice(5)), datasets: [{ data: diasKey.map(d=>+(byDia[d]||0).toFixed(2)), borderColor: '#1a6ef5', backgroundColor: 'rgba(26,110,245,.08)', fill: true, tension: .35, pointBackgroundColor: '#1a6ef5', pointRadius: 4, pointHoverRadius: 6 }] },
+      options: { ...baseOpts, plugins: { legend: { display: false } }, scales: { x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, autoSkip: false, maxRotation: 45 } }, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => fmtR(v) } } } }
+    }); chartInst.push(cDia);
+  }
+}
+
+// ── APRESENTAÇÃO ───────────────────────────────────
+function gerarApresentacao() {
+  const { diasKey, itens } = getFilteredData();
+  const totalFat = itens.reduce((a,i) => a+i.valor, 0);
+  const totalVisit = diasKey.reduce((a,d) => a+(visitantes[d]||0), 0);
+  const bySetor = {};
+  itens.forEach(i => { if (!bySetor[i.setor]) bySetor[i.setor] = 0; bySetor[i.setor] += i.valor; });
+  const setores = Object.entries(bySetor).sort((a,b) => b[1]-a[1]);
+  const periodoLabel = `${diasKey[0] || '—'} a ${diasKey[diasKey.length-1] || '—'}`;
+  const prompt = `Gere uma apresentação executiva em PowerPoint (.pptx) com os resultados do parque:
+
+Período: ${periodoLabel} (${diasKey.length} dias)
+Faturamento total: ${fmtRFull(totalFat)}
+Visitantes: ${totalVisit.toLocaleString()}
+Ticket médio/visitante: ${totalVisit ? fmtRFull(totalFat/totalVisit) : '—'}
+
+Faturamento por setor:
+${setores.map(([s,v]) => `- ${s}: ${fmtRFull(v)} (${totalFat?(v/totalFat*100).toFixed(1):0}%) — ticket/visitante: ${totalVisit?fmtRFull(v/totalVisit):'—'}`).join('\n')}
+
+Crie slides: capa, resumo executivo com KPIs principais, faturamento por setor (gráfico), ticket médio por setor/visitante, evolução diária se houver múltiplos dias, e conclusão com destaques. Design moderno e corporativo.`;
+  alert('Copie o texto abaixo e cole no Claude.ai para gerar o PowerPoint:\n\n' + prompt);
+}
+
+// ── INIT ───────────────────────────────────────────
+load();
+document.getElementById('dataVenda').value = today();
+document.getElementById('dataVisit').value = today();
+renderProdTable();
+renderHistorico();
+renderHistVisit();
+updateFiltros();
+if (Object.keys(vendas).length) {
+  document.getElementById('btnPpt').style.display = 'flex';
+  renderDash();
+}
+const totalDias = Object.keys(vendas).length;
+document.getElementById('brandSub').textContent = totalDias ? `${totalDias} dia(s) registrado(s)` : 'Sistema de gestão';
+</script>
+</body>
+</html>
