@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BI Parque</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f5f5f2;--surface:#fff;--surface2:#f0efec;--surface3:#e8e7e3;
+  --border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.13);
+  --text:#181816;--text2:#6b6b67;--text3:#a0a09b;
+  --accent:#1a6ef5;--accent-bg:#eaf1ff;--accent-t:#0d47c4;
+  --green:#0e7d55;--green-bg:#e6f7f1;
+  --amber:#b45309;--amber-bg:#fef3e2;
+  --red:#c0392b;--red-bg:#fdecea;
+  --r:8px;--rl:12px;--sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#131312;--surface:#1d1d1b;--surface2:#252523;--surface3:#2e2e2b;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
+  --text:#eeeee8;--text2:#9a9a94;--text3:#68685f;
+  --accent:#4d8fff;--accent-bg:#182540;--accent-t:#7fb3ff;
+  --green:#2dd4a0;--green-bg:#0c2a1e;
+  --amber:#f5a623;--amber-bg:#271d09;
+  --red:#f07070;--red-bg:#2a1010;
+}}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.sidebar{position:fixed;top:0;left:0;width:214px;height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;overflow-y:auto}
+.main{margin-left:214px;padding:28px 30px;min-height:100vh}
+@media(max-width:700px){.sidebar{position:relative;width:100%;height:auto;border-right:none;border-bottom:1px solid var(--border)}.main{margin-left:0;padding:16px}}
+.brand{padding:20px 18px 16px;border-bottom:1px solid var(--border)}
+.brand-logo{font-size:15px;font-weight:600;letter-spacing:-.3px;display:flex;align-items:center;gap:7px}
+.brand-logo i{font-size:18px;color:var(--accent)}
+.brand-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.nav{padding:10px 8px;flex:1}
+.nav-sec{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--text2);border:none;background:none;width:100%;text-align:left;transition:all .12s;font-family:'DM Sans',sans-serif}
+.nav-btn:hover{background:var(--surface2);color:var(--text)}
+.nav-btn.on{background:var(--accent-bg);color:var(--accent);font-weight:500}
+.nav-btn i{font-size:16px;flex-shrink:0}
+.sidebar-foot{padding:10px 8px;border-top:1px solid var(--border)}
+.sidebar-foot .btn{width:100%;justify-content:center;margin-bottom:5px;font-size:12px}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+.page-title{font-size:19px;font-weight:600;letter-spacing:-.4px}
+.page-sub{font-size:12px;color:var(--text2);margin-top:3px}
+.screen{display:none}.screen.on{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px 20px;margin-bottom:13px;box-shadow:var(--sh)}
+.card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:13px;display:flex;align-items:center;gap:7px}
+.card-title i{font-size:15px;color:var(--text2)}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:11px}
+.field label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.55px}
+.field input,.field select,.field textarea{padding:8px 11px;font-size:13px;font-family:'DM Sans',sans-serif;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);outline:none;transition:border-color .13s,box-shadow .13s;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,110,245,.1)}
+.field textarea{resize:vertical;min-height:120px;font-family:'DM Mono',monospace;font-size:11.5px;line-height:1.65}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+@media(max-width:600px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.btn{padding:8px 15px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:var(--surface2);color:var(--text);display:inline-flex;align-items:center;gap:6px;transition:all .12s;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.btn:hover{background:var(--surface3)}
+.btn:active{transform:scale(.98)}
+.btn-p{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-p:hover{opacity:.87;background:var(--accent)}
+.btn-sm{padding:6px 11px;font-size:12px}
+.act{display:flex;gap:7px;flex-wrap:wrap;margin-top:6px}
+.tbl-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover td{background:var(--surface2)}
+.badge{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:11px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:15px 17px;box-shadow:var(--sh)}
+.kpi-lbl{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+.kpi-val{font-size:22px;font-weight:600;letter-spacing:-.5px;line-height:1}
+.kpi-sub{font-size:11px;color:var(--text2);margin-top:4px}
+.alert{padding:10px 13px;border-radius:var(--r);font-size:12.5px;display:flex;gap:9px;align-items:flex-start;margin-bottom:11px;line-height:1.55}
+.alert i{font-size:15px;flex-shrink:0;margin-top:1px}
+.alert-info{background:var(--accent-bg);color:var(--accent-t);border:1px solid rgba(26,110,245,.18)}
+.alert-warn{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(180,83,9,.18)}
+.alert-ok{background:var(--green-bg);color:var(--green);border:1px solid rgba(14,125,85,.18)}
+.fbar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.fbar select{padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;cursor:pointer}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:9px}
+.leg{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)}
+.leg-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.sep{height:1px;background:var(--border);margin:14px 0}
+.empty{text-align:center;padding:44px 20px;color:var(--text3)}
+.empty i{font-size:32px;display:block;margin-bottom:9px;opacity:.35}
+.empty p{font-size:13px;line-height:1.6}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:17px;padding:0 3px;line-height:1;transition:color .1s}
+.del-btn:hover{color:var(--red)}
+.mono{font-family:'DM Mono',monospace;font-size:12px}
+.bar-bg{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px}
+#toast{position:fixed;bottom:22px;right:22px;padding:10px 16px;border-radius:var(--r);font-size:13px;font-weight:500;color:#fff;opacity:0;transition:opacity .28s;pointer-events:none;z-index:9999;box-shadow:var(--sh)}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-logo"><i class="ti ti-building-store"></i>BI Parque</div>
+    <div class="brand-sub" id="brandSub">Sistema de gestão</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-sec">Cadastro</div>
+    <button class="nav-btn on" onclick="goTab('class')"><i class="ti ti-tag"></i>Classificação</button>
+    <div class="nav-sec">Operação diária</div>
+    <button class="nav-btn" onclick="goTab('vendas')"><i class="ti ti-clipboard-list"></i>Relatório de vendas</button>
+    <button class="nav-btn" onclick="goTab('visit')"><i class="ti ti-users"></i>Visitantes</button>
+    <div class="nav-sec">Resultados</div>
+    <button class="nav-btn" onclick="goTab('dash')"><i class="ti ti-chart-bar"></i>Dashboard</button>
+  </nav>
+  <div class="sidebar-foot">
+    <button class="btn btn-sm" onclick="exportar()"><i class="ti ti-download"></i>Backup</button>
+    <button class="btn btn-sm" onclick="document.getElementById('fileIn').click()"><i class="ti ti-upload"></i>Restaurar</button>
+    <input type="file" id="fileIn" accept=".json" style="display:none" onchange="importar(event)">
+  </div>
+</aside>
+
+<main class="main">
+
+<!-- CLASSIFICAÇÃO -->
+<div id="sc-class" class="screen on">
+  <div class="topbar">
+    <div><div class="page-title">Classificação de produtos</div>
+    <div class="page-sub">Associe cada código de produto ao seu setor</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-circle-plus"></i>Adicionar produto</div>
+    <div class="alert alert-info"><i class="ti ti-info-circle"></i>
+      <span><strong>Col. 1 — Código:</strong> deve ser idêntico ao que aparece na coluna 2 do relatório de vendas.<br>
+      <strong>Col. 2 — Descrição:</strong> nome legível para exibição no dashboard.<br>
+      <strong>Col. 3 — Setor:</strong> área do parque (ex: Alimentação, Entretenimento, Loja).</span>
+    </div>
+    <div class="g3">
+      <div class="field"><label>Código (col. 1)</label><input id="inCod" placeholder="Ex: 1001 ou HAMBURGUER" onkeydown="if(event.key==='Enter')addProd()"></div>
+      <div class="field"><label>Descrição (col. 2)</label><input id="inDesc" placeholder="Ex: Hambúrguer artesanal" onkeydown="if(event.key==='Enter')addProd()"></div>
+      <div class="field"><label>Setor (col. 3)</label><input id="inSetor" placeholder="Ex: Alimentação" list="setDL" onkeydown="if(event.key==='Enter')addProd()"><datalist id="setDL"></datalist></div>
+    </div>
+    <div class="act">
+      <button class="btn btn-p btn-sm" onclick="addProd()"><i class="ti ti-plus"></i>Adicionar</button>
+      <button class="btn btn-sm" onclick="tog('classImp')"><i class="ti ti-table-import"></i>Importar lista do Excel</button>
+    </div>
+  </div>
+  <div class="card" id="classImp" style="display:none">
+    <div class="card-title"><i class="ti ti-table-import"></i>Importar lista</div>
+    <div class="alert alert-info"><i class="ti ti-info-circle"></i>
+      <span>Cole com cabeçalho na linha 1 (será ignorado) e dados a partir da linha 2:<br>
+      <span class="mono">Código [tab] Descrição [tab] Setor</span></span>
+    </div>
+    <div class="field"><label>Tabela copiada do Excel</label>
+      <textarea id="classImpTxt" placeholder="Código	Descrição	Setor&#10;1001	Hambúrguer artesanal	Alimentação&#10;1002	Refrigerante lata	Alimentação&#10;2001	Ingresso adulto	Entretenimento"></textarea>
+    </div>
+    <div class="act">
+      <button class="btn btn-p btn-sm" onclick="procImpClass()"><i class="ti ti-check"></i>Importar</button>
+      <button class="btn btn-sm" onclick="tog('classImp')">Cancelar</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-list"></i>Produtos cadastrados <span id="prodCnt" style="color:var(--text3);font-weight:400;font-size:11px;margin-left:3px"></span></div>
+    <div id="prodEmpty" class="empty"><i class="ti ti-tag"></i><p>Nenhum produto cadastrado.<br>Adicione acima ou importe do Excel.</p></div>
+    <div id="prodWrap" style="display:none"><div class="tbl-wrap">
+      <table class="tbl"><thead><tr><th>Código</th><th>Descrição</th><th>Setor</th><th style="width:36px"></th></tr></thead>
+      <tbody id="prodBody"></tbody></table>
+    </div></div>
+  </div>
+</div>
+
+<!-- VENDAS -->
+<div id="sc-vendas" class="screen">
+  <div class="topbar">
+    <div><div class="page-title">Relatório de vendas</div>
+    <div class="page-sub">Cole o relatório diário exportado do sistema</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-clipboard-data"></i>Colar relatório do dia</div>
+    <div class="alert alert-info"><i class="ti ti-info-circle"></i>
+      <span>Formato esperado — 9 colunas, <strong>com cabeçalho na linha 1</strong>:<br>
+      <span class="mono">Col1: Data · Col2: Descrição · Col3: Qtd Vendas · Col4: Quantidade · Col5: Valor Bruto · Col6: Acréscimo · Col7: Desconto% · Col8: Desconto R$ · Col9: Valor Líquido</span><br>
+      O sistema usará o <strong>Valor Líquido (col. 9)</strong> como faturamento de cada item.</span>
+    </div>
+    <div class="g2">
+      <div class="field"><label>Data do relatório</label><input type="date" id="dataVenda"></div>
+      <div></div>
+    </div>
+    <div class="field"><label>Tabela copiada do Excel (com cabeçalho na 1ª linha)</label>
+      <textarea id="vendaTxt" placeholder="Data	Descrição	Qtd Vendas	Quantidade	Valor Bruto	Acréscimo	Desconto %	Desconto R$	Valor Líquido&#10;01/01/2025	HAMBURGUER	45	45	1125.00	0	0	0	1125.00"></textarea>
+    </div>
+    <div class="act">
+      <button class="btn btn-p" onclick="procVendas()"><i class="ti ti-cpu"></i>Processar relatório</button>
+      <button class="btn" onclick="loadEx()"><i class="ti ti-sparkles"></i>Carregar exemplo</button>
+    </div>
+  </div>
+  <div class="card" id="prevCard" style="display:none">
+    <div class="card-title"><i class="ti ti-eye"></i>Pré-visualização — <span id="prevLbl" style="color:var(--accent)"></span></div>
+    <div id="prevAlerta"></div>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Descrição</th><th>Setor</th><th>Qtd</th><th>Valor bruto</th><th>Acréscimo</th><th>Desc. %</th><th>Desc. R$</th><th>Valor líquido</th></tr></thead>
+        <tbody id="prevBody"></tbody>
+      </table>
+    </div>
+    <div class="sep"></div>
+    <div class="act">
+      <button class="btn btn-p" onclick="confirmarVendas()"><i class="ti ti-device-floppy"></i>Salvar este dia</button>
+      <button class="btn" onclick="document.getElementById('prevCard').style.display='none'">Cancelar</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-history"></i>Dias registrados</div>
+    <div id="histVendas"><div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum dia registrado ainda.</p></div></div>
+  </div>
+</div>
+
+<!-- VISITANTES -->
+<div id="sc-visit" class="screen">
+  <div class="topbar">
+    <div><div class="page-title">Visitantes diários</div>
+    <div class="page-sub">Visitantes válidos = Entradas − Vale Retorno</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-user-plus"></i>Registrar manualmente</div>
+    <div class="g4" style="align-items:flex-end">
+      <div class="field" style="margin:0"><label>Data</label><input type="date" id="dataVisit"></div>
+      <div class="field" style="margin:0"><label>Entradas (col. 3)</label><input type="number" id="vEnt" placeholder="0" min="0"></div>
+      <div class="field" style="margin:0"><label>Vale Retorno (col. 4)</label><input type="number" id="vRet" placeholder="0" min="0"></div>
+      <div><button class="btn btn-p" style="width:100%" onclick="addVisit()"><i class="ti ti-plus"></i>Registrar</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-table-import"></i>Importar tabela de visitantes</div>
+    <div class="alert alert-info"><i class="ti ti-info-circle"></i>
+      <span>Cole com cabeçalho na linha 1 (será ignorado):<br>
+      <span class="mono">Col1: Data · Col2: Visitantes · Col3: Entradas · Col4: Vale Retorno</span><br>
+      O sistema calcula: Entradas − Vale Retorno = Visitantes válidos.</span>
+    </div>
+    <div class="field"><label>Tabela copiada do Excel (com cabeçalho)</label>
+      <textarea id="visitTxt" placeholder="Data	Visitantes	Entradas	Vale Retorno&#10;01/01/2025	500	520	20&#10;02/01/2025	430	450	20"></textarea>
+    </div>
+    <div class="act"><button class="btn btn-p btn-sm" onclick="impVisit()"><i class="ti ti-check"></i>Importar</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-calendar-stats"></i>Histórico de visitantes</div>
+    <div id="histVisit"><div class="empty"><i class="ti ti-users"></i><p>Nenhum registro ainda.</p></div></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="sc-dash" class="screen">
+  <div class="topbar">
+    <div><div class="page-title">Dashboard</div>
+    <div class="page-sub" id="dashSub">Visão geral dos resultados</div></div>
+    <button class="btn btn-p" id="btnPpt" style="display:none" onclick="gerarApres()"><i class="ti ti-presentation"></i>Gerar apresentação</button>
+  </div>
+  <div class="fbar">
+    <select id="fTipo" onchange="renderDash()">
+      <option value="mes">Por mês</option>
+      <option value="dia">Todos os dias</option>
+      <option value="ano">Por ano</option>
+    </select>
+    <select id="fMes" onchange="renderDash()"></select>
+    <select id="fAno" onchange="renderDash()"></select>
+    <select id="fSetor" onchange="renderDash()"><option value="">Todos os setores</option></select>
+  </div>
+  <div id="dashContent"><div class="empty"><i class="ti ti-chart-bar"></i><p>Registre vendas e visitantes para ver o dashboard</p></div></div>
+</div>
+
+</main>
+<div id="toast"></div>
+
+<script>
+let P={}, V={}, VI={}, pending=null, charts=[];
+const CORES=['#1a6ef5','#0e7d55','#e67e22','#c0392b','#7f4fc0','#b45309','#0891b2','#16a085','#8e44ad','#c0397a'];
+const CM={};
+function cor(s){if(!CM[s]){const k=Object.keys(CM).length;CM[s]=CORES[k%CORES.length];}return CM[s];}
+
+function save(){try{localStorage.setItem('bip',JSON.stringify(P));localStorage.setItem('biv',JSON.stringify(V));localStorage.setItem('bivi',JSON.stringify(VI));}catch(e){}}
+function load(){try{const p=localStorage.getItem('bip'),v=localStorage.getItem('biv'),vi=localStorage.getItem('bivi');if(p)P=JSON.parse(p);if(v)V=JSON.parse(v);if(vi)VI=JSON.parse(vi);}catch(e){}}
+
+function exportar(){
+  const b=new Blob([JSON.stringify({P,V,VI,ver:3,at:new Date().toISOString()},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='bi-parque-'+hoje()+'.json';a.click();
+  toast('Backup exportado!','ok');
+}
+function importar(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{try{
+    const d=JSON.parse(ev.target.result);
+    if(d.P)P=d.P;if(d.V)V=d.V;if(d.VI)VI=d.VI;
+    // compat v1/v2
+    if(d.produtos)P=d.produtos;if(d.vendas)V=d.vendas;if(d.visitantes)VI=d.visitantes;
+    save();renderAll();toast('Backup restaurado!','ok');
+  }catch(_){toast('Arquivo inválido','err');}};
+  r.readAsText(f);e.target.value='';
+}
+
+function hoje(){return new Date().toISOString().slice(0,10);}
+function parseN(s){return parseFloat((s||'0').toString().replace(/\s/g,'').replace(/\./g,'').replace(',','.'))||0;}
+function fR(v){if(v>=1e6)return'R$ '+(v/1e6).toFixed(2).replace('.',',')+' M';if(v>=1e3)return'R$ '+(v/1e3).toFixed(1).replace('.',',')+' k';return'R$ '+v.toFixed(2).replace('.',',');}
+function fRF(v){return'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function parseData(s){
+  s=(s||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m)return`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  return s;
+}
+function toast(msg,t){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.style.background=t==='err'?'#c0392b':t==='warn'?'#b45309':'#0e7d55';
+  el.style.opacity='1';clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',2800);
+}
+function tog(id){const c=document.getElementById(id);c.style.display=c.style.display==='none'?'block':'none';}
+
+function goTab(t){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('sc-'+t).classList.add('on');
+  const idx={class:0,vendas:1,visit:2,dash:3}[t];
+  document.querySelectorAll('.nav-btn')[idx].classList.add('on');
+  if(t==='dash'){updFiltros();renderDash();}
+}
+
+/* ── CLASSIFICAÇÃO ── */
+function addProd(){
+  const cod=document.getElementById('inCod').value.trim().toUpperCase();
+  const desc=document.getElementById('inDesc').value.trim();
+  const setor=document.getElementById('inSetor').value.trim();
+  if(!cod||!setor){toast('Preencha código e setor','err');return;}
+  P[cod]={cod,desc:desc||cod,setor};
+  document.getElementById('inCod').value='';document.getElementById('inDesc').value='';
+  document.getElementById('inCod').focus();
+  save();renderProds();toast('"'+cod+'" adicionado!');
+}
+function delProd(cod){
+  if(!confirm('Remover "'+cod+'"?'))return;
+  delete P[cod];save();renderProds();toast('Removido');
+}
+function procImpClass(){
+  const lines=document.getElementById('classImpTxt').value.trim().split('\n');
+  let ok=0;
+  lines.forEach((l,i)=>{
+    const p=l.split('\t');
+    if(p.length<2)return;
+    const cod=(p[0]||'').trim().toUpperCase();
+    const desc=(p[1]||'').trim();
+    const setor=(p[2]||p[1]||'').trim();
+    // pula linha se parecer cabeçalho (primeira linha sem números no código)
+    if(i===0&&!/\d/.test(cod)&&cod.length<20&&!cod.includes(' ')){}
+    if(cod&&setor){P[cod]={cod,desc:desc||cod,setor};ok++;}
+  });
+  save();renderProds();tog('classImp');document.getElementById('classImpTxt').value='';
+  toast(ok+' produto(s) importado(s)!');
+}
+function renderProds(){
+  const arr=Object.values(P).sort((a,b)=>a.setor.localeCompare(b.setor)||a.cod.localeCompare(b.cod));
+  document.getElementById('prodCnt').textContent=arr.length?'('+arr.length+')':'';
+  const em=document.getElementById('prodEmpty'),wr=document.getElementById('prodWrap');
+  if(!arr.length){em.style.display='block';wr.style.display='none';return;}
+  em.style.display='none';wr.style.display='block';
+  const tb=document.getElementById('prodBody');tb.innerHTML='';
+  arr.forEach(p=>{
+    const c=cor(p.setor);const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="mono">${p.cod}</td><td>${p.desc}</td>
+      <td><span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}28">${p.setor}</span></td>
+      <td><button class="del-btn" onclick="delProd('${p.cod.replace(/'/g,"\\'")}')">×</button></td>`;
+    tb.appendChild(tr);
+  });
+  updSetores();
+}
+function updSetores(){
+  const ss=[...new Set(Object.values(P).map(p=>p.setor))].sort();
+  const dl=document.getElementById('setDL');dl.innerHTML='';
+  ss.forEach(s=>{const o=document.createElement('option');o.value=s;dl.appendChild(o);});
+  const sel=document.getElementById('fSetor'),cur=sel.value;
+  sel.innerHTML='<option value="">Todos os setores</option>';
+  ss.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+  if(cur)sel.value=cur;
+}
+
+/* ── VENDAS ── */
+function procVendas(){
+  const raw=document.getElementById('vendaTxt').value.trim();
+  const data=document.getElementById('dataVenda').value;
+  if(!raw){toast('Cole o relatório primeiro','err');return;}
+  if(!data){toast('Selecione a data','err');return;}
+  const lines=raw.split('\n').map(l=>l.split('\t'));
+  const dados=lines.slice(1).filter(c=>c.length>=9&&(c[1]||'').trim());
+  if(!dados.length){toast('Nenhuma linha encontrada após o cabeçalho (verifica se há 9 colunas)','err');return;}
+  const itens=[],naoEnc=[];
+  dados.forEach(c=>{
+    const cod=(c[1]||'').trim().toUpperCase();
+    if(!cod)return;
+    const qtd=parseN(c[2]);
+    const vBruto=parseN(c[4]);
+    const acrescimo=parseN(c[5]);
+    const descPct=parseN(c[6]);
+    const descR=parseN(c[7]);
+    const vLiq=parseN(c[8]);
+    const prod=P[cod];
+    if(!prod){naoEnc.push(cod);itens.push({cod,desc:cod,setor:'(não classificado)',qtd,vBruto,acrescimo,descPct,descR,vLiq});return;}
+    itens.push({cod,desc:prod.desc,setor:prod.setor,qtd,vBruto,acrescimo,descPct,descR,vLiq});
+  });
+  pending={data,itens};
+  const tb=document.getElementById('prevBody');tb.innerHTML='';
+  let tB=0,tA=0,tD=0,tL=0,tQ=0;
+  itens.forEach(i=>{
+    tB+=i.vBruto;tA+=i.acrescimo;tD+=i.descR;tL+=i.vLiq;tQ+=i.qtd;
+    const c=i.setor==='(não classificado)'?'var(--red)':cor(i.setor);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i.desc}</td>
+      <td><span class="badge" style="background:${c}18;color:${c}">${i.setor}</span></td>
+      <td>${i.qtd}</td>
+      <td>${fRF(i.vBruto)}</td>
+      <td>${i.acrescimo?fRF(i.acrescimo):'—'}</td>
+      <td>${i.descPct?i.descPct.toFixed(1)+'%':'—'}</td>
+      <td>${i.descR?fRF(i.descR):'—'}</td>
+      <td style="font-weight:600">${fRF(i.vLiq)}</td>`;
+    tb.appendChild(tr);
+  });
+  const tf=document.createElement('tr');
+  tf.style.background='var(--surface2)';
+  tf.innerHTML=`<td colspan="2" style="font-weight:600;font-size:12px;color:var(--text2)">Total (${tQ} itens)</td>
+    <td style="font-weight:600">${tQ}</td>
+    <td style="font-weight:600">${fRF(tB)}</td>
+    <td style="font-weight:600;color:var(--green)">${tA?fRF(tA):'—'}</td>
+    <td>—</td>
+    <td style="font-weight:600;color:var(--red)">${tD?fRF(tD):'—'}</td>
+    <td style="font-weight:600;color:var(--green)">${fRF(tL)}</td>`;
+  tb.appendChild(tf);
+  document.getElementById('prevLbl').textContent=data;
+  const al=document.getElementById('prevAlerta');
+  if(naoEnc.length){
+    const uniq=[...new Set(naoEnc)];
+    al.innerHTML=`<div class="alert alert-warn"><i class="ti ti-alert-triangle"></i><span><strong>${uniq.length} produto(s) não encontrado(s)</strong> no cadastro: ${uniq.slice(0,6).join(', ')}${uniq.length>6?'…':''}.<br>Cadastre-os na aba Classificação para alocá-los ao setor correto.</span></div>`;
+  } else {
+    al.innerHTML=`<div class="alert alert-ok"><i class="ti ti-circle-check"></i><span>Todos os ${itens.length} produto(s) foram classificados com sucesso.</span></div>`;
+  }
+  document.getElementById('prevCard').style.display='block';
+  document.getElementById('prevCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function confirmarVendas(){
+  if(!pending)return;
+  V[pending.data]=pending.itens;pending=null;
+  document.getElementById('prevCard').style.display='none';
+  document.getElementById('vendaTxt').value='';
+  save();renderHistV();updFiltros();
+  document.getElementById('btnPpt').style.display='flex';
+  toast('Dia salvo!','ok');
+}
+function delDia(d){
+  if(!confirm('Remover o dia '+d+'?'))return;
+  delete V[d];save();renderHistV();updFiltros();renderDash();toast('Removido');
+}
+function renderHistV(){
+  const dias=Object.keys(V).sort().reverse();
+  const el=document.getElementById('histVendas');
+  if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum dia registrado ainda.</p></div>';return;}
+  let html=`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Itens</th><th>Fat. bruto</th><th>Descontos</th><th>Fat. líquido</th><th>Visitantes</th><th>Ticket/visit.</th><th style="width:36px"></th></tr></thead><tbody>`;
+  dias.forEach(d=>{
+    const fat=V[d].reduce((a,i)=>a+i.vLiq,0);
+    const bruto=V[d].reduce((a,i)=>a+i.vBruto,0);
+    const desc=V[d].reduce((a,i)=>a+i.descR,0);
+    const vi=VI[d]?VI[d].valido:0;
+    html+=`<tr><td><strong>${d}</strong></td><td>${V[d].length}</td>
+      <td>${fRF(bruto)}</td>
+      <td style="color:var(--red)">${desc?fRF(desc):'—'}</td>
+      <td style="font-weight:500">${fRF(fat)}</td>
+      <td>${vi||'—'}</td><td>${vi?fRF(fat/vi):'—'}</td>
+      <td><button class="del-btn" onclick="delDia('${d}')">×</button></td></tr>`;
+  });
+  html+='</tbody></table></div>';el.innerHTML=html;
+}
+function loadEx(){
+  const ex={
+    'HAMBURGUER':{cod:'HAMBURGUER',desc:'Hambúrguer artesanal',setor:'Alimentação'},
+    'REFRIGERANTE':{cod:'REFRIGERANTE',desc:'Refrigerante lata',setor:'Alimentação'},
+    'AGUA':{cod:'AGUA',desc:'Água mineral',setor:'Alimentação'},
+    'PORCAO FRITAS':{cod:'PORCAO FRITAS',desc:'Porção de batata frita',setor:'Alimentação'},
+    'INGRESSO KIDS':{cod:'INGRESSO KIDS',desc:'Ingresso infantil',setor:'Entretenimento'},
+    'INGRESSO ADULTO':{cod:'INGRESSO ADULTO',desc:'Ingresso adulto',setor:'Entretenimento'},
+    'SOUVENIR CANECA':{cod:'SOUVENIR CANECA',desc:'Caneca souvenir',setor:'Loja'},
+    'BONE':{cod:'BONE',desc:'Boné do parque',setor:'Loja'},
+    'CAMISETA':{cod:'CAMISETA',desc:'Camiseta do parque',setor:'Loja'},
+    'PROTETOR SOLAR':{cod:'PROTETOR SOLAR',desc:'Protetor solar FPS50',setor:'Farmácia'},
+  };
+  Object.assign(P,ex);save();renderProds();
+  const d=hoje();
+  document.getElementById('vendaTxt').value=
+`Data\tDescrição\tQtd Vendas\tQuantidade\tValor Bruto\tAcréscimo\tDesconto %\tDesconto R$\tValor Líquido
+${d}\tHAMBURGUER\t45\t45\t1125.00\t0\t0\t0\t1125.00
+${d}\tREFRIGERANTE\t120\t120\t960.00\t0\t5\t48.00\t912.00
+${d}\tAGUA\t80\t80\t400.00\t0\t0\t0\t400.00
+${d}\tPORCAO FRITAS\t38\t38\t684.00\t0\t0\t0\t684.00
+${d}\tINGRESSO KIDS\t30\t30\t1350.00\t0\t0\t0\t1350.00
+${d}\tINGRESSO ADULTO\t55\t55\t3575.00\t0\t10\t357.50\t3217.50
+${d}\tSOUVENIR CANECA\t22\t22\t770.00\t0\t0\t0\t770.00
+${d}\tBONE\t18\t18\t720.00\t0\t0\t0\t720.00
+${d}\tCAMISETA\t12\t12\t780.00\t0\t0\t0\t780.00
+${d}\tPROTETOR SOLAR\t25\t25\t700.00\t0\t0\t0\t700.00`;
+  document.getElementById('dataVenda').value=d;
+  toast('Exemplo carregado!','ok');
+}
+
+/* ── VISITANTES ── */
+function addVisit(){
+  const d=document.getElementById('dataVisit').value;
+  const ent=parseInt(document.getElementById('vEnt').value)||0;
+  const ret=parseInt(document.getElementById('vRet').value)||0;
+  if(!d||!ent){toast('Preencha data e entradas','err');return;}
+  VI[d]={entradas:ent,retorno:ret,valido:Math.max(0,ent-ret)};
+  document.getElementById('vEnt').value='';document.getElementById('vRet').value='';
+  save();renderHistVI();toast('Registrado!','ok');
+}
+function impVisit(){
+  const raw=document.getElementById('visitTxt').value.trim();
+  if(!raw){toast('Cole a tabela primeiro','err');return;}
+  const lines=raw.split('\n').slice(1).filter(l=>l.trim());
+  let ok=0;
+  lines.forEach(l=>{
+    const c=l.split('\t');
+    const d=parseData(c[0]);
+    const ent=parseInt((c[2]||'0').replace(/\D/g,''))||0;
+    const ret=parseInt((c[3]||'0').replace(/\D/g,''))||0;
+    if(d&&ent){VI[d]={entradas:ent,retorno:ret,valido:Math.max(0,ent-ret)};ok++;}
+  });
+  save();renderHistVI();document.getElementById('visitTxt').value='';
+  toast(ok+' dia(s) importado(s)!','ok');
+}
+function delVI(d){
+  if(!confirm('Remover visitantes do dia '+d+'?'))return;
+  delete VI[d];save();renderHistVI();renderDash();toast('Removido');
+}
+function renderHistVI(){
+  const dias=Object.keys(VI).sort().reverse();
+  const el=document.getElementById('histVisit');
+  if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-users"></i><p>Nenhum registro ainda.</p></div>';return;}
+  let html=`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Entradas</th><th>Vale Retorno</th><th>Visitantes válidos</th><th>Fat. líquido</th><th>Ticket médio</th><th style="width:36px"></th></tr></thead><tbody>`;
+  dias.forEach(d=>{
+    const vi=VI[d];
+    const fat=V[d]?V[d].reduce((a,i)=>a+i.vLiq,0):null;
+    html+=`<tr><td><strong>${d}</strong></td><td>${vi.entradas}</td><td>${vi.retorno}</td>
+      <td style="font-weight:500">${vi.valido}</td>
+      <td>${fat!==null?fRF(fat):'—'}</td>
+      <td>${fat!==null&&vi.valido?fRF(fat/vi.valido):'—'}</td>
+      <td><button class="del-btn" onclick="delVI('${d}')">×</button></td></tr>`;
+  });
+  html+='</tbody></table></div>';el.innerHTML=html;
+}
+
+/* ── DASHBOARD ── */
+function updFiltros(){
+  const dias=Object.keys(V).sort();if(!dias.length)return;
+  const anos=[...new Set(dias.map(d=>d.slice(0,4)))];
+  const meses=[...new Set(dias.map(d=>d.slice(0,7)))];
+  const MN=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const sA=document.getElementById('fAno'),sM=document.getElementById('fMes');
+  const cA=sA.value,cM=sM.value;
+  sA.innerHTML=anos.map(a=>`<option value="${a}">${a}</option>`).join('');
+  if(anos.includes(cA))sA.value=cA;else sA.value=anos[anos.length-1];
+  sM.innerHTML=meses.map(m=>`<option value="${m}">${MN[+m.slice(5)]} ${m.slice(0,4)}</option>`).join('');
+  if(meses.includes(cM))sM.value=cM;else sM.value=meses[meses.length-1];
+  updSetores();
+}
+function getFiltered(){
+  const tipo=document.getElementById('fTipo').value;
+  const mes=document.getElementById('fMes').value;
+  const ano=document.getElementById('fAno').value;
+  const setF=document.getElementById('fSetor').value;
+  const diasKey=Object.keys(V).filter(d=>{
+    if(tipo==='mes')return d.startsWith(mes);
+    if(tipo==='ano')return d.startsWith(ano);
+    return true;
+  }).sort();
+  const itens=[];
+  diasKey.forEach(d=>V[d].forEach(i=>{if(!setF||i.setor===setF)itens.push({...i,data:d});}));
+  return{diasKey,itens};
+}
+function killCharts(){charts.forEach(c=>c.destroy());charts=[];}
+
+function renderDash(){
+  if(!Object.keys(V).length)return;
+  updFiltros();killCharts();
+  const{diasKey,itens}=getFiltered();
+  if(!itens.length){document.getElementById('dashContent').innerHTML='<div class="empty"><i class="ti ti-filter-off"></i><p>Nenhum dado para o filtro selecionado</p></div>';return;}
+
+  const tLiq=itens.reduce((a,i)=>a+i.vLiq,0);
+  const tBruto=itens.reduce((a,i)=>a+i.vBruto,0);
+  const tDesc=itens.reduce((a,i)=>a+i.descR,0);
+  const tAcr=itens.reduce((a,i)=>a+i.acrescimo,0);
+  const tQtd=itens.reduce((a,i)=>a+i.qtd,0);
+  const tVisit=diasKey.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);
+  const ticket=tVisit?tLiq/tVisit:0;
+
+  const bySe={};
+  itens.forEach(i=>{
+    if(!bySe[i.setor])bySe[i.setor]={liq:0,bruto:0,desc:0,qtd:0};
+    bySe[i.setor].liq+=i.vLiq;bySe[i.setor].bruto+=i.vBruto;
+    bySe[i.setor].desc+=i.descR;bySe[i.setor].qtd+=i.qtd;
+  });
+  const setores=Object.keys(bySe).sort((a,b)=>bySe[b].liq-bySe[a].liq);
+
+  const byDia={};
+  itens.forEach(i=>{if(!byDia[i.data])byDia[i.data]=0;byDia[i.data]+=i.vLiq;});
+
+  const MN=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const tipo=document.getElementById('fTipo').value;
+  const pLbl=tipo==='mes'
+    ?`${MN[+document.getElementById('fMes').value.slice(5)]} ${document.getElementById('fMes').value.slice(0,4)}`
+    :tipo==='ano'?document.getElementById('fAno').value
+    :`${diasKey[0]} → ${diasKey[diasKey.length-1]}`;
+  document.getElementById('dashSub').textContent=`${pLbl} · ${diasKey.length} dia(s)`;
+  document.getElementById('btnPpt').style.display='flex';
+
+  const isDark=matchMedia('(prefers-color-scheme:dark)').matches;
+  const gc=isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.05)';
+  const tc=isDark?'#888':'#999';
+  const bO={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:11,family:"'DM Sans'"}}},
+            y:{grid:{color:gc},ticks:{color:tc,font:{size:11,family:"'DM Sans'"}}}}};
+
+  const rows=setores.map(s=>{
+    const d=bySe[s];const pct=tLiq?(d.liq/tLiq*100).toFixed(1):0;
+    const tck=tVisit?fRF(d.liq/tVisit):'—';const c=cor(s);
+    return`<tr>
+      <td><span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}28">${s}</span></td>
+      <td>${fRF(d.liq)}</td><td>${fRF(d.bruto)}</td>
+      <td style="color:var(--red)">${d.desc?fRF(d.desc):'—'}</td>
+      <td><div style="display:flex;align-items:center;gap:7px">
+        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${c}"></div></div>
+        <span style="font-size:11px;color:var(--text2);min-width:34px">${pct}%</span>
+      </div></td>
+      <td>${tck}</td></tr>`;
+  }).join('');
+
+  document.getElementById('dashContent').innerHTML=`
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-lbl">Faturamento líquido</div><div class="kpi-val">${fR(tLiq)}</div><div class="kpi-sub">${diasKey.length} dia(s) no período</div></div>
+    <div class="kpi"><div class="kpi-lbl">Faturamento bruto</div><div class="kpi-val">${fR(tBruto)}</div><div class="kpi-sub">antes dos descontos</div></div>
+    <div class="kpi"><div class="kpi-lbl">Total de descontos</div><div class="kpi-val" style="color:var(--red)">${tDesc?fR(tDesc):'R$ 0'}</div><div class="kpi-sub">${tBruto?(tDesc/tBruto*100).toFixed(1):0}% do bruto</div></div>
+    ${tAcr?`<div class="kpi"><div class="kpi-lbl">Acréscimos</div><div class="kpi-val" style="color:var(--green)">${fR(tAcr)}</div><div class="kpi-sub">total do período</div></div>`:''}
+    <div class="kpi"><div class="kpi-lbl">Visitantes</div><div class="kpi-val">${tVisit?tVisit.toLocaleString():'—'}</div><div class="kpi-sub">Entradas − Vale Retorno</div></div>
+    <div class="kpi"><div class="kpi-lbl">Ticket / visitante</div><div class="kpi-val">${tVisit?fR(ticket):'—'}</div><div class="kpi-sub">líquido ÷ visitantes</div></div>
+    <div class="kpi"><div class="kpi-lbl">Itens vendidos</div><div class="kpi-val">${tQtd.toLocaleString()}</div><div class="kpi-sub">unidades totais</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px">
+    <div class="card" style="margin:0">
+      <div class="card-title"><i class="ti ti-chart-bar"></i>Faturamento líquido por setor</div>
+      <div class="legend">${setores.map(s=>`<span class="leg"><span class="leg-dot" style="background:${cor(s)}"></span>${s}</span>`).join('')}</div>
+      <div style="position:relative;height:${Math.max(160,setores.length*40+50)}px"><canvas id="cSe" role="img" aria-label="Faturamento por setor">Faturamento por setor.</canvas></div>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="card-title"><i class="ti ti-users"></i>Ticket médio / visitante por setor</div>
+      <div class="legend">${setores.map(s=>`<span class="leg"><span class="leg-dot" style="background:${cor(s)}80"></span>${s}</span>`).join('')}</div>
+      <div style="position:relative;height:${Math.max(160,setores.length*40+50)}px"><canvas id="cTk" role="img" aria-label="Ticket por setor">Ticket por setor.</canvas></div>
+    </div>
+  </div>
+
+  ${diasKey.length>1?`<div class="card">
+    <div class="card-title"><i class="ti ti-trending-up"></i>Evolução do faturamento líquido diário</div>
+    <div style="position:relative;height:210px"><canvas id="cDia" role="img" aria-label="Evolução diária">Evolução diária.</canvas></div>
+  </div>`:''}
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-table"></i>Detalhamento por setor</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Setor</th><th>Fat. líquido</th><th>Fat. bruto</th><th>Descontos</th><th>Participação</th><th>Ticket/visitante</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+  </div>`;
+
+  const cSe=new Chart(document.getElementById('cSe'),{type:'bar',indexAxis:'y',
+    data:{labels:setores,datasets:[{data:setores.map(s=>+bySe[s].liq.toFixed(2)),backgroundColor:setores.map(s=>cor(s)),borderRadius:4}]},
+    options:{...bO,scales:{x:{...bO.scales.x,ticks:{...bO.scales.x.ticks,callback:v=>fR(v)}},y:bO.scales.y}}});
+  charts.push(cSe);
+
+  const cTk=new Chart(document.getElementById('cTk'),{type:'bar',indexAxis:'y',
+    data:{labels:setores,datasets:[{data:setores.map(s=>tVisit?+(bySe[s].liq/tVisit).toFixed(2):0),backgroundColor:setores.map(s=>cor(s)+'90'),borderRadius:4}]},
+    options:{...bO,scales:{x:{...bO.scales.x,ticks:{...bO.scales.x.ticks,callback:v=>fR(v)}},y:bO.scales.y}}});
+  charts.push(cTk);
+
+  if(diasKey.length>1){
+    const cDia=new Chart(document.getElementById('cDia'),{type:'line',
+      data:{labels:diasKey.map(d=>d.slice(5)),datasets:[{data:diasKey.map(d=>+(byDia[d]||0).toFixed(2)),borderColor:'#1a6ef5',backgroundColor:'rgba(26,110,245,.07)',fill:true,tension:.35,pointBackgroundColor:'#1a6ef5',pointRadius:4,pointHoverRadius:6}]},
+      options:{...bO,plugins:{legend:{display:false}},scales:{x:{...bO.scales.x,ticks:{...bO.scales.x.ticks,autoSkip:false,maxRotation:45}},y:{...bO.scales.y,ticks:{...bO.scales.y.ticks,callback:v=>fR(v)}}}}});
+    charts.push(cDia);
+  }
+}
+
+/* ── APRESENTAÇÃO ── */
+function gerarApres(){
+  const{diasKey,itens}=getFiltered();
+  const tLiq=itens.reduce((a,i)=>a+i.vLiq,0);
+  const tBruto=itens.reduce((a,i)=>a+i.vBruto,0);
+  const tDesc=itens.reduce((a,i)=>a+i.descR,0);
+  const tVisit=diasKey.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);
+  const bySe={};itens.forEach(i=>{if(!bySe[i.setor])bySe[i.setor]=0;bySe[i.setor]+=i.vLiq;});
+  const setores=Object.entries(bySe).sort((a,b)=>b[1]-a[1]);
+  const txt=`Gere uma apresentação executiva em PowerPoint (.pptx) com os resultados do parque:\n\nPeríodo: ${diasKey[0]||'—'} a ${diasKey[diasKey.length-1]||'—'} (${diasKey.length} dia(s))\nFaturamento líquido: ${fRF(tLiq)}\nFaturamento bruto: ${fRF(tBruto)}\nTotal de descontos: ${fRF(tDesc)} (${tBruto?(tDesc/tBruto*100).toFixed(1):0}% do bruto)\nVisitantes: ${tVisit.toLocaleString()}\nTicket médio/visitante: ${tVisit?fRF(tLiq/tVisit):'—'}\n\nFaturamento líquido por setor:\n${setores.map(([s,v])=>`- ${s}: ${fRF(v)} (${tLiq?(v/tLiq*100).toFixed(1):0}%) — ticket/visitante: ${tVisit?fRF(v/tVisit):'—'}`).join('\n')}\n\nSlides: capa, resumo executivo com KPIs, faturamento por setor (gráfico de barras), ticket médio por setor/visitante, evolução diária (se múltiplos dias), e conclusão com destaques. Design moderno e corporativo.`;
+  navigator.clipboard.writeText(txt)
+    .then(()=>toast('Texto copiado! Cole no Claude.ai','ok'))
+    .catch(()=>alert('Copie e cole no Claude.ai:\n\n'+txt));
+}
+
+/* ── INIT ── */
+function renderAll(){renderProds();renderHistV();renderHistVI();updFiltros();}
+load();
+document.getElementById('dataVenda').value=hoje();
+document.getElementById('dataVisit').value=hoje();
+renderAll();
+if(Object.keys(V).length){document.getElementById('btnPpt').style.display='flex';}
+const nd=Object.keys(V).length;
+document.getElementById('brandSub').textContent=nd?nd+' dia(s) registrado(s)':'Sistema de gestão';
+</script>
+</body>
+</html>
