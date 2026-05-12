@@ -121,8 +121,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="nav-btn" onclick="goTab('visit')"><i class="ti ti-users"></i>Visitantes</button>
     <button class="nav-btn" onclick="goTab('metas')"><i class="ti ti-target"></i>Metas</button>
     <button class="nav-btn" onclick="goTab('anterior')"><i class="ti ti-clock"></i>Ano anterior</button>
+    <div class="nav-sec">Canais externos</div>
+    <button class="nav-btn" onclick="goTab('pontos')"><i class="ti ti-map-pin"></i>Pontos Externos</button>
+    <button class="nav-btn" onclick="goTab('site')"><i class="ti ti-world"></i>Site Oficial</button>
     <div class="nav-sec">Resultados</div>
     <button class="nav-btn" onclick="goTab('dash')"><i class="ti ti-chart-bar"></i>Dashboard</button>
+    <button class="nav-btn" onclick="goTab('dashext')"><i class="ti ti-chart-dots"></i>Dashboard Externos</button>
   </nav>
   <div class="sidebar-foot">
     <button class="btn btn-sm" onclick="exportar()"><i class="ti ti-download"></i>Backup</button>
@@ -387,12 +391,92 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div id="dashContent"><div class="empty"><i class="ti ti-chart-bar"></i><p>Registre vendas e visitantes para ver o dashboard</p></div></div>
 </div>
 
+<!-- PONTOS EXTERNOS -->
+<div id="sc-pontos" class="screen">
+  <div class="topbar">
+    <div><div class="page-title">Pontos Externos</div>
+    <div class="page-sub">Faturamento dos pontos de venda externos</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-table-import"></i>Importar do Excel</div>
+    <div class="alert alert-info"><i class="ti ti-info-circle"></i>
+      <span>Cole com cabeçalho na linha 1 (ignorado). Formato:<br>
+      <span style="font-family:'DM Mono',monospace;font-size:11px">Data [tab] Valor Líquido</span><br>
+      Formato da data: <strong>dd/mm/aaaa</strong> — Ex: 01/05/2025</span>
+    </div>
+    <div class="field"><label>Tabela copiada do Excel</label>
+      <textarea id="pontosTxt" placeholder="Data	Valor Líquido&#10;01/05/2025	1250.00&#10;02/05/2025	980.50"></textarea>
+    </div>
+    <div class="act"><button class="btn btn-p btn-sm" onclick="impPontos()"><i class="ti ti-check"></i>Importar</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-history"></i>Registros importados
+      <div style="display:flex;gap:6px;margin-left:auto">
+        <button class="btn btn-sm" id="btnExportPontos" onclick="exportarPontosExcel()" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
+        <button class="btn btn-sm" id="btnLimparPontos" onclick="limparPontos()" style="display:none;color:var(--red)"><i class="ti ti-trash"></i>Limpar dados</button>
+      </div>
+    </div>
+    <div id="histPontos"><div class="empty"><i class="ti ti-map-pin"></i><p>Nenhum registro ainda.</p></div></div>
+  </div>
+</div>
+
+<!-- SITE OFICIAL -->
+<div id="sc-site" class="screen">
+  <div class="topbar">
+    <div><div class="page-title">Site Oficial</div>
+    <div class="page-sub">Faturamento do site oficial</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-table-import"></i>Importar do Excel</div>
+    <div class="alert alert-info"><i class="ti ti-info-circle"></i>
+      <span>Cole com cabeçalho na linha 1 (ignorado). Formato:<br>
+      <span style="font-family:'DM Mono',monospace;font-size:11px">Data [tab] Valor Líquido</span><br>
+      Formato da data: <strong>dd/mm/aaaa</strong> — Ex: 01/05/2025</span>
+    </div>
+    <div class="field"><label>Tabela copiada do Excel</label>
+      <textarea id="siteTxt" placeholder="Data	Valor Líquido&#10;01/05/2025	3200.00&#10;02/05/2025	2750.00"></textarea>
+    </div>
+    <div class="act"><button class="btn btn-p btn-sm" onclick="impSite()"><i class="ti ti-check"></i>Importar</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-history"></i>Registros importados
+      <div style="display:flex;gap:6px;margin-left:auto">
+        <button class="btn btn-sm" id="btnExportSite" onclick="exportarSiteExcel()" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
+        <button class="btn btn-sm" id="btnLimparSite" onclick="limparSite()" style="display:none;color:var(--red)"><i class="ti ti-trash"></i>Limpar dados</button>
+      </div>
+    </div>
+    <div id="histSite"><div class="empty"><i class="ti ti-world"></i><p>Nenhum registro ainda.</p></div></div>
+  </div>
+</div>
+
+<!-- DASHBOARD EXTERNOS -->
+<div id="sc-dashext" class="screen">
+  <div class="topbar">
+    <div><div class="page-title">Dashboard Externos</div>
+    <div class="page-sub" id="dashextSub">Pontos Externos e Site Oficial</div></div>
+  </div>
+  <div class="fbar">
+    <div class="fbar-item"><label>Ano</label><select id="fExtAno" onchange="onFExtAno()"></select></div>
+    <div class="fbar-item"><label>Mês</label><select id="fExtMes" onchange="onFExtMes()"><option value="">Todos</option></select></div>
+    <div class="fbar-item"><label>Dia</label><select id="fExtDia" onchange="renderDashExt()"><option value="">Todos</option></select></div>
+    <div class="fbar-item"><label>Canal</label>
+      <select id="fExtCanal" onchange="renderDashExt()">
+        <option value="">Todos</option>
+        <option value="pontos">Pontos Externos</option>
+        <option value="site">Site Oficial</option>
+      </select>
+    </div>
+  </div>
+  <div id="dashextContent"><div class="empty"><i class="ti ti-chart-dots"></i><p>Importe dados de Pontos Externos e/ou Site Oficial para ver o dashboard</p></div></div>
+</div>
+
+
 </main>
 <div id="toast"></div>
 
 <script>
 // ── ESTADO ────────────────────────────────────────────────────────────
-let P={}, V={}, VI={}, METAS={}, ANTERIOR={}, pending=null, charts=[];
+let P={}, V={}, VI={}, METAS={}, ANTERIOR={}, PONTOS={}, SITE={}, pending=null, charts=[], chartsExt=[];
 let _nid=1;
 function novaKey(){return 'p'+(++_nid);}
 
@@ -416,15 +500,19 @@ function save(){
     localStorage.setItem('bivi',JSON.stringify(VI));
     localStorage.setItem('bimetas',JSON.stringify(METAS));
     localStorage.setItem('biant',JSON.stringify(ANTERIOR));
+    localStorage.setItem('bipontos',JSON.stringify(PONTOS));
+    localStorage.setItem('bisite',JSON.stringify(SITE));
     localStorage.setItem('bi_nid',String(_nid));
   }catch(e){}
 }
 function load(){
   try{
     const p=localStorage.getItem('bip'),v=localStorage.getItem('biv'),vi=localStorage.getItem('bivi'),
-          m=localStorage.getItem('bimetas'),a=localStorage.getItem('biant'),nid=localStorage.getItem('bi_nid');
+          m=localStorage.getItem('bimetas'),a=localStorage.getItem('biant'),nid=localStorage.getItem('bi_nid'),
+          po=localStorage.getItem('bipontos'),si=localStorage.getItem('bisite');
     if(p)P=JSON.parse(p);if(v)V=JSON.parse(v);if(vi)VI=JSON.parse(vi);
     if(m)METAS=JSON.parse(m);if(a)ANTERIOR=JSON.parse(a);
+    if(po)PONTOS=JSON.parse(po);if(si)SITE=JSON.parse(si);
     if(nid)_nid=parseInt(nid)||1;
     let mig=false;
     Object.keys(P).forEach(k=>{if(!k.startsWith('p')){const nk=novaKey();P[nk]=P[k];delete P[k];mig=true;}});
@@ -432,7 +520,7 @@ function load(){
   }catch(e){}
 }
 function exportar(){
-  const b=new Blob([JSON.stringify({P,V,VI,METAS,ANTERIOR,_nid,ver:1,at:new Date().toISOString()},null,2)],{type:'application/json'});
+  const b=new Blob([JSON.stringify({P,V,VI,METAS,ANTERIOR,PONTOS,SITE,_nid,ver:2,at:new Date().toISOString()},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='super-carros-'+hoje()+'.json';a.click();
   toast('Backup exportado!');
 }
@@ -443,6 +531,7 @@ function importar(e){
     const d=JSON.parse(ev.target.result);
     if(d.P)P=d.P;if(d.V)V=d.V;if(d.VI)VI=d.VI;
     if(d.METAS)METAS=d.METAS;if(d.ANTERIOR)ANTERIOR=d.ANTERIOR;
+    if(d.PONTOS)PONTOS=d.PONTOS;if(d.SITE)SITE=d.SITE;
     if(d._nid)_nid=d._nid;
     save();renderAll();toast('Backup restaurado!');
   }catch(_){toast('Arquivo inválido','err');}};
@@ -466,7 +555,7 @@ function parseData(s){
 function toast(msg,t){const el=document.getElementById('toast');el.textContent=msg;el.style.background=t==='err'?'#c0392b':t==='warn'?'#b45309':'#0e7d55';el.style.opacity='1';clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',2800);}
 function tog(id){const c=document.getElementById(id);c.style.display=c.style.display==='none'?'block':'none';}
 
-const NAV_IDS=['class','ajustado','vendas','visit','metas','anterior','dash'];
+const NAV_IDS=['class','ajustado','vendas','visit','metas','anterior','pontos','site','dash','dashext'];
 function goTab(t){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
@@ -475,6 +564,9 @@ function goTab(t){
   if(idx>=0)document.querySelectorAll('.nav-btn')[idx].classList.add('on');
   if(t==='ajustado')renderAjustado();
   if(t==='dash'){updFiltros();renderDash();}
+  if(t==='pontos')renderHistPontos();
+  if(t==='site')renderHistSite();
+  if(t==='dashext'){updFiltrosExt();renderDashExt();}
   if(t==='metas')renderMetas();
   if(t==='anterior')renderAnterior();
 }
@@ -1253,8 +1345,310 @@ function gerarApres(){
   navigator.clipboard.writeText(txt).then(()=>toast('Texto copiado! Cole no Claude.ai')).catch(()=>alert('Copie e cole no Claude.ai:\n\n'+txt));
 }
 
+// ── PONTOS EXTERNOS ──────────────────────────────────────────────────
+function impPontos(){
+  const raw=document.getElementById('pontosTxt').value.trim();
+  if(!raw){toast('Cole a tabela primeiro','err');return;}
+  const todasLinhas=raw.split('\n').filter(l=>l.trim());
+  const primeiraData=parseData((todasLinhas[0]||'').split('\t')[0]);
+  const lines=primeiraData?todasLinhas:todasLinhas.slice(1);
+  let ok=0;
+  lines.forEach(l=>{
+    const p=l.split('\t');if(p.length<2)return;
+    const d=parseData((p[0]||'').trim());
+    const v=parseN(p[1]);
+    if(!d||!v)return;
+    if(!PONTOS[d])PONTOS[d]=0;
+    PONTOS[d]+=v;ok++;
+  });
+  save();renderHistPontos();document.getElementById('pontosTxt').value='';
+  if(ok>0){toast(ok+' registro(s) importado(s)!');updFiltrosExt();}
+  else toast('Nenhum registro importado. Verifique o formato.','err');
+}
+function renderHistPontos(){
+  const dias=Object.keys(PONTOS).sort().reverse();
+  const el=document.getElementById('histPontos');
+  if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-map-pin"></i><p>Nenhum registro ainda.</p></div>';return;}
+  let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Valor líquido</th><th style="width:40px"></th></tr></thead><tbody>';
+  dias.forEach(d=>{
+    html+='<tr><td><strong>'+d+'</strong></td><td style="font-weight:500">'+fRF(PONTOS[d])+'</td>'
+      +'<td><button class="del-btn" data-dia="'+d+'" onclick="delPonto(this.dataset.dia)">×</button></td></tr>';
+  });
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+  document.getElementById('btnExportPontos').style.display='';
+  document.getElementById('btnLimparPontos').style.display='';
+}
+function delPonto(d){if(!confirm('Remover o dia '+d+'?'))return;delete PONTOS[d];save();renderHistPontos();updFiltrosExt();renderDashExt();toast('Removido');}
+function exportarPontosExcel(){
+  const rows=[['Data','Valor Líquido']];
+  Object.keys(PONTOS).sort().forEach(d=>rows.push([d,PONTOS[d].toFixed(2).replace('.',',')]));
+  exportarExcel(rows,'pontos-externos-'+hoje()+'.xls');
+}
+function limparPontos(){
+  if(!confirm('Apagar TODOS os registros de Pontos Externos?'))return;
+  PONTOS={};save();renderHistPontos();updFiltrosExt();renderDashExt();
+  document.getElementById('btnExportPontos').style.display='none';
+  document.getElementById('btnLimparPontos').style.display='none';
+  toast('Dados apagados');
+}
+
+// ── SITE OFICIAL ──────────────────────────────────────────────────────
+function impSite(){
+  const raw=document.getElementById('siteTxt').value.trim();
+  if(!raw){toast('Cole a tabela primeiro','err');return;}
+  const todasLinhas=raw.split('\n').filter(l=>l.trim());
+  const primeiraData=parseData((todasLinhas[0]||'').split('\t')[0]);
+  const lines=primeiraData?todasLinhas:todasLinhas.slice(1);
+  let ok=0;
+  lines.forEach(l=>{
+    const p=l.split('\t');if(p.length<2)return;
+    const d=parseData((p[0]||'').trim());
+    const v=parseN(p[1]);
+    if(!d||!v)return;
+    if(!SITE[d])SITE[d]=0;
+    SITE[d]+=v;ok++;
+  });
+  save();renderHistSite();document.getElementById('siteTxt').value='';
+  if(ok>0){toast(ok+' registro(s) importado(s)!');updFiltrosExt();}
+  else toast('Nenhum registro importado. Verifique o formato.','err');
+}
+function renderHistSite(){
+  const dias=Object.keys(SITE).sort().reverse();
+  const el=document.getElementById('histSite');
+  if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-world"></i><p>Nenhum registro ainda.</p></div>';return;}
+  let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Valor líquido</th><th style="width:40px"></th></tr></thead><tbody>';
+  dias.forEach(d=>{
+    html+='<tr><td><strong>'+d+'</strong></td><td style="font-weight:500">'+fRF(SITE[d])+'</td>'
+      +'<td><button class="del-btn" data-dia="'+d+'" onclick="delSite(this.dataset.dia)">×</button></td></tr>';
+  });
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+  document.getElementById('btnExportSite').style.display='';
+  document.getElementById('btnLimparSite').style.display='';
+}
+function delSite(d){if(!confirm('Remover o dia '+d+'?'))return;delete SITE[d];save();renderHistSite();updFiltrosExt();renderDashExt();toast('Removido');}
+function exportarSiteExcel(){
+  const rows=[['Data','Valor Líquido']];
+  Object.keys(SITE).sort().forEach(d=>rows.push([d,SITE[d].toFixed(2).replace('.',',')]));
+  exportarExcel(rows,'site-oficial-'+hoje()+'.xls');
+}
+function limparSite(){
+  if(!confirm('Apagar TODOS os registros do Site Oficial?'))return;
+  SITE={};save();renderHistSite();updFiltrosExt();renderDashExt();
+  document.getElementById('btnExportSite').style.display='none';
+  document.getElementById('btnLimparSite').style.display='none';
+  toast('Dados apagados');
+}
+
+// ── DASHBOARD EXTERNOS ────────────────────────────────────────────────
+function getExtDias(canal){
+  // retorna todos os dias disponíveis para o canal filtrado
+  const diasP=canal===''||canal==='pontos'?Object.keys(PONTOS):[];
+  const diasS=canal===''||canal==='site'?Object.keys(SITE):[];
+  return [...new Set([...diasP,...diasS])].sort();
+}
+
+function updFiltrosExt(){
+  const canal=document.getElementById('fExtCanal')?document.getElementById('fExtCanal').value:'';
+  const todos=getExtDias('');
+  if(!todos.length)return;
+  const anos=[...new Set(todos.map(d=>d.slice(0,4)))];
+  const sA=document.getElementById('fExtAno'),cur=sA.value;
+  sA.innerHTML=anos.map(a=>'<option value="'+a+'">'+a+'</option>').join('');
+  if(anos.includes(cur))sA.value=cur;else sA.value=anos[anos.length-1];
+  updFiltrosExtMesDia();
+}
+
+function updFiltrosExtMesDia(){
+  const ano=document.getElementById('fExtAno').value;
+  const canal=document.getElementById('fExtCanal').value;
+  const todos=getExtDias('').filter(d=>d.startsWith(ano));
+  const meses=[...new Set(todos.map(d=>d.slice(5,7)))].sort();
+  const sM=document.getElementById('fExtMes'),curM=sM.value;
+  sM.innerHTML='<option value="">Todos</option>';
+  meses.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=MNomes[parseInt(m)-1];sM.appendChild(o);});
+  if(meses.includes(curM))sM.value=curM;
+  updFiltrosExtDia();
+}
+
+function updFiltrosExtDia(){
+  const ano=document.getElementById('fExtAno').value;
+  const mes=document.getElementById('fExtMes').value;
+  const pref=mes?ano+'-'+mes:ano;
+  const todos=getExtDias('').filter(d=>d.startsWith(pref));
+  const sD=document.getElementById('fExtDia'),curD=sD.value;
+  sD.innerHTML='<option value="">Todos</option>';
+  todos.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4);sD.appendChild(o);});
+  if(todos.includes(curD))sD.value=curD;
+}
+
+function onFExtAno(){updFiltrosExtMesDia();document.getElementById('fExtMes').value='';document.getElementById('fExtDia').value='';renderDashExt();}
+function onFExtMes(){updFiltrosExtDia();document.getElementById('fExtDia').value='';renderDashExt();}
+
+function getExtFiltrados(){
+  const ano=document.getElementById('fExtAno').value;
+  const mes=document.getElementById('fExtMes').value;
+  const dia=document.getElementById('fExtDia').value;
+  const canal=document.getElementById('fExtCanal').value;
+  const pref=dia?dia:mes?ano+'-'+mes:ano;
+  const diasP=Object.keys(PONTOS).filter(d=>d.startsWith(pref)).sort();
+  const diasS=Object.keys(SITE).filter(d=>d.startsWith(pref)).sort();
+  return{diasP,diasS,ano,mes,dia,canal,pref};
+}
+
+function killChartsExt(){chartsExt.forEach(c=>c.destroy());chartsExt=[];}
+
+function getMetaExt(setor,mf){
+  // reutiliza a mesma tabela de METAS com setores "Pontos Externos" e "Site Oficial"
+  return getMeta(setor,mf);
+}
+function getAntExt(setor,anoRef){
+  // reutiliza ANTERIOR com setores "Pontos Externos" e "Site Oficial"
+  return getAnt(setor,anoRef);
+}
+
+function renderDashExt(){
+  const temDados=Object.keys(PONTOS).length>0||Object.keys(SITE).length>0;
+  if(!temDados){
+    document.getElementById('dashextContent').innerHTML='<div class="empty"><i class="ti ti-chart-dots"></i><p>Importe dados de Pontos Externos e/ou Site Oficial para ver o dashboard</p></div>';
+    return;
+  }
+  updFiltrosExt();
+  killChartsExt();
+
+  const{diasP,diasS,ano,mes,dia,canal,pref}=getExtFiltrados();
+  const anoAnt=String(parseInt(ano)-1);
+  const mesFmt=mes?ano+'-'+mes:null;
+
+  // Faturamento por canal
+  const fatP=canal===''||canal==='pontos'?diasP.reduce((a,d)=>a+(PONTOS[d]||0),0):0;
+  const fatS=canal===''||canal==='site'?diasS.reduce((a,d)=>a+(SITE[d]||0),0):0;
+  const fatTotal=fatP+fatS;
+
+  // Label período
+  let periLbl;
+  if(dia)periLbl=dia.slice(8)+'/'+dia.slice(5,7)+'/'+dia.slice(0,4);
+  else if(mes)periLbl=MNomes[parseInt(mes)-1]+' '+ano;
+  else periLbl=ano;
+
+  document.getElementById('dashextSub').textContent=periLbl;
+
+  // Metas
+  function getMetaExtFiltro(setor,mf){
+    const direto=getMeta(setor,mf);
+    if(direto)return direto;
+    return null;
+  }
+  function somaMetaExt(setor){
+    if(mesFmt)return getMetaExtFiltro(setor,mesFmt);
+    let soma=0,found=false;
+    for(let mi=1;mi<=12;mi++){
+      const mf=ano+'-'+String(mi).padStart(2,'0');
+      const v=getMetaExtFiltro(setor,mf);
+      if(v){soma+=v;found=true;}
+    }
+    return found?soma:null;
+  }
+  function somaAntExt(setor){
+    let soma=0,found=false;
+    for(let mi=1;mi<=12;mi++){
+      const mf=anoAnt+'-'+String(mi).padStart(2,'0');
+      const v=getAntMes(setor,mf);
+      if(v){soma+=v;found=true;}
+    }
+    return found?soma:null;
+  }
+
+  const metaP=canal!=='site'?somaMetaExt('Pontos Externos'):null;
+  const metaS=canal!=='pontos'?somaMetaExt('Site Oficial'):null;
+  const antP=canal!=='site'?somaAntExt('Pontos Externos'):null;
+  const antS=canal!=='pontos'?somaAntExt('Site Oficial'):null;
+
+  function kpiCanal(label, fat, meta, ant, cor){
+    let html='<div class="kpi" style="border-top:3px solid #'+cor+'">'
+      +'<div class="kpi-lbl">'+label+'</div>'
+      +'<div class="kpi-val" style="color:#'+cor+'">'+fR(fat)+'</div>';
+    if(meta){
+      const pct=Math.min((fat/meta*100),999).toFixed(1);
+      const barW=Math.min(100,(fat/meta*100)).toFixed(1);
+      const atingiu=fat>=meta;
+      html+='<div style="margin-top:6px">'
+        +'<div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-bottom:4px">'
+        +'<div style="width:'+barW+'%;height:100%;background:'+(atingiu?'var(--green)':'#'+cor)+';border-radius:3px"></div></div>'
+        +'<div style="font-size:11px;color:var(--text2)">Meta: '+fRF(meta)+' &middot; <span style="color:'+(atingiu?'var(--green)':'var(--red)')+'">'+pct+'%</span></div>'
+        +'</div>';
+    }
+    if(ant&&!dia){
+      const vr=((fat-ant)/ant*100).toFixed(1);
+      const sinal=parseFloat(vr)>=0?'+':'';
+      const corVr=parseFloat(vr)>=0?'var(--green)':'var(--red)';
+      html+='<div style="font-size:11px;color:var(--text2);margin-top:4px">Vs '+anoAnt+': <span style="color:'+corVr+'">'+sinal+vr+'%</span> ('+fRF(ant)+')</div>';
+    }
+    html+='</div>';
+    return html;
+  }
+
+  // KPIs
+  let kpisHtml='<div class="kpi-grid">';
+  if(fatTotal>0){
+    kpisHtml+='<div class="kpi"><div class="kpi-lbl">Total Externos</div>'
+      +'<div class="kpi-val">'+fR(fatTotal)+'</div>'
+      +'<div class="kpi-sub">'+periLbl+'</div></div>';
+  }
+  if(canal===''||canal==='pontos') kpisHtml+=kpiCanal('Pontos Externos',fatP,metaP,antP,'C0392B');
+  if(canal===''||canal==='site')   kpisHtml+=kpiCanal('Site Oficial',fatS,metaS,antS,'0891B2');
+  kpisHtml+='</div>';
+
+  // Série temporal
+  const isDark=matchMedia('(prefers-color-scheme:dark)').matches;
+  const gc=isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.05)',tc=isDark?'#888':'#999';
+  const bO={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:tc,font:{size:11,family:"'DM Sans'"}}}},
+    scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:11,family:"'DM Sans'"}}},
+            y:{grid:{color:gc},ticks:{color:tc,font:{size:11,family:"'DM Sans'"},callback:function(v){return fR(v);}}}}};
+
+  let sLabels,sDataP,sDataS;
+  if(!mes&&!dia){
+    sLabels=MNomes;
+    sDataP=MNomes.map((_,mi)=>{
+      const pf=ano+'-'+String(mi+1).padStart(2,'0');
+      return +Object.keys(PONTOS).filter(d=>d.startsWith(pf)).reduce((a,d)=>a+(PONTOS[d]||0),0).toFixed(2);
+    });
+    sDataS=MNomes.map((_,mi)=>{
+      const pf=ano+'-'+String(mi+1).padStart(2,'0');
+      return +Object.keys(SITE).filter(d=>d.startsWith(pf)).reduce((a,d)=>a+(SITE[d]||0),0).toFixed(2);
+    });
+  } else if(mes&&!dia){
+    const todosDias=[...new Set([...diasP,...diasS])].sort();
+    sLabels=todosDias.map(d=>d.slice(8));
+    sDataP=todosDias.map(d=>+(PONTOS[d]||0).toFixed(2));
+    sDataS=todosDias.map(d=>+(SITE[d]||0).toFixed(2));
+  } else {
+    sLabels=['Pontos Externos','Site Oficial'];
+    sDataP=[+fatP.toFixed(2),0];
+    sDataS=[0,+fatS.toFixed(2)];
+  }
+
+  const datasets=[];
+  if(canal===''||canal==='pontos') datasets.push({label:'Pontos Externos',data:sDataP,backgroundColor:'rgba(192,57,43,0.8)',borderColor:'C0392B',borderRadius:4});
+  if(canal===''||canal==='site')   datasets.push({label:'Site Oficial',data:sDataS,backgroundColor:'rgba(8,145,178,0.8)',borderColor:'0891B2',borderRadius:4});
+
+  const g1Lbl=!mes&&!dia?'Faturamento mensal — '+ano:mes&&!dia?'Faturamento diário — '+MNomes[parseInt(mes)-1]+' '+ano:'Faturamento por canal';
+
+  document.getElementById('dashextContent').innerHTML=kpisHtml
+    +'<div class="card"><div class="card-title"><i class="ti ti-trending-up"></i>'+g1Lbl+'</div>'
+    +'<div style="position:relative;height:280px"><canvas id="cExt"></canvas></div></div>';
+
+  const cExt=new Chart(document.getElementById('cExt'),{
+    type:'bar',
+    data:{labels:sLabels,datasets},
+    options:{...bO,plugins:{...bO.plugins,legend:{display:datasets.length>1,labels:{color:tc,font:{size:11,family:"'DM Sans'"}}}}}
+  });
+  chartsExt.push(cExt);
+}
+
 // ── INIT ─────────────────────────────────────────────────────────────
-function renderAll(){renderProds();renderAjustado();renderHistV();renderHistVI();renderMetas();renderAnterior();updFiltros();}
+function renderAll(){renderProds();renderAjustado();renderHistV();renderHistVI();renderMetas();renderAnterior();renderHistPontos();renderHistSite();updFiltros();updFiltrosExt();}
 load();
 document.getElementById('dataVisit').value=hoje();
 renderAll();
