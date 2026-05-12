@@ -323,7 +323,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="card">
     <div class="card-title"><i class="ti ti-clock"></i>Adicionar manualmente</div>
     <div class="g4" style="align-items:flex-end">
-      <div class="field" style="margin:0"><label>Ano</label><input type="number" id="antAno" placeholder="2024" min="2000" max="2099"></div>
+      <div class="field" style="margin:0"><label>Mês/Ano</label><input type="month" id="antMes" placeholder="2024-01"></div>
       <div class="field" style="margin:0"><label>Setor</label>
         <select id="antSetor">
           <option value="">Selecione</option>
@@ -338,12 +338,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="card">
     <div class="card-title"><i class="ti ti-table-import"></i>Importar do Excel</div>
     <div class="alert alert-info"><i class="ti ti-info-circle"></i>
-      <span>Cole com cabeçalho na linha 1 (ignorado):<br>
-      <span style="font-family:'DM Mono',monospace;font-size:11px">Ano [tab] Setor [tab] Valor</span><br>
-      Ex: <span style="font-family:'DM Mono',monospace;font-size:11px">2024 [tab] Bilheteria [tab] 480000</span></span>
+      <span>Cole com cabeçalho na linha 1 (ignorado) — mesmo formato das metas:<br>
+      <span style="font-family:'DM Mono',monospace;font-size:11px">Mês/Ano [tab] Setor [tab] Valor</span><br>
+      Formato do mês: <strong>mm/aaaa</strong> ou <strong>aaaa-mm</strong> — Ex: 05/2024 ou 2024-05</span>
     </div>
     <div class="field"><label>Tabela copiada do Excel</label>
-      <textarea id="antImpTxt" placeholder="Ano	Setor	Valor&#10;2024	Bilheteria	480000&#10;2024	Passeios	320000&#10;2024	Salão Total	1200000"></textarea>
+      <textarea id="antImpTxt" placeholder="Mês/Ano	Setor	Valor&#10;01/2024	Bilheteria	48000&#10;01/2024	Passeios	32000&#10;01/2024	Salão Total	120000"></textarea>
     </div>
     <div class="act"><button class="btn btn-p btn-sm" onclick="impAnterior()"><i class="ti ti-check"></i>Importar</button></div>
   </div>
@@ -752,13 +752,23 @@ function renderMetas(){
 }
 
 // ── ANO ANTERIOR ──────────────────────────────────────────────────────
-function antKey(a,s){return a+'|'+s;}
+// chave: "mes|setor" onde mes = "2024-05"
+function antKey(mes,s){return mes+'|'+s;}
+
+function parseMesAnt(s){
+  s=(s||'').trim();
+  if(/^\d{4}-\d{2}$/.test(s))return s;
+  const m=s.match(/^(\d{1,2})\/(\d{4})$/);
+  if(m)return m[2]+'-'+m[1].padStart(2,'0');
+  return '';
+}
+
 function addAnterior(){
-  const ano=document.getElementById('antAno').value;
+  const mes=document.getElementById('antMes').value;
   const setor=document.getElementById('antSetor').value;
   const val=parseFloat(document.getElementById('antVal').value)||0;
-  if(!ano||!setor||!val){toast('Preencha ano, setor e valor','err');return;}
-  ANTERIOR[antKey(ano,setor)]={ano,setor,val};
+  if(!mes||!setor||!val){toast('Preencha mês/ano, setor e valor','err');return;}
+  ANTERIOR[antKey(mes,setor)]={mes,setor,val};
   document.getElementById('antVal').value='';
   save();renderAnterior();toast('Faturamento anterior adicionado!');
 }
@@ -770,25 +780,28 @@ function impAnterior(){
   let ok=0;
   lines.forEach(l=>{
     const p=l.split('\t');if(p.length<3)return;
-    const ano=(p[0]||'').trim();
+    const mes=parseMesAnt((p[0]||'').trim());
     const setor=(p[1]||'').trim();
     const val=parseN(p[2]);
-    if(!ano||!setor||!val)return;
-    ANTERIOR[antKey(ano,setor)]={ano,setor,val};ok++;
+    if(!mes||!setor||!val)return;
+    ANTERIOR[antKey(mes,setor)]={mes,setor,val};ok++;
   });
   save();renderAnterior();document.getElementById('antImpTxt').value='';
   toast(ok+' registro(s) importado(s)!');
 }
 function renderAnterior(){
-  const arr=Object.entries(ANTERIOR).sort((a,b)=>b[1].ano.localeCompare(a[1].ano)||a[1].setor.localeCompare(b[1].setor));
+  const arr=Object.entries(ANTERIOR).sort((a,b)=>b[1].mes.localeCompare(a[1].mes)||a[1].setor.localeCompare(b[1].setor));
   const el=document.getElementById('anteriorWrap');
   if(!arr.length){el.innerHTML='<div class="empty"><i class="ti ti-clock"></i><p>Nenhum faturamento anterior cadastrado.</p></div>';return;}
-  let html=`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Ano</th><th>Setor</th><th>Faturamento</th><th style="width:40px"></th></tr></thead><tbody>`;
-  arr.forEach(([k,a])=>{
-    const c=cor(a.setor);
-    html+=`<tr><td><strong>${a.ano}</strong></td><td><span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}28">${a.setor}</span></td>
-      <td style="font-weight:500">${fRF(a.val)}</td>
-      <td><button class="del-btn" data-k="${k}" onclick="delAnt(this.dataset.k)">×</button></td></tr>`;
+  let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Mês/Ano</th><th>Setor</th><th>Faturamento</th><th style="width:40px"></th></tr></thead><tbody>';
+  arr.forEach(function(entry){
+    const k=entry[0],a=entry[1];
+    const cv=cor(a.setor);
+    const lbl=MNomes[parseInt(a.mes.slice(5))-1]+' '+a.mes.slice(0,4);
+    html+='<tr><td><strong>'+lbl+'</strong></td>'
+      +'<td><span class="badge" style="background:'+cv+'18;color:'+cv+';border:1px solid '+cv+'28">'+a.setor+'</span></td>'
+      +'<td style="font-weight:500">'+fRF(a.val)+'</td>'
+      +'<td><button class="del-btn" data-k="'+k+'" onclick="delAnt(this.dataset.k)">×</button></td></tr>';
   });
   html+='</tbody></table></div>';el.innerHTML=html;
 }
@@ -857,7 +870,22 @@ function agruparSe(itens){
   const b={};itens.forEach(i=>{if(!b[i.setor])b[i.setor]={liq:0,qtd:0};b[i.setor].liq+=i.vLiq;b[i.setor].qtd+=i.qtd;});return b;
 }
 function getMeta(s,m){const k=metaKey(s,m);return METAS[k]?METAS[k].val:null;}
-function getAnt(s,a){const k=antKey(a,s);return ANTERIOR[k]?ANTERIOR[k].val:null;}
+function getAnt(s,mes){
+  // se recebe mês específico (yyyy-mm), busca direto
+  if(mes&&mes.length===7)return ANTERIOR[antKey(mes,s)]?ANTERIOR[antKey(mes,s)].val:null;
+  // se recebe ano (yyyy), soma todos os meses
+  const ano=mes;
+  let soma=0,found=false;
+  Object.values(ANTERIOR).forEach(function(a){
+    if(a.mes&&a.mes.startsWith(ano)&&a.setor===s){soma+=a.val;found=true;}
+  });
+  return found?soma:null;
+}
+function getAntMes(s,mesFmt){
+  // busca faturamento anterior para um mês específico
+  const k=antKey(mesFmt,s);
+  return ANTERIOR[k]?ANTERIOR[k].val:null;
+}
 function killCharts(){charts.forEach(c=>c.destroy());charts=[];}
 
 function renderDash(){
@@ -898,7 +926,8 @@ function renderDash(){
     }
     if(found)metaGeral=soma;
   }
-  const antGeral=setorF&&setorF!==S_TOTAL?getAnt(setorF,ano):getAnt(S_TOTAL,ano);
+  // ano anterior: soma todos os meses do anoAnt para o setor filtrado
+  const antGeral=setorF&&setorF!==S_TOTAL?getAnt(setorF,anoAnt):getAnt(S_TOTAL,anoAnt);
 
   let kpiMeta='',kpiAnt='';
   if(metaGeral){
@@ -951,13 +980,31 @@ function renderDash(){
     sLabels=setores;sFat=setores.map(s=>+bySe[s].liq.toFixed(2));sTick=setores.map(s=>tVisit?+(bySe[s].liq/tVisit).toFixed(2):0);sMeta=null;
   }
 
+  // ── Dados do ano anterior por mês (para gráfico comparativo) ──
+  const sAntMes=MNomes.map((_,mi)=>{
+    const mf=anoAnt+'-'+String(mi+1).padStart(2,'0');
+    const setor=setorF&&setorF!==S_TOTAL?setorF:S_TOTAL;
+    // busca direto pelo mês
+    let val=getAntMes(setor,mf);
+    // se não tiver Salão Total, soma todos os setores do mês
+    if(val===null&&(!setorF||setorF===S_TOTAL)){
+      let soma=0,found=false;
+      Object.values(ANTERIOR).forEach(function(a){
+        if(a.mes===mf){soma+=a.val;found=true;}
+      });
+      val=found?soma:null;
+    }
+    return val;
+  });
+  const temAntAnual=sAntMes.some(v=>v!==null)&&!mes&&!dia;
+
   const isDark=matchMedia('(prefers-color-scheme:dark)').matches;
   const gc=isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.05)',tc=isDark?'#888':'#999';
   const bO={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:11,family:"'DM Sans'"}}},y:{grid:{color:gc},ticks:{color:tc,font:{size:11,family:"'DM Sans'"}}}}};
 
   const rows=setores.map(s=>{
     const d=bySe[s];const pct=tLiq?(d.liq/tLiq*100).toFixed(1):0;const tck=tVisit?fRF(d.liq/tVisit):'—';const c=cor(s);
-    const mKey=mesFmt?getMeta(s,mesFmt):null;const aKey=getAnt(s,ano);
+    const mKey=mesFmt?getMeta(s,mesFmt):null;const aKey=getAnt(s,anoAnt);
     const metaStr=mKey?`<span style="font-size:11px;color:var(--text2)"> / meta: ${fRF(mKey)}</span>`:'';
     const antStr=aKey?`<span style="font-size:11px;color:var(--text3)"> / ${anoAnt}: ${fRF(aKey)}</span>`:'';
     return`<tr><td><span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}28">${s}</span></td>
@@ -983,6 +1030,14 @@ function renderDash(){
     <div class="card" style="margin:0"><div class="card-title"><i class="ti ti-users"></i>${g2}</div>
       <div style="position:relative;height:220px"><canvas id="cTick"></canvas></div></div>
   </div>
+  ${temAntAnual?`<div class="card">
+    <div class="card-title"><i class="ti ti-chart-bar"></i>Faturamento mensal: ${ano} vs ${anoAnt}</div>
+    <div class="legend">
+      <span class="leg"><span class="leg-dot" style="background:var(--accent)"></span>${ano}</span>
+      <span class="leg"><span class="leg-dot" style="background:#999"></span>${anoAnt}</span>
+    </div>
+    <div style="position:relative;height:240px"><canvas id="cComp"></canvas></div>
+  </div>`:''}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px">
     <div class="card" style="margin:0"><div class="card-title"><i class="ti ti-chart-bar"></i>Faturamento por setor</div>
       <div class="legend">${setores.map(s=>`<span class="leg"><span class="leg-dot" style="background:${cor(s)}"></span>${s}</span>`).join('')}</div>
@@ -1003,6 +1058,31 @@ function renderDash(){
   const cFat=new Chart(document.getElementById('cFat'),{type:tipoF,data:{labels:sLabels,datasets:datasetsF},options:{...bO,plugins:{legend:{display:datasetsF.length>1,labels:{color:tc,font:{size:11}}}},scales:{x:bO.scales.x,y:{...bO.scales.y,ticks:{...bO.scales.y.ticks,callback:v=>fR(v)}}}}});charts.push(cFat);
 
   const cTick=new Chart(document.getElementById('cTick'),{type:'line',data:{labels:sLabels,datasets:[{data:sTick,borderColor:'#0e7d55',backgroundColor:'rgba(14,125,85,.07)',fill:true,tension:.35,pointRadius:sTick.map(v=>v>0?4:0),pointBackgroundColor:'#0e7d55',pointHoverRadius:6}]},options:{...bO,plugins:{legend:{display:false}},scales:{x:bO.scales.x,y:{...bO.scales.y,ticks:{...bO.scales.y.ticks,callback:v=>v?fR(v):''}}}}});charts.push(cTick);
+
+  // Gráfico comparativo ano atual vs anterior (só quando visualizando ano inteiro)
+  if(temAntAnual){
+    const corAnt='rgba(150,150,150,0.7)';
+    const accentC=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#1a6ef5';
+    const cComp=new Chart(document.getElementById('cComp'),{
+      type:'bar',
+      data:{
+        labels:MNomes,
+        datasets:[
+          {label:ano,data:sFat,backgroundColor:sFat.map(v=>v>0?'var(--accent)':'transparent'),borderRadius:3,order:1},
+          {label:anoAnt,data:sAntMes.map(v=>v||0),backgroundColor:corAnt,borderRadius:3,order:2}
+        ]
+      },
+      options:{
+        ...bO,
+        plugins:{legend:{display:true,labels:{color:tc,font:{size:11,family:"'DM Sans'"}}}},
+        scales:{
+          x:bO.scales.x,
+          y:{...bO.scales.y,ticks:{...bO.scales.y.ticks,callback:function(v){return fR(v);}}}
+        }
+      }
+    });
+    charts.push(cComp);
+  }
 
   const cSe=new Chart(document.getElementById('cSe'),{type:'bar',indexAxis:'y',data:{labels:setores,datasets:[{data:setores.map(s=>+bySe[s].liq.toFixed(2)),backgroundColor:setores.map(s=>cor(s)),borderRadius:4}]},options:{...bO,scales:{x:{...bO.scales.x,ticks:{...bO.scales.x.ticks,callback:v=>fR(v)}},y:bO.scales.y}}});charts.push(cSe);
 
