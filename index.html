@@ -360,13 +360,15 @@ const CORES=['#1a6ef5','#0e7d55','#e67e22','#c0392b','#7f4fc0','#b45309','#0891b
 const CM={};
 function cor(s){if(!CM[s])CM[s]=CORES[Object.keys(CM).length%CORES.length];return CM[s];}
 
-const PASSEIOS=['Carona','Direção'];
+const PASSEIOS=['Carona','Direção','Direcao','Direçao','Direcão'];
 const S_PASSEIOS='Passeios';
 const S_TOTAL='Salão Total';
 const MNomes=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-// Setor ajustado: Carona/Direção → Passeios
-function setorAdj(s){return PASSEIOS.includes(s)?S_PASSEIOS:s;}
+// Setor ajustado: Carona/Direção → Passeios (normaliza acentos para comparação)
+function normSetor(s){return(s||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
+const PASSEIOS_NORM=PASSEIOS.map(normSetor);
+function setorAdj(s){return PASSEIOS_NORM.includes(normSetor(s))?S_PASSEIOS:s;}
 
 // ── PERSIST ───────────────────────────────────────────────────────────
 function save(){
@@ -452,7 +454,7 @@ function addProd(){
   const chave=findKey(nome)||novaKey();
   P[chave]={nome,setor};
   document.getElementById('inNome').value='';document.getElementById('inNome').focus();
-  save();renderProds();toast('"'+nome+'" adicionado!');
+  save();renderProds();renderAjustado();toast('"'+nome+'" adicionado!');
 }
 function renderProds(){
   const arr=Object.entries(P).map(([k,v])=>({k,...v})).sort((a,b)=>a.setor.localeCompare(b.setor)||a.nome.localeCompare(b.nome));
@@ -476,7 +478,7 @@ function renderProds(){
     btn.addEventListener('click',function(){
       const prod=P[this.dataset.key];if(!prod)return;
       if(!confirm('Remover "'+prod.nome+'"?'))return;
-      delete P[this.dataset.key];save();renderProds();toast('Produto removido');
+      delete P[this.dataset.key];save();renderProds();renderAjustado();toast('Produto removido');
     });
     tdA.appendChild(btn);
     tr.appendChild(tdN);tr.appendChild(tdS);tr.appendChild(tdA);tb.appendChild(tr);
@@ -493,7 +495,7 @@ function procImpClass(){
     const chave=findKey(nome)||novaKey();
     P[chave]={nome,setor};ok++;
   });
-  save();renderProds();tog('classImp');document.getElementById('classImpTxt').value='';
+  save();renderProds();renderAjustado();tog('classImp');document.getElementById('classImpTxt').value='';
   toast(ok+' produto(s) importado(s)!');
 }
 function updSetoresDL(){
@@ -521,7 +523,7 @@ function renderAjustado(){
     bdgAdj.textContent=adj;tdAdj.appendChild(bdgAdj);
     const tdOrig=document.createElement('td');
     tdOrig.style.color='var(--text3)';tdOrig.style.fontSize='12px';
-    tdOrig.textContent=PASSEIOS.includes(setor)?setor:'—';
+    tdOrig.textContent=PASSEIOS_NORM.includes(normSetor(setor))?setor:'—';
     tr.appendChild(tdN);tr.appendChild(tdAdj);tr.appendChild(tdOrig);tb.appendChild(tr);
   });
 }
@@ -993,7 +995,7 @@ function gerarApres(){
 }
 
 // ── INIT ─────────────────────────────────────────────────────────────
-function renderAll(){renderProds();renderHistV();renderHistVI();renderMetas();renderAnterior();updFiltros();}
+function renderAll(){renderProds();renderAjustado();renderHistV();renderHistVI();renderMetas();renderAnterior();updFiltros();}
 load();
 document.getElementById('dataVisit').value=hoje();
 renderAll();
