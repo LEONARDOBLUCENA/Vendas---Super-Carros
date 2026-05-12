@@ -918,22 +918,73 @@ function renderDash(){
 
   const mesFmt=mes?`${ano}-${mes}`:null;
   const anoAnt=String(parseInt(ano)-1);
-  // meta: se mês selecionado usa mês, senão soma todas as metas do ano para o setor
+
+  // ── META ──
+  // Função auxiliar: busca meta de um mês para um setor (ou soma todos os setores se "Todos")
+  function getMetaParaFiltro(setor, mf){
+    if(setor&&setor!==S_TOTAL){
+      // setor específico: busca direta, ou tenta S_TOTAL se não achar
+      return getMeta(setor,mf)||getMeta(S_TOTAL,mf);
+    }
+    // "Todos": primeiro tenta S_TOTAL cadastrado
+    const vTotal=getMeta(S_TOTAL,mf);
+    if(vTotal)return vTotal;
+    // senão soma todos os setores individuais cadastrados para esse mês
+    let soma=0,found=false;
+    Object.values(METAS).forEach(function(m){
+      if(m.mes===mf&&m.setor!==S_TOTAL){soma+=m.val;found=true;}
+    });
+    return found?soma:null;
+  }
+
   let metaGeral=null;
   if(mesFmt){
-    metaGeral=setorF&&setorF!==S_TOTAL?getMeta(setorF,mesFmt):getMeta(S_TOTAL,mesFmt);
+    // mês específico selecionado
+    metaGeral=getMetaParaFiltro(setorF,mesFmt);
   } else {
-    // soma metas de todos os meses do ano para o setor selecionado
+    // ano inteiro: soma metas de todos os meses do ano
     let soma=0,found=false;
     for(let mi=1;mi<=12;mi++){
       const mf=`${ano}-${String(mi).padStart(2,'0')}`;
-      const v=setorF&&setorF!==S_TOTAL?getMeta(setorF,mf):getMeta(S_TOTAL,mf);
+      const v=getMetaParaFiltro(setorF,mf);
       if(v){soma+=v;found=true;}
     }
     if(found)metaGeral=soma;
   }
-  // ano anterior: soma todos os meses do anoAnt para o setor filtrado
-  const antGeral=setorF&&setorF!==S_TOTAL?getAnt(setorF,anoAnt):getAnt(S_TOTAL,anoAnt);
+
+  // ── ANO ANTERIOR ──
+  // Função auxiliar: busca faturamento anterior de um mês para um setor (ou soma todos)
+  function getAntParaFiltro(setor, mf){
+    if(setor&&setor!==S_TOTAL){
+      return getAntMes(setor,mf)||getAntMes(S_TOTAL,mf);
+    }
+    // "Todos": primeiro tenta S_TOTAL
+    const vTotal=getAntMes(S_TOTAL,mf);
+    if(vTotal)return vTotal;
+    // senão soma todos os setores individuais
+    let soma=0,found=false;
+    Object.values(ANTERIOR).forEach(function(a){
+      if(a.mes===mf&&a.setor!==S_TOTAL){soma+=a.val;found=true;}
+    });
+    return found?soma:null;
+  }
+
+  let antGeral=null;
+  if(!mes&&!dia){
+    // ano inteiro: soma acumulado do ano anterior (apenas meses que existem)
+    let soma=0,found=false;
+    for(let mi=1;mi<=12;mi++){
+      const mf=`${anoAnt}-${String(mi).padStart(2,'0')}`;
+      const v=getAntParaFiltro(setorF,mf);
+      if(v){soma+=v;found=true;}
+    }
+    if(found)antGeral=soma;
+  } else if(mesFmt){
+    // mês específico: compara com mesmo mês do ano anterior
+    const mfAnt=`${anoAnt}-${mes}`;
+    antGeral=getAntParaFiltro(setorF,mfAnt);
+  }
+  // se dia selecionado: sem comparativo de ano anterior (não temos dados diários do passado)
 
   let kpiMeta='',kpiAnt='';
   if(metaGeral){
@@ -976,7 +1027,7 @@ function renderDash(){
     sLabels=MNomes;
     sFat=MNomes.map((_,mi)=>{const pref=`${ano}-${String(mi+1).padStart(2,'0')}`;return +getItens(diasKey.filter(d=>d.startsWith(pref)),setorF).reduce((a,i)=>a+i.vLiq,0).toFixed(2);});
     sTick=MNomes.map((_,mi)=>{const pref=`${ano}-${String(mi+1).padStart(2,'0')}`;const dM=diasKey.filter(d=>d.startsWith(pref));const fat=getItens(dM,setorF).reduce((a,i)=>a+i.vLiq,0);const vis=dM.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);return vis?+(fat/vis).toFixed(2):0;});
-    sMeta=MNomes.map((_,mi)=>{const mf=`${ano}-${String(mi+1).padStart(2,'0')}`;return setorF&&setorF!==S_TOTAL?getMeta(setorF,mf):getMeta(S_TOTAL,mf);});
+    sMeta=MNomes.map((_,mi)=>{const mf=`${ano}-${String(mi+1).padStart(2,'0')}`;return getMetaParaFiltro(setorF,mf);});
   } else if(mes&&!dia){
     sLabels=diasKey.map(d=>d.slice(8));
     sFat=diasKey.map(d=>+getItens([d],setorF).reduce((a,i)=>a+i.vLiq,0).toFixed(2));
@@ -989,18 +1040,7 @@ function renderDash(){
   // ── Dados do ano anterior por mês (para gráfico comparativo) ──
   const sAntMes=MNomes.map((_,mi)=>{
     const mf=anoAnt+'-'+String(mi+1).padStart(2,'0');
-    const setor=setorF&&setorF!==S_TOTAL?setorF:S_TOTAL;
-    // busca direto pelo mês
-    let val=getAntMes(setor,mf);
-    // se não tiver Salão Total, soma todos os setores do mês
-    if(val===null&&(!setorF||setorF===S_TOTAL)){
-      let soma=0,found=false;
-      Object.values(ANTERIOR).forEach(function(a){
-        if(a.mes===mf){soma+=a.val;found=true;}
-      });
-      val=found?soma:null;
-    }
-    return val;
+    return getAntParaFiltro(setorF,mf);
   });
   const temAntAnual=sAntMes.some(v=>v!==null)&&!mes&&!dia;
 
@@ -1010,7 +1050,7 @@ function renderDash(){
 
   const rows=setores.map(s=>{
     const d=bySe[s];const pct=tLiq?(d.liq/tLiq*100).toFixed(1):0;const tck=tVisit?fRF(d.liq/tVisit):'—';const c=cor(s);
-    const mKey=mesFmt?getMeta(s,mesFmt):null;const aKey=getAnt(s,anoAnt);
+    const mKey=mesFmt?getMeta(s,mesFmt):null;const aKey=mesFmt?getAntMes(s,`${anoAnt}-${mes}`):getAnt(s,anoAnt);
     const metaStr=mKey?`<span style="font-size:11px;color:var(--text2)"> / meta: ${fRF(mKey)}</span>`:'';
     const antStr=aKey?`<span style="font-size:11px;color:var(--text3)"> / ${anoAnt}: ${fRF(aKey)}</span>`:'';
     return`<tr><td><span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}28">${s}</span></td>
