@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BI Parque</title>
+<title>BI Super Carros</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
@@ -13,7 +13,7 @@
   --bg:#f5f5f2;--surface:#fff;--surface2:#f0efec;--surface3:#e8e7e3;
   --border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.13);
   --text:#181816;--text2:#6b6b67;--text3:#a0a09b;
-  --accent:#1a6ef5;--accent-bg:#eaf1ff;--accent-t:#0d47c4;
+  --accent:#c0392b;--accent-bg:#fdecea;--accent-t:#922b21;
   --green:#0e7d55;--green-bg:#e6f7f1;
   --amber:#b45309;--amber-bg:#fef3e2;
   --red:#c0392b;--red-bg:#fdecea;
@@ -23,7 +23,7 @@
   --bg:#131312;--surface:#1d1d1b;--surface2:#252523;--surface3:#2e2e2b;
   --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
   --text:#eeeee8;--text2:#9a9a94;--text3:#68685f;
-  --accent:#4d8fff;--accent-bg:#182540;--accent-t:#7fb3ff;
+  --accent:#e74c3c;--accent-bg:#2a1010;--accent-t:#f07070;
   --green:#2dd4a0;--green-bg:#0c2a1e;
   --amber:#f5a623;--amber-bg:#271d09;
   --red:#f07070;--red-bg:#2a1010;
@@ -56,7 +56,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .field{display:flex;flex-direction:column;gap:4px;margin-bottom:11px}
 .field label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.55px}
 .field input,.field select,.field textarea{padding:8px 11px;font-size:13px;font-family:'DM Sans',sans-serif;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);outline:none;transition:border-color .13s,box-shadow .13s;width:100%}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,110,245,.1)}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(192,57,43,.1)}
 .field textarea{resize:vertical;min-height:110px;font-family:'DM Mono',monospace;font-size:11.5px;line-height:1.65}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
@@ -84,7 +84,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .kpi-good{color:var(--green)}.kpi-bad{color:var(--red)}.kpi-neutral{color:var(--amber)}
 .alert{padding:10px 13px;border-radius:var(--r);font-size:12.5px;display:flex;gap:9px;align-items:flex-start;margin-bottom:11px;line-height:1.55}
 .alert i{font-size:15px;flex-shrink:0;margin-top:1px}
-.alert-info{background:var(--accent-bg);color:var(--accent-t);border:1px solid rgba(26,110,245,.18)}
+.alert-info{background:var(--accent-bg);color:var(--accent-t);border:1px solid rgba(192,57,43,.18)}
 .alert-warn{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(180,83,9,.18)}
 .alert-ok{background:var(--green-bg);color:var(--green);border:1px solid rgba(14,125,85,.18)}
 .fbar{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px}
@@ -103,18 +103,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .bar-bg{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden}
 .bar-fill{height:100%;border-radius:3px}
 #toast{position:fixed;bottom:22px;right:22px;padding:10px 16px;border-radius:var(--r);font-size:13px;font-weight:500;color:#fff;opacity:0;transition:opacity .28s;pointer-events:none;z-index:9999;box-shadow:var(--sh)}
-.section-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:18px}
-.stab{padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .12s;font-family:'DM Sans',sans-serif}
-.stab:hover{color:var(--text)}
-.stab.on{color:var(--accent);border-bottom-color:var(--accent)}
-.stab-panel{display:none}.stab-panel.on{display:block}
 </style>
 </head>
 <body>
 
 <aside class="sidebar">
   <div class="brand">
-    <div class="brand-logo"><i class="ti ti-building-store"></i>BI Parque</div>
+    <div class="brand-logo"><i class="ti ti-steering-wheel"></i>Super Carros</div>
     <div class="brand-sub" id="brandSub">Sistema de gestão</div>
   </div>
   <nav class="nav">
@@ -142,16 +137,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div id="sc-class" class="screen on">
   <div class="topbar">
     <div><div class="page-title">Classificação de produtos</div>
-    <div class="page-sub">Cadastro original — associe cada produto ao seu setor bruto</div></div>
+    <div class="page-sub">Cadastro original — associe cada produto ao seu setor</div></div>
   </div>
   <div class="card">
     <div class="card-title"><i class="ti ti-circle-plus"></i>Adicionar produto</div>
     <div class="alert alert-info"><i class="ti ti-info-circle"></i>
-      <span><strong>Nome:</strong> idêntico ao da coluna 2 do relatório de vendas. Use <strong>Carona</strong> ou <strong>Direção</strong> como setor — no Cadastro Ajustado eles viram <strong>Passeios</strong> automaticamente.</span>
+      <span><strong>Nome:</strong> idêntico ao da coluna 2 do relatório de vendas.<br>
+      Use <strong>Carona</strong> ou <strong>Direção</strong> como setor — no Cadastro Ajustado eles viram <strong>Passeios</strong> automaticamente.</span>
     </div>
     <div class="g2">
-      <div class="field"><label>Nome do produto</label><input id="inNome" placeholder="Ex: Hambúrguer artesanal" onkeydown="if(event.key==='Enter')addProd()"></div>
-      <div class="field"><label>Setor</label><input id="inSetor" placeholder="Ex: Alimentação" list="setDL" onkeydown="if(event.key==='Enter')addProd()"><datalist id="setDL"></datalist></div>
+      <div class="field"><label>Nome do produto</label><input id="inNome" placeholder="Ex: Carona Standard" onkeydown="if(event.key==='Enter')addProd()"></div>
+      <div class="field"><label>Setor</label><input id="inSetor" placeholder="Ex: Bilheteria" list="setDL" onkeydown="if(event.key==='Enter')addProd()">
+        <datalist id="setDL">
+          <option value="Bilheteria"><option value="Passeios"><option value="Fotos"><option value="Simuladores"><option value="Vídeos"><option value="Eventos"><option value="Carona"><option value="Direção">
+        </datalist>
+      </div>
     </div>
     <div class="act">
       <button class="btn btn-p btn-sm" onclick="addProd()"><i class="ti ti-plus"></i>Adicionar</button>
@@ -163,7 +163,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="alert alert-info"><i class="ti ti-info-circle"></i>
       <span>Com cabeçalho na linha 1 (ignorado): <span style="font-family:'DM Mono',monospace;font-size:11px">Nome do produto [tab] Setor</span></span>
     </div>
-    <div class="field"><label>Tabela copiada</label><textarea id="classImpTxt" placeholder="Nome do produto	Setor&#10;Hambúrguer artesanal	Alimentação"></textarea></div>
+    <div class="field"><label>Tabela copiada</label><textarea id="classImpTxt" placeholder="Nome do produto	Setor&#10;Carona Standard	Carona&#10;Direção Básica	Direção"></textarea></div>
     <div class="act">
       <button class="btn btn-p btn-sm" onclick="procImpClass()"><i class="ti ti-check"></i>Importar</button>
       <button class="btn btn-sm" onclick="tog('classImp')">Cancelar</button>
@@ -185,11 +185,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div id="sc-ajustado" class="screen">
   <div class="topbar">
     <div><div class="page-title">Cadastro ajustado</div>
-    <div class="page-sub">Carona e Direção aparecem como Passeios · Setores: Bilheteria, Simuladores, Vídeos, Fotos, Eventos, Passeios</div></div>
+    <div class="page-sub">Carona e Direção aparecem como Passeios · Setores: Bilheteria, Passeios, Fotos, Simuladores, Vídeos, Eventos</div></div>
   </div>
   <div class="card">
     <div class="alert alert-info" style="margin-bottom:0"><i class="ti ti-info-circle"></i>
-      <span>Esta é a visão ajustada do cadastro. Os produtos dos setores <strong>Carona</strong> e <strong>Direção</strong> aparecem aqui como <strong>Passeios</strong>. Esta é a classificação usada no Relatório de Vendas e no Dashboard.</span>
+      <span>Produtos dos setores <strong>Carona</strong> e <strong>Direção</strong> aparecem aqui como <strong>Passeios</strong>. Esta é a classificação usada no Relatório de Vendas e no Dashboard.</span>
     </div>
   </div>
   <div class="card">
@@ -213,7 +213,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="card">
     <div class="card-title"><i class="ti ti-clipboard-data"></i>Colar relatório do dia</div>
     <div class="alert alert-info"><i class="ti ti-info-circle"></i>
-      <span>9 colunas com cabeçalho na linha 1. <strong>Data</strong> = col.1. <strong>Quantidade</strong> = col.4. <strong>Faturamento</strong> = Valor Líquido (col.9). Classificação puxada do Cadastro Ajustado.<br>
+      <span>9 colunas com cabeçalho na linha 1. <strong>Data</strong> = col.1. <strong>Quantidade</strong> = col.4. <strong>Faturamento</strong> = Valor Líquido (col.9). Classificação via Cadastro Ajustado.<br>
       <span style="font-family:'DM Mono',monospace;font-size:11px">Data · Produto · QtdVendas · Quantidade · V.Bruto · Acréscimo · Desc% · Desc R$ · V.Líquido</span></span>
     </div>
     <div class="field"><label>Tabela copiada do Excel (com cabeçalho na 1ª linha)</label>
@@ -221,14 +221,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div class="act">
       <button class="btn btn-p" onclick="procVendas()"><i class="ti ti-cpu"></i>Processar relatório</button>
-      <button class="btn" onclick="loadEx()"><i class="ti ti-sparkles"></i>Exemplo</button>
     </div>
   </div>
-
   <div class="card" id="prevCard" style="display:none">
     <div class="card-title"><i class="ti ti-eye"></i>Pré-visualização — <span id="prevLbl" style="color:var(--accent)"></span></div>
     <div id="prevAlerta"></div>
-    <!-- Preview agrupado por data e setor -->
     <div class="tbl-wrap">
       <table class="tbl">
         <thead><tr><th>Data</th><th>Setor</th><th>Valor líquido</th><th>Visitantes</th><th>Ticket médio</th></tr></thead>
@@ -241,7 +238,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <button class="btn" onclick="document.getElementById('prevCard').style.display='none'">Cancelar</button>
     </div>
   </div>
-
   <div class="card">
     <div class="card-title"><i class="ti ti-history"></i>Dias registrados</div>
     <div id="histVendas"><div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum dia registrado ainda.</p></div></div>
@@ -289,8 +285,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="field" style="margin:0"><label>Setor</label>
         <select id="metaSetor">
           <option value="">Selecione</option>
-          <option>Bilheteria</option><option>Simuladores</option><option>Vídeos</option>
-          <option>Fotos</option><option>Eventos</option><option>Passeios</option><option>Salão Total</option>
+          <option>Bilheteria</option><option>Passeios</option><option>Fotos</option>
+          <option>Simuladores</option><option>Vídeos</option><option>Eventos</option><option>Salão Total</option>
         </select>
       </div>
       <div class="field" style="margin:0"><label>Mês/Ano</label><input type="month" id="metaMes"></div>
@@ -308,7 +304,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div id="sc-anterior" class="screen">
   <div class="topbar">
     <div><div class="page-title">Faturamento ano anterior</div>
-    <div class="page-sub">Cadastre o faturamento realizado em anos anteriores para comparação</div></div>
+    <div class="page-sub">Cadastre faturamentos realizados em anos anteriores para comparação</div></div>
   </div>
   <div class="card">
     <div class="card-title"><i class="ti ti-clock"></i>Adicionar faturamento anterior</div>
@@ -317,8 +313,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="field" style="margin:0"><label>Setor</label>
         <select id="antSetor">
           <option value="">Selecione</option>
-          <option>Bilheteria</option><option>Simuladores</option><option>Vídeos</option>
-          <option>Fotos</option><option>Eventos</option><option>Passeios</option><option>Salão Total</option>
+          <option>Bilheteria</option><option>Passeios</option><option>Fotos</option>
+          <option>Simuladores</option><option>Vídeos</option><option>Eventos</option><option>Salão Total</option>
         </select>
       </div>
       <div class="field" style="margin:0"><label>Valor realizado (R$)</label><input type="number" id="antVal" placeholder="0,00" min="0" step="0.01"></div>
@@ -326,7 +322,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
   </div>
   <div class="card">
-    <div class="card-title"><i class="ti ti-list"></i>Faturamentos anteriores cadastrados</div>
+    <div class="card-title"><i class="ti ti-list"></i>Faturamentos anteriores</div>
     <div id="anteriorWrap"><div class="empty"><i class="ti ti-clock"></i><p>Nenhum faturamento anterior cadastrado.</p></div></div>
   </div>
 </div>
@@ -356,47 +352,44 @@ let P={}, V={}, VI={}, METAS={}, ANTERIOR={}, pending=null, charts=[];
 let _nid=1;
 function novaKey(){return 'p'+(++_nid);}
 
-const CORES=['#1a6ef5','#0e7d55','#e67e22','#c0392b','#7f4fc0','#b45309','#0891b2','#16a085','#8e44ad','#c0397a'];
+const CORES=['#c0392b','#1a6ef5','#0e7d55','#e67e22','#7f4fc0','#b45309','#0891b2','#16a085','#8e44ad','#2c3e50'];
 const CM={};
 function cor(s){if(!CM[s])CM[s]=CORES[Object.keys(CM).length%CORES.length];return CM[s];}
 
-const PASSEIOS=['Carona','Direção','Direcao','Direçao','Direcão'];
+const PASSEIOS_NORM_LIST=['carona','direcao','direção','direçao','direcão'];
 const S_PASSEIOS='Passeios';
 const S_TOTAL='Salão Total';
 const MNomes=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-// Setor ajustado: Carona/Direção → Passeios (normaliza acentos para comparação)
-function normSetor(s){return(s||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
-const PASSEIOS_NORM=PASSEIOS.map(normSetor);
-function setorAdj(s){return PASSEIOS_NORM.includes(normSetor(s))?S_PASSEIOS:s;}
+function normStr(s){return(s||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
+function setorAdj(s){return PASSEIOS_NORM_LIST.includes(normStr(s))?S_PASSEIOS:s;}
 
 // ── PERSIST ───────────────────────────────────────────────────────────
 function save(){
   try{
-    localStorage.setItem('bip',JSON.stringify(P));
-    localStorage.setItem('biv',JSON.stringify(V));
-    localStorage.setItem('bivi',JSON.stringify(VI));
-    localStorage.setItem('bimetas',JSON.stringify(METAS));
-    localStorage.setItem('biant',JSON.stringify(ANTERIOR));
-    localStorage.setItem('bi_nid',String(_nid));
+    localStorage.setItem('sc_p',JSON.stringify(P));
+    localStorage.setItem('sc_v',JSON.stringify(V));
+    localStorage.setItem('sc_vi',JSON.stringify(VI));
+    localStorage.setItem('sc_metas',JSON.stringify(METAS));
+    localStorage.setItem('sc_ant',JSON.stringify(ANTERIOR));
+    localStorage.setItem('sc_nid',String(_nid));
   }catch(e){}
 }
 function load(){
   try{
-    const p=localStorage.getItem('bip'),v=localStorage.getItem('biv'),vi=localStorage.getItem('bivi'),
-          m=localStorage.getItem('bimetas'),a=localStorage.getItem('biant'),nid=localStorage.getItem('bi_nid');
+    const p=localStorage.getItem('sc_p'),v=localStorage.getItem('sc_v'),vi=localStorage.getItem('sc_vi'),
+          m=localStorage.getItem('sc_metas'),a=localStorage.getItem('sc_ant'),nid=localStorage.getItem('sc_nid');
     if(p)P=JSON.parse(p);if(v)V=JSON.parse(v);if(vi)VI=JSON.parse(vi);
     if(m)METAS=JSON.parse(m);if(a)ANTERIOR=JSON.parse(a);
     if(nid)_nid=parseInt(nid)||1;
-    // migração de chaves antigas
     let mig=false;
     Object.keys(P).forEach(k=>{if(!k.startsWith('p')){const nk=novaKey();P[nk]=P[k];delete P[k];mig=true;}});
     if(mig)save();
   }catch(e){}
 }
 function exportar(){
-  const b=new Blob([JSON.stringify({P,V,VI,METAS,ANTERIOR,_nid,ver:9,at:new Date().toISOString()},null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='bi-parque-'+hoje()+'.json';a.click();
+  const b=new Blob([JSON.stringify({P,V,VI,METAS,ANTERIOR,_nid,ver:1,at:new Date().toISOString()},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='super-carros-'+hoje()+'.json';a.click();
   toast('Backup exportado!');
 }
 function importar(e){
@@ -407,7 +400,6 @@ function importar(e){
     if(d.P)P=d.P;if(d.V)V=d.V;if(d.VI)VI=d.VI;
     if(d.METAS)METAS=d.METAS;if(d.ANTERIOR)ANTERIOR=d.ANTERIOR;
     if(d._nid)_nid=d._nid;
-    if(d.produtos)P=d.produtos;if(d.vendas)V=d.vendas;if(d.visitantes)VI=d.visitantes;
     save();renderAll();toast('Backup restaurado!');
   }catch(_){toast('Arquivo inválido','err');}};
   r.readAsText(f);e.target.value='';
@@ -470,8 +462,7 @@ function renderProds(){
     const tdS=document.createElement('td');
     const bdg=document.createElement('span');bdg.className='badge';
     bdg.style.cssText=`background:${c}18;color:${c};border:1px solid ${c}28`;
-    bdg.textContent=setor;
-    tdS.appendChild(bdg);
+    bdg.textContent=setor;tdS.appendChild(bdg);
     const tdA=document.createElement('td');
     const btn=document.createElement('button');btn.className='del-btn';btn.innerHTML='×';btn.title='Remover';
     btn.dataset.key=k;
@@ -483,7 +474,6 @@ function renderProds(){
     tdA.appendChild(btn);
     tr.appendChild(tdN);tr.appendChild(tdS);tr.appendChild(tdA);tb.appendChild(tr);
   });
-  updSetoresDL();
 }
 function procImpClass(){
   const lines=document.getElementById('classImpTxt').value.trim().split('\n');
@@ -497,11 +487,6 @@ function procImpClass(){
   });
   save();renderProds();renderAjustado();tog('classImp');document.getElementById('classImpTxt').value='';
   toast(ok+' produto(s) importado(s)!');
-}
-function updSetoresDL(){
-  const brutos=[...new Set(Object.values(P).map(p=>p.setor))].sort();
-  const dl=document.getElementById('setDL');dl.innerHTML='';
-  brutos.forEach(s=>{const o=document.createElement('option');o.value=s;dl.appendChild(o);});
 }
 
 // ── CADASTRO AJUSTADO ─────────────────────────────────────────────────
@@ -518,12 +503,12 @@ function renderAjustado(){
     const tr=document.createElement('tr');
     const tdN=document.createElement('td');tdN.textContent=nome;
     const tdAdj=document.createElement('td');
-    const bdgAdj=document.createElement('span');bdgAdj.className='badge';
-    bdgAdj.style.cssText=`background:${c}18;color:${c};border:1px solid ${c}28`;
-    bdgAdj.textContent=adj;tdAdj.appendChild(bdgAdj);
+    const bdg=document.createElement('span');bdg.className='badge';
+    bdg.style.cssText=`background:${c}18;color:${c};border:1px solid ${c}28`;
+    bdg.textContent=adj;tdAdj.appendChild(bdg);
     const tdOrig=document.createElement('td');
     tdOrig.style.color='var(--text3)';tdOrig.style.fontSize='12px';
-    tdOrig.textContent=PASSEIOS_NORM.includes(normSetor(setor))?setor:'—';
+    tdOrig.textContent=PASSEIOS_NORM_LIST.includes(normStr(setor))?setor:'—';
     tr.appendChild(tdN);tr.appendChild(tdAdj);tr.appendChild(tdOrig);tb.appendChild(tr);
   });
 }
@@ -535,44 +520,33 @@ function procVendas(){
   const lines=raw.split('\n').map(l=>l.split('\t'));
   const dados=lines.slice(1).filter(c=>c.length>=9&&(c[1]||'').trim());
   if(!dados.length){toast('Nenhuma linha após o cabeçalho','err');return;}
-
   const porData={};const naoEnc=[];
   dados.forEach(c=>{
     const data=parseData((c[0]||'').trim());if(!data)return;
     const nomeRaw=(c[1]||'').trim();if(!nomeRaw)return;
     const chave=findKey(nomeRaw);const prod=chave?P[chave]:null;
     if(!prod)naoEnc.push(nomeRaw);
-    // usa setor ajustado (Carona/Direção → Passeios)
     const setor=prod?setorAdj(prod.setor):'(não classificado)';
     const nomeDisplay=prod?prod.nome:nomeRaw;
     const qtd=parseN(c[3]),vLiq=parseN(c[8]);
     if(!porData[data])porData[data]=[];
     porData[data].push({nome:nomeDisplay,setor,qtd,vLiq});
   });
-
   const datas=Object.keys(porData).sort();
   if(!datas.length){toast('Nenhuma data válida. Use dd/mm/aaaa','err');return;}
   pending={porData};
 
-  // Preview agrupado por Data + Setor
   const tb=document.getElementById('prevBody');tb.innerHTML='';
   let tL=0;
   datas.forEach(data=>{
     const vis=VI[data]?VI[data].valido:0;
-    // agrupa por setor neste dia
     const bySetor={};
-    porData[data].forEach(i=>{
-      if(!bySetor[i.setor])bySetor[i.setor]=0;
-      bySetor[i.setor]+=i.vLiq;
-    });
-    const setoresDia=Object.keys(bySetor).sort();
-    const fatDia=Object.values(bySetor).reduce((a,v)=>a+v,0);
-    tL+=fatDia;
-    // linha de cabeçalho do dia
+    porData[data].forEach(i=>{if(!bySetor[i.setor])bySetor[i.setor]=0;bySetor[i.setor]+=i.vLiq;});
+    const fatDia=Object.values(bySetor).reduce((a,v)=>a+v,0);tL+=fatDia;
     const hdtr=document.createElement('tr');
     hdtr.innerHTML=`<td colspan="5" style="background:var(--surface2);font-weight:600;font-size:11px;color:var(--text2);padding:6px 10px">${data} — Total: ${fRF(fatDia)}${vis?' · '+vis+' visitantes · Ticket: '+fRF(fatDia/vis):''}</td>`;
     tb.appendChild(hdtr);
-    setoresDia.forEach(setor=>{
+    Object.keys(bySetor).sort().forEach(setor=>{
       const v=bySetor[setor];
       const c=setor==='(não classificado)'?'var(--red)':cor(setor);
       const tr=document.createElement('tr');
@@ -584,29 +558,24 @@ function procVendas(){
       tb.appendChild(tr);
     });
   });
-
   const tf=document.createElement('tr');tf.style.background='var(--surface2)';
-  tf.innerHTML=`<td colspan="2" style="font-weight:600;font-size:12px;color:var(--text2)">${datas.length} dia(s) — Total geral</td>
-    <td style="font-weight:600;color:var(--green)">${fRF(tL)}</td><td colspan="2"></td>`;
+  tf.innerHTML=`<td colspan="2" style="font-weight:600;font-size:12px;color:var(--text2)">${datas.length} dia(s) — Total</td><td style="font-weight:600;color:var(--green)">${fRF(tL)}</td><td colspan="2"></td>`;
   tb.appendChild(tf);
 
   document.getElementById('prevLbl').textContent=datas.length===1?datas[0]:`${datas[0]} → ${datas[datas.length-1]} (${datas.length} dias)`;
-
   const al=document.getElementById('prevAlerta');
   if(naoEnc.length){
     const uniq=[...new Set(naoEnc)];
-    al.innerHTML=`<div class="alert alert-warn"><i class="ti ti-alert-triangle"></i><span><strong>${uniq.length} produto(s) não encontrado(s):</strong> ${uniq.slice(0,6).join(', ')}${uniq.length>6?'…':''}. Cadastre na aba Classificação.</span></div>`;
+    al.innerHTML=`<div class="alert alert-warn"><i class="ti ti-alert-triangle"></i><span><strong>${uniq.length} produto(s) não encontrado(s):</strong> ${uniq.slice(0,6).join(', ')}${uniq.length>6?'…':''}. Cadastre na Classificação.</span></div>`;
   } else {
-    al.innerHTML=`<div class="alert alert-ok"><i class="ti ti-circle-check"></i><span>Todos classificados pelo Cadastro Ajustado. ${datas.length} dia(s): ${datas.join(', ')}.</span></div>`;
+    al.innerHTML=`<div class="alert alert-ok"><i class="ti ti-circle-check"></i><span>Todos classificados. ${datas.length} dia(s): ${datas.join(', ')}.</span></div>`;
   }
   document.getElementById('prevCard').style.display='block';
   document.getElementById('prevCard').scrollIntoView({behavior:'smooth',block:'start'});
 }
-
 function confirmarVendas(){
   if(!pending)return;
-  Object.assign(V,pending.porData);
-  pending=null;
+  Object.assign(V,pending.porData);pending=null;
   document.getElementById('prevCard').style.display='none';
   document.getElementById('vendaTxt').value='';
   save();renderHistV();updFiltros();
@@ -615,30 +584,15 @@ function confirmarVendas(){
 }
 function delDia(d){if(!confirm('Remover o dia '+d+'?'))return;delete V[d];save();renderHistV();updFiltros();renderDash();toast('Removido');}
 function renderHistV(){
-  const dias=Object.keys(V).sort().reverse();
-  const el=document.getElementById('histVendas');
+  const dias=Object.keys(V).sort().reverse();const el=document.getElementById('histVendas');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum dia registrado ainda.</p></div>';return;}
   let html=`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Fat. líquido</th><th>Visitantes</th><th>Ticket médio</th><th style="width:40px"></th></tr></thead><tbody>`;
   dias.forEach(d=>{
-    const fat=V[d].reduce((a,i)=>a+i.vLiq,0);
-    const vi=VI[d]?VI[d].valido:0;
+    const fat=V[d].reduce((a,i)=>a+i.vLiq,0);const vi=VI[d]?VI[d].valido:0;
     html+=`<tr><td><strong>${d}</strong></td><td style="font-weight:500">${fRF(fat)}</td><td>${vi||'—'}</td><td>${vi?fRF(fat/vi):'—'}</td>
       <td><button class="del-btn" data-dia="${d}" onclick="delDia(this.dataset.dia)">×</button></td></tr>`;
   });
   html+='</tbody></table></div>';el.innerHTML=html;
-}
-function loadEx(){
-  [['Hambúrguer artesanal','Alimentação'],['Refrigerante lata','Alimentação'],['Água mineral','Alimentação'],
-   ['Ingresso Kids','Bilheteria'],['Ingresso Adulto','Bilheteria'],
-   ['Carona Dupla','Carona'],['Carona Simples','Carona'],['Direção Básica','Direção'],
-   ['Souvenir Caneca','Loja'],['Boné Parque','Loja']].forEach(([nome,setor])=>{
-    const chave=findKey(nome)||novaKey();P[chave]={nome,setor};
-  });
-  save();renderProds();
-  const d='01/05/2025';
-  document.getElementById('vendaTxt').value=
-`Data\tProduto\tQtd Vendas\tQuantidade\tValor Bruto\tAcréscimo\tDesconto %\tDesconto R$\tValor Líquido\n${d}\tHambúrguer artesanal\t45\t90\t1125.00\t0\t0\t0\t1125.00\n${d}\tRefrigerante lata\t120\t120\t960.00\t0\t5\t48.00\t912.00\n${d}\tIngresso Kids\t30\t30\t1350.00\t0\t0\t0\t1350.00\n${d}\tIngresso Adulto\t55\t55\t3575.00\t0\t10\t357.50\t3217.50\n${d}\tCarona Dupla\t40\t80\t2000.00\t0\t0\t0\t2000.00\n${d}\tCarona Simples\t25\t25\t875.00\t0\t0\t0\t875.00\n${d}\tDireção Básica\t20\t20\t1200.00\t0\t0\t0\t1200.00\n${d}\tSouvenir Caneca\t22\t22\t770.00\t0\t0\t0\t770.00\n${d}\tBoné Parque\t18\t18\t720.00\t0\t0\t0\t720.00`;
-  toast('Exemplo carregado!');
 }
 
 // ── VISITANTES ────────────────────────────────────────────────────────
@@ -652,23 +606,19 @@ function addVisit(){
   save();renderHistVI();toast('Registrado!');
 }
 function impVisit(){
-  const raw=document.getElementById('visitTxt').value.trim();
-  if(!raw){toast('Cole a tabela primeiro','err');return;}
-  const lines=raw.split('\n').slice(1).filter(l=>l.trim());
-  let ok=0;
+  const raw=document.getElementById('visitTxt').value.trim();if(!raw){toast('Cole a tabela primeiro','err');return;}
+  const lines=raw.split('\n').slice(1).filter(l=>l.trim());let ok=0;
   lines.forEach(l=>{
     const c=l.split('\t');const d=parseData(c[0]);
     const ent=parseInt((c[2]||'0').replace(/\D/g,''))||0;
     const ret=parseInt((c[3]||'0').replace(/\D/g,''))||0;
     if(d&&ent){VI[d]={entradas:ent,retorno:ret,valido:Math.max(0,ent-ret)};ok++;}
   });
-  save();renderHistVI();document.getElementById('visitTxt').value='';
-  toast(ok+' dia(s) importado(s)!');
+  save();renderHistVI();document.getElementById('visitTxt').value='';toast(ok+' dia(s) importado(s)!');
 }
 function delVI(d){if(!confirm('Remover visitantes do dia '+d+'?'))return;delete VI[d];save();renderHistVI();renderDash();toast('Removido');}
 function renderHistVI(){
-  const dias=Object.keys(VI).sort().reverse();
-  const el=document.getElementById('histVisit');
+  const dias=Object.keys(VI).sort().reverse();const el=document.getElementById('histVisit');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-users"></i><p>Nenhum registro ainda.</p></div>';return;}
   let html=`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Entradas</th><th>Vale Retorno</th><th>Visitantes válidos</th><th>Fat. líquido</th><th>Ticket médio</th><th style="width:40px"></th></tr></thead><tbody>`;
   dias.forEach(d=>{
@@ -680,8 +630,7 @@ function renderHistVI(){
 }
 
 // ── METAS ─────────────────────────────────────────────────────────────
-// chave: "setor|2025-05"
-function metaKey(setor,mes){return setor+'|'+mes;}
+function metaKey(s,m){return s+'|'+m;}
 function addMeta(){
   const setor=document.getElementById('metaSetor').value;
   const mes=document.getElementById('metaMes').value;
@@ -707,8 +656,7 @@ function renderMetas(){
 }
 
 // ── ANO ANTERIOR ──────────────────────────────────────────────────────
-// chave: "ano|setor"
-function antKey(ano,setor){return ano+'|'+setor;}
+function antKey(a,s){return a+'|'+s;}
 function addAnterior(){
   const ano=document.getElementById('antAno').value;
   const setor=document.getElementById('antSetor').value;
@@ -726,8 +674,7 @@ function renderAnterior(){
   let html=`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Ano</th><th>Setor</th><th>Faturamento</th><th style="width:40px"></th></tr></thead><tbody>`;
   arr.forEach(([k,a])=>{
     const c=cor(a.setor);
-    html+=`<tr><td><strong>${a.ano}</strong></td>
-      <td><span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}28">${a.setor}</span></td>
+    html+=`<tr><td><strong>${a.ano}</strong></td><td><span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}28">${a.setor}</span></td>
       <td style="font-weight:500">${fRF(a.val)}</td>
       <td><button class="del-btn" data-k="${k}" onclick="delAnt(this.dataset.k)">×</button></td></tr>`;
   });
@@ -763,19 +710,22 @@ function updDia(){
   if(diasF.includes(curD))sD.value=curD;
 }
 function updSetoresFiltro(){
-  const setoresBrutos=new Set();
-  Object.values(V).forEach(dia=>dia.forEach(i=>setoresBrutos.add(i.setor)));
-  const setoresDash=[...new Set([...setoresBrutos].filter(s=>s!=='(não classificado)'))].sort();
+  const setoresSet=new Set();
+  // aplica setorAdj para garantir Carona/Direção → Passeios no filtro
+  Object.values(V).forEach(dia=>dia.forEach(i=>{
+    const s=setorAdj(i.setor);
+    if(s!=='(não classificado)')setoresSet.add(s);
+  }));
+  const setores=[...setoresSet].sort();
   const sel=document.getElementById('fSetor'),cur=sel.value;
   sel.innerHTML='<option value="">Todos</option>';
-  setoresDash.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+  setores.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
   const sep=document.createElement('option');sep.disabled=true;sep.textContent='──────────';sel.appendChild(sep);
   const oT=document.createElement('option');oT.value=S_TOTAL;oT.textContent='★ Salão Total (todos)';sel.appendChild(oT);
   if(cur)sel.value=cur;
 }
 function onFAno(){updMesDia();document.getElementById('fMes').value='';document.getElementById('fDia').value='';renderDash();}
 function onFMes(){updDia();document.getElementById('fDia').value='';renderDash();}
-
 function getDias(){
   const ano=document.getElementById('fAno').value,mes=document.getElementById('fMes').value,dia=document.getElementById('fDia').value;
   if(dia)return[dia];
@@ -785,38 +735,25 @@ function getDias(){
 function getItens(diasKey,setorF){
   const itens=[];
   diasKey.forEach(d=>V[d].forEach(i=>{
-    if(i.setor==='(não classificado)')return;
-    if(!setorF||setorF===S_TOTAL||i.setor===setorF)itens.push({...i,data:d});
+    const s=setorAdj(i.setor); // normaliza sempre
+    if(s==='(não classificado)')return;
+    if(!setorF||setorF===S_TOTAL||s===setorF)itens.push({...i,setor:s,data:d});
   }));
   return itens;
 }
 function agruparSe(itens){
-  const b={};itens.forEach(i=>{if(!b[i.setor])b[i.setor]={liq:0,qtd:0};b[i.setor].liq+=i.vLiq;b[i.setor].qtd+=i.qtd;});
-  return b;
+  const b={};itens.forEach(i=>{if(!b[i.setor])b[i.setor]={liq:0,qtd:0};b[i.setor].liq+=i.vLiq;b[i.setor].qtd+=i.qtd;});return b;
 }
+function getMeta(s,m){const k=metaKey(s,m);return METAS[k]?METAS[k].val:null;}
+function getAnt(s,a){const k=antKey(a,s);return ANTERIOR[k]?ANTERIOR[k].val:null;}
 function killCharts(){charts.forEach(c=>c.destroy());charts=[];}
-
-// Busca meta para setor+mes (formato "2025-05")
-function getMeta(setor,mes){
-  const k=metaKey(setor,mes);return METAS[k]?METAS[k].val:null;
-}
-// Busca faturamento ano anterior para setor+ano
-function getAnterior(setor,ano){
-  const k=antKey(ano,setor);return ANTERIOR[k]?ANTERIOR[k].val:null;
-}
 
 function renderDash(){
   if(!Object.keys(V).length)return;
   updFiltros();killCharts();
-
-  const ano=document.getElementById('fAno').value;
-  const mes=document.getElementById('fMes').value;
-  const dia=document.getElementById('fDia').value;
-  const setorF=document.getElementById('fSetor').value;
+  const ano=document.getElementById('fAno').value,mes=document.getElementById('fMes').value,dia=document.getElementById('fDia').value,setorF=document.getElementById('fSetor').value;
   const diasKey=getDias();
-
   if(!diasKey.length){document.getElementById('dashContent').innerHTML='<div class="empty"><i class="ti ti-filter-off"></i><p>Nenhum dado para o filtro selecionado</p></div>';return;}
-
   const itens=getItens(diasKey,setorF);
   const tLiq=itens.reduce((a,i)=>a+i.vLiq,0);
   const tVisit=diasKey.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);
@@ -824,13 +761,6 @@ function renderDash(){
   const bySe=agruparSe(itens);
   const setores=Object.keys(bySe).sort((a,b)=>bySe[b].liq-bySe[a].liq);
 
-  // Meta e Ano Anterior (para KPI geral)
-  const mesFmt=mes?`${ano}-${mes}`:null;
-  const anoAnt=String(parseInt(ano)-1);
-  const metaGeral=mesFmt?(setorF&&setorF!==S_TOTAL?getMeta(setorF,mesFmt):getMeta(S_TOTAL,mesFmt)):null;
-  const antGeral=setorF&&setorF!==S_TOTAL?getAnterior(setorF,ano):getAnterior(S_TOTAL,ano);
-
-  // label período
   let periLbl;
   if(dia)periLbl=dia.slice(8)+'/'+dia.slice(5,7)+'/'+dia.slice(0,4);
   else if(mes)periLbl=MNomes[parseInt(mes)-1]+' '+ano;
@@ -840,75 +770,72 @@ function renderDash(){
   document.getElementById('dashSub').textContent=`${periLbl} · ${diasKey.length} dia(s)`;
   document.getElementById('btnPpt').style.display='flex';
 
-  // Série temporal para gráficos
-  let sLabels,sFat,sTick,sMeta,sAnt;
+  const mesFmt=mes?`${ano}-${mes}`:null;
+  const anoAnt=String(parseInt(ano)-1);
+  const metaGeral=mesFmt?(setorF&&setorF!==S_TOTAL?getMeta(setorF,mesFmt):getMeta(S_TOTAL,mesFmt)):null;
+  const antGeral=setorF&&setorF!==S_TOTAL?getAnt(setorF,ano):getAnt(S_TOTAL,ano);
+
+  let kpiMeta='',kpiAnt='';
+  if(metaGeral){
+    const pct=Math.min((tLiq/metaGeral*100),999).toFixed(1);
+    const falta=metaGeral-tLiq;
+    const atingiu=tLiq>=metaGeral;
+    const cls=atingiu?'kpi-good':'kpi-bad';
+    const barW=Math.min(100,(tLiq/metaGeral*100)).toFixed(1);
+    const nomeSetor=setorF&&setorF!==S_TOTAL?' — '+setorF:'';
+    kpiMeta=`<div class="kpi" style="grid-column:span 2">
+      <div class="kpi-lbl">Meta do período${nomeSetor}</div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
+        <div class="kpi-val ${cls}">${pct}%</div>
+        <div style="font-size:12px;color:var(--text2)">${atingiu?'✓ Meta atingida':'Faltam '+fRF(falta)}</div>
+      </div>
+      <div style="height:6px;background:var(--surface2);border-radius:4px;overflow:hidden;margin-bottom:6px">
+        <div style="width:${barW}%;height:100%;background:${atingiu?'var(--green)':'var(--accent)'};border-radius:4px"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2)">
+        <span>Realizado: <strong style="color:var(--text)">${fRF(tLiq)}</strong></span>
+        <span>Meta: <strong style="color:var(--text)">${fRF(metaGeral)}</strong></span>
+      </div>
+    </div>`;
+  }
+  if(antGeral){
+    const vr=((tLiq-antGeral)/antGeral*100).toFixed(1);
+    const sinal=parseFloat(vr)>=0?'+':'';
+    const cls=parseFloat(vr)>=0?'kpi-good':'kpi-bad';
+    kpiAnt=`<div class="kpi"><div class="kpi-lbl">Vs. ano anterior (${anoAnt})</div><div class="kpi-val ${cls}">${sinal}${vr}%</div><div class="kpi-sub">Anterior: ${fRF(antGeral)} · Atual: ${fRF(tLiq)}</div></div>`;
+  }
+
+  let sLabels,sFat,sTick,sMeta;
   if(!mes&&!dia){
-    // ano inteiro → mensal
     sLabels=MNomes;
-    sFat=MNomes.map((_,mi)=>{
-      const pref=`${ano}-${String(mi+1).padStart(2,'0')}`;
-      return +getItens(diasKey.filter(d=>d.startsWith(pref)),setorF).reduce((a,i)=>a+i.vLiq,0).toFixed(2);
-    });
-    sTick=MNomes.map((_,mi)=>{
-      const pref=`${ano}-${String(mi+1).padStart(2,'0')}`;
-      const dM=diasKey.filter(d=>d.startsWith(pref));
-      const fat=getItens(dM,setorF).reduce((a,i)=>a+i.vLiq,0);
-      const vis=dM.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);
-      return vis?+(fat/vis).toFixed(2):0;
-    });
-    // meta mensal (para linha de meta no gráfico)
-    sMeta=MNomes.map((_,mi)=>{
-      const mf=`${ano}-${String(mi+1).padStart(2,'0')}`;
-      return setorF&&setorF!==S_TOTAL?getMeta(setorF,mf):getMeta(S_TOTAL,mf);
-    });
-    // ano anterior mensal — não temos detalhe mensal, só anual
-    sAnt=null;
+    sFat=MNomes.map((_,mi)=>{const pref=`${ano}-${String(mi+1).padStart(2,'0')}`;return +getItens(diasKey.filter(d=>d.startsWith(pref)),setorF).reduce((a,i)=>a+i.vLiq,0).toFixed(2);});
+    sTick=MNomes.map((_,mi)=>{const pref=`${ano}-${String(mi+1).padStart(2,'0')}`;const dM=diasKey.filter(d=>d.startsWith(pref));const fat=getItens(dM,setorF).reduce((a,i)=>a+i.vLiq,0);const vis=dM.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);return vis?+(fat/vis).toFixed(2):0;});
+    sMeta=MNomes.map((_,mi)=>{const mf=`${ano}-${String(mi+1).padStart(2,'0')}`;return setorF&&setorF!==S_TOTAL?getMeta(setorF,mf):getMeta(S_TOTAL,mf);});
   } else if(mes&&!dia){
     sLabels=diasKey.map(d=>d.slice(8));
     sFat=diasKey.map(d=>+getItens([d],setorF).reduce((a,i)=>a+i.vLiq,0).toFixed(2));
     sTick=diasKey.map(d=>{const fat=getItens([d],setorF).reduce((a,i)=>a+i.vLiq,0);const vis=VI[d]?VI[d].valido:0;return vis?+(fat/vis).toFixed(2):0;});
-    sMeta=null;sAnt=null;
+    sMeta=null;
   } else {
-    sLabels=setores;sFat=setores.map(s=>+bySe[s].liq.toFixed(2));
-    sTick=setores.map(s=>tVisit?+(bySe[s].liq/tVisit).toFixed(2):0);
-    sMeta=null;sAnt=null;
+    sLabels=setores;sFat=setores.map(s=>+bySe[s].liq.toFixed(2));sTick=setores.map(s=>tVisit?+(bySe[s].liq/tVisit).toFixed(2):0);sMeta=null;
   }
 
   const isDark=matchMedia('(prefers-color-scheme:dark)').matches;
   const gc=isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.05)',tc=isDark?'#888':'#999';
-  const bO={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-    scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:11,family:"'DM Sans'"}}},
-            y:{grid:{color:gc},ticks:{color:tc,font:{size:11,family:"'DM Sans'"}}}}};
-
-  // KPIs de meta e ano anterior
-  let kpiMeta='', kpiAnt='';
-  if(metaGeral){
-    const pct=(tLiq/metaGeral*100).toFixed(1);
-    const cls=tLiq>=metaGeral?'kpi-good':'kpi-bad';
-    kpiMeta=`<div class="kpi"><div class="kpi-lbl">Meta do período</div><div class="kpi-val ${cls}">${pct}%</div><div class="kpi-sub">Meta: ${fRF(metaGeral)} · Real: ${fRF(tLiq)}</div></div>`;
-  }
-  if(antGeral){
-    const var_=((tLiq-antGeral)/antGeral*100).toFixed(1);
-    const sinal=parseFloat(var_)>=0?'+':'';
-    const cls=parseFloat(var_)>=0?'kpi-good':'kpi-bad';
-    kpiAnt=`<div class="kpi"><div class="kpi-lbl">Vs. ano anterior (${anoAnt})</div><div class="kpi-val ${cls}">${sinal}${var_}%</div><div class="kpi-sub">Anterior: ${fRF(antGeral)}</div></div>`;
-  }
+  const bO={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:11,family:"'DM Sans'"}}},y:{grid:{color:gc},ticks:{color:tc,font:{size:11,family:"'DM Sans'"}}}}};
 
   const rows=setores.map(s=>{
     const d=bySe[s];const pct=tLiq?(d.liq/tLiq*100).toFixed(1):0;const tck=tVisit?fRF(d.liq/tVisit):'—';const c=cor(s);
-    // meta e anterior por setor (mensal ou anual dependendo do filtro)
-    const mKey=mesFmt?getMeta(s,mesFmt):null;
-    const aKey=getAnterior(s,ano);
+    const mKey=mesFmt?getMeta(s,mesFmt):null;const aKey=getAnt(s,ano);
     const metaStr=mKey?`<span style="font-size:11px;color:var(--text2)"> / meta: ${fRF(mKey)}</span>`:'';
     const antStr=aKey?`<span style="font-size:11px;color:var(--text3)"> / ${anoAnt}: ${fRF(aKey)}</span>`:'';
-    return`<tr>
-      <td><span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}28">${s}</span></td>
+    return`<tr><td><span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}28">${s}</span></td>
       <td>${fRF(d.liq)}${metaStr}${antStr}</td>
       <td><div style="display:flex;align-items:center;gap:7px"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${c}"></div></div><span style="font-size:11px;color:var(--text2);min-width:34px">${pct}%</span></div></td>
       <td>${tck}</td></tr>`;
   }).join('');
 
-  const g1=!mes&&!dia?`Faturamento mensal — ${ano}`:mes&&!dia?`Faturamento diário — ${MNomes[parseInt(mes)-1]} ${ano}`:`Faturamento por setor — ${periLbl}`;
+  const g1=!mes&&!dia?`Faturamento mensal — ${ano}`:mes&&!dia?`Faturamento diário — ${MNomes[parseInt(mes)-1]} ${ano}`:`Faturamento por setor`;
   const g2=!mes&&!dia?`Ticket médio/visitante — ${ano}`:mes&&!dia?`Ticket diário — ${MNomes[parseInt(mes)-1]} ${ano}`:`Ticket por setor`;
 
   document.getElementById('dashContent').innerHTML=`
@@ -919,14 +846,12 @@ function renderDash(){
     <div class="kpi"><div class="kpi-lbl">Dias registrados</div><div class="kpi-val">${diasKey.length}</div><div class="kpi-sub">no período</div></div>
     ${kpiMeta}${kpiAnt}
   </div>
-
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px">
     <div class="card" style="margin:0"><div class="card-title"><i class="ti ti-trending-up"></i>${g1}</div>
       <div style="position:relative;height:220px"><canvas id="cFat"></canvas></div></div>
     <div class="card" style="margin:0"><div class="card-title"><i class="ti ti-users"></i>${g2}</div>
       <div style="position:relative;height:220px"><canvas id="cTick"></canvas></div></div>
   </div>
-
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px">
     <div class="card" style="margin:0"><div class="card-title"><i class="ti ti-chart-bar"></i>Faturamento por setor</div>
       <div class="legend">${setores.map(s=>`<span class="leg"><span class="leg-dot" style="background:${cor(s)}"></span>${s}</span>`).join('')}</div>
@@ -935,62 +860,31 @@ function renderDash(){
       <div class="legend">${setores.map(s=>`<span class="leg"><span class="leg-dot" style="background:${cor(s)}80"></span>${s}</span>`).join('')}</div>
       <div style="position:relative;height:${Math.max(160,setores.length*42+50)}px"><canvas id="cTk"></canvas></div></div>
   </div>
-
   <div class="card"><div class="card-title"><i class="ti ti-table"></i>Detalhamento por setor</div>
     <div class="tbl-wrap"><table class="tbl">
       <thead><tr><th>Setor</th><th>Fat. líquido</th><th>Participação</th><th>Ticket/visitante</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div></div>`;
 
-  // Gráfico Faturamento
   const tipoF=(!mes&&!dia)?'bar':'line';
-  const datasetsF=[{
-    data:sFat,label:'Realizado',
-    backgroundColor:tipoF==='bar'?sFat.map(v=>v>0?'#1a6ef5':'#1a6ef522'):'rgba(26,110,245,.07)',
-    borderColor:'#1a6ef5',fill:tipoF==='line',tension:.35,
-    pointRadius:tipoF==='line'?sFat.map(v=>v>0?4:0):0,
-    pointBackgroundColor:'#1a6ef5',borderRadius:tipoF==='bar'?4:0
-  }];
-  // adiciona linha de meta se disponível
-  if(sMeta&&sMeta.some(v=>v!==null)){
-    datasetsF.push({
-      data:sMeta.map(v=>v||null),label:'Meta',type:'line',
-      borderColor:'#e67e22',borderDash:[5,4],borderWidth:2,
-      pointRadius:0,fill:false,tension:0,spanGaps:true
-    });
-  }
-  const cFat=new Chart(document.getElementById('cFat'),{
-    type:tipoF,data:{labels:sLabels,datasets:datasetsF},
-    options:{...bO,plugins:{legend:{display:datasetsF.length>1,labels:{color:tc,font:{size:11}}}},
-      scales:{x:bO.scales.x,y:{...bO.scales.y,ticks:{...bO.scales.y.ticks,callback:v=>fR(v)}}}}});
-  charts.push(cFat);
+  const datasetsF=[{data:sFat,label:'Realizado',backgroundColor:tipoF==='bar'?sFat.map(v=>v>0?'#c0392b':'#c0392b22'):'rgba(192,57,43,.07)',borderColor:'#c0392b',fill:tipoF==='line',tension:.35,pointRadius:tipoF==='line'?sFat.map(v=>v>0?4:0):0,pointBackgroundColor:'#c0392b',borderRadius:tipoF==='bar'?4:0}];
+  if(sMeta&&sMeta.some(v=>v!==null)){datasetsF.push({data:sMeta.map(v=>v||null),label:'Meta',type:'line',borderColor:'#e67e22',borderDash:[5,4],borderWidth:2,pointRadius:0,fill:false,tension:0,spanGaps:true});}
+  const cFat=new Chart(document.getElementById('cFat'),{type:tipoF,data:{labels:sLabels,datasets:datasetsF},options:{...bO,plugins:{legend:{display:datasetsF.length>1,labels:{color:tc,font:{size:11}}}},scales:{x:bO.scales.x,y:{...bO.scales.y,ticks:{...bO.scales.y.ticks,callback:v=>fR(v)}}}}});charts.push(cFat);
 
-  const cTick=new Chart(document.getElementById('cTick'),{type:'line',
-    data:{labels:sLabels,datasets:[{data:sTick,borderColor:'#0e7d55',backgroundColor:'rgba(14,125,85,.07)',fill:true,tension:.35,pointRadius:sTick.map(v=>v>0?4:0),pointBackgroundColor:'#0e7d55',pointHoverRadius:6}]},
-    options:{...bO,plugins:{legend:{display:false}},scales:{x:bO.scales.x,y:{...bO.scales.y,ticks:{...bO.scales.y.ticks,callback:v=>v?fR(v):''}}}}});
-  charts.push(cTick);
+  const cTick=new Chart(document.getElementById('cTick'),{type:'line',data:{labels:sLabels,datasets:[{data:sTick,borderColor:'#0e7d55',backgroundColor:'rgba(14,125,85,.07)',fill:true,tension:.35,pointRadius:sTick.map(v=>v>0?4:0),pointBackgroundColor:'#0e7d55',pointHoverRadius:6}]},options:{...bO,plugins:{legend:{display:false}},scales:{x:bO.scales.x,y:{...bO.scales.y,ticks:{...bO.scales.y.ticks,callback:v=>v?fR(v):''}}}}});charts.push(cTick);
 
-  const cSe=new Chart(document.getElementById('cSe'),{type:'bar',indexAxis:'y',
-    data:{labels:setores,datasets:[{data:setores.map(s=>+bySe[s].liq.toFixed(2)),backgroundColor:setores.map(s=>cor(s)),borderRadius:4}]},
-    options:{...bO,scales:{x:{...bO.scales.x,ticks:{...bO.scales.x.ticks,callback:v=>fR(v)}},y:bO.scales.y}}});
-  charts.push(cSe);
+  const cSe=new Chart(document.getElementById('cSe'),{type:'bar',indexAxis:'y',data:{labels:setores,datasets:[{data:setores.map(s=>+bySe[s].liq.toFixed(2)),backgroundColor:setores.map(s=>cor(s)),borderRadius:4}]},options:{...bO,scales:{x:{...bO.scales.x,ticks:{...bO.scales.x.ticks,callback:v=>fR(v)}},y:bO.scales.y}}});charts.push(cSe);
 
-  const cTk=new Chart(document.getElementById('cTk'),{type:'bar',indexAxis:'y',
-    data:{labels:setores,datasets:[{data:setores.map(s=>tVisit?+(bySe[s].liq/tVisit).toFixed(2):0),backgroundColor:setores.map(s=>cor(s)+'90'),borderRadius:4}]},
-    options:{...bO,scales:{x:{...bO.scales.x,ticks:{...bO.scales.x.ticks,callback:v=>fR(v)}},y:bO.scales.y}}});
-  charts.push(cTk);
+  const cTk=new Chart(document.getElementById('cTk'),{type:'bar',indexAxis:'y',data:{labels:setores,datasets:[{data:setores.map(s=>tVisit?+(bySe[s].liq/tVisit).toFixed(2):0),backgroundColor:setores.map(s=>cor(s)+'90'),borderRadius:4}]},options:{...bO,scales:{x:{...bO.scales.x,ticks:{...bO.scales.x.ticks,callback:v=>fR(v)}},y:bO.scales.y}}});charts.push(cTk);
 }
 
 // ── APRESENTAÇÃO ─────────────────────────────────────────────────────
 function gerarApres(){
-  const setorF=document.getElementById('fSetor').value;
-  const diasKey=getDias();
-  const itens=getItens(diasKey,setorF);
-  const tLiq=itens.reduce((a,i)=>a+i.vLiq,0);
+  const setorF=document.getElementById('fSetor').value;const diasKey=getDias();
+  const itens=getItens(diasKey,setorF);const tLiq=itens.reduce((a,i)=>a+i.vLiq,0);
   const tVisit=diasKey.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);
-  const bySe=agruparSe(itens);
-  const setores=Object.entries(bySe).sort((a,b)=>b[1].liq-a[1].liq);
-  const txt=`Gere apresentação executiva em PowerPoint (.pptx):\n\nPeríodo: ${diasKey[0]||'—'} a ${diasKey[diasKey.length-1]||'—'} (${diasKey.length} dia(s))\nFaturamento líquido: ${fRF(tLiq)}\nVisitantes: ${tVisit.toLocaleString()}\nTicket médio/visitante: ${tVisit?fRF(tLiq/tVisit):'—'}\n\nPor setor:\n${setores.map(([s,d])=>`- ${s}: ${fRF(d.liq)} (${tLiq?(d.liq/tLiq*100).toFixed(1):0}%) — ticket/visit: ${tVisit?fRF(d.liq/tVisit):'—'}`).join('\n')}\n\nSlides: capa, KPIs, faturamento mensal, por setor, ticket/visitante por setor, conclusão. Design moderno e corporativo.`;
+  const bySe=agruparSe(itens);const setores=Object.entries(bySe).sort((a,b)=>b[1].liq-a[1].liq);
+  const txt=`Gere apresentação executiva em PowerPoint (.pptx) — Super Carros:\n\nPeríodo: ${diasKey[0]||'—'} a ${diasKey[diasKey.length-1]||'—'} (${diasKey.length} dia(s))\nFaturamento líquido: ${fRF(tLiq)}\nVisitantes: ${tVisit.toLocaleString()}\nTicket médio/visitante: ${tVisit?fRF(tLiq/tVisit):'—'}\n\nPor setor:\n${setores.map(([s,d])=>`- ${s}: ${fRF(d.liq)} (${tLiq?(d.liq/tLiq*100).toFixed(1):0}%) — ticket/visit: ${tVisit?fRF(d.liq/tVisit):'—'}`).join('\n')}\n\nSlides: capa, KPIs, faturamento mensal, por setor, ticket/visitante, conclusão. Design moderno e corporativo.`;
   navigator.clipboard.writeText(txt).then(()=>toast('Texto copiado! Cole no Claude.ai')).catch(()=>alert('Copie e cole no Claude.ai:\n\n'+txt));
 }
 
