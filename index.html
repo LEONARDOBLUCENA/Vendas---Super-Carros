@@ -239,7 +239,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
   </div>
   <div class="card">
-    <div class="card-title"><i class="ti ti-history"></i>Dias registrados</div>
+    <div class="card-title"><i class="ti ti-history"></i>Dias registrados
+      <button class="btn btn-sm" style="margin-left:auto" onclick="exportarVendasExcel()" id="btnExportVendas" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
+    </div>
     <div id="histVendas"><div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum dia registrado ainda.</p></div></div>
   </div>
 </div>
@@ -280,7 +282,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="page-sub">Cadastre a meta de faturamento por setor e mês</div></div>
   </div>
   <div class="card">
-    <div class="card-title"><i class="ti ti-target"></i>Adicionar meta</div>
+    <div class="card-title"><i class="ti ti-target"></i>Adicionar meta manualmente</div>
     <div class="g4" style="align-items:flex-end">
       <div class="field" style="margin:0"><label>Setor</label>
         <select id="metaSetor">
@@ -295,6 +297,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
   </div>
   <div class="card">
+    <div class="card-title"><i class="ti ti-table-import"></i>Importar metas do Excel</div>
+    <div class="alert alert-info"><i class="ti ti-info-circle"></i>
+      <span>Cole com cabeçalho na linha 1 (ignorado):<br>
+      <span style="font-family:'DM Mono',monospace;font-size:11px">Setor [tab] Mês/Ano [tab] Valor</span><br>
+      Formato do mês: <strong>mm/aaaa</strong> ou <strong>aaaa-mm</strong> — Ex: 05/2025 ou 2025-05</span>
+    </div>
+    <div class="field"><label>Tabela copiada do Excel</label>
+      <textarea id="metaImpTxt" placeholder="Setor	Mês/Ano	Valor&#10;Bilheteria	05/2025	50000&#10;Passeios	05/2025	30000&#10;Salão Total	05/2025	120000"></textarea>
+    </div>
+    <div class="act"><button class="btn btn-p btn-sm" onclick="impMetas()"><i class="ti ti-check"></i>Importar</button></div>
+  </div>
+  <div class="card">
     <div class="card-title"><i class="ti ti-list"></i>Metas cadastradas</div>
     <div id="metasWrap"><div class="empty"><i class="ti ti-target"></i><p>Nenhuma meta cadastrada ainda.</p></div></div>
   </div>
@@ -307,7 +321,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="page-sub">Cadastre faturamentos realizados em anos anteriores para comparação</div></div>
   </div>
   <div class="card">
-    <div class="card-title"><i class="ti ti-clock"></i>Adicionar faturamento anterior</div>
+    <div class="card-title"><i class="ti ti-clock"></i>Adicionar manualmente</div>
     <div class="g4" style="align-items:flex-end">
       <div class="field" style="margin:0"><label>Ano</label><input type="number" id="antAno" placeholder="2024" min="2000" max="2099"></div>
       <div class="field" style="margin:0"><label>Setor</label>
@@ -320,6 +334,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="field" style="margin:0"><label>Valor realizado (R$)</label><input type="number" id="antVal" placeholder="0,00" min="0" step="0.01"></div>
       <div><button class="btn btn-p" style="width:100%" onclick="addAnterior()"><i class="ti ti-plus"></i>Adicionar</button></div>
     </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-table-import"></i>Importar do Excel</div>
+    <div class="alert alert-info"><i class="ti ti-info-circle"></i>
+      <span>Cole com cabeçalho na linha 1 (ignorado):<br>
+      <span style="font-family:'DM Mono',monospace;font-size:11px">Ano [tab] Setor [tab] Valor</span><br>
+      Ex: <span style="font-family:'DM Mono',monospace;font-size:11px">2024 [tab] Bilheteria [tab] 480000</span></span>
+    </div>
+    <div class="field"><label>Tabela copiada do Excel</label>
+      <textarea id="antImpTxt" placeholder="Ano	Setor	Valor&#10;2024	Bilheteria	480000&#10;2024	Passeios	320000&#10;2024	Salão Total	1200000"></textarea>
+    </div>
+    <div class="act"><button class="btn btn-p btn-sm" onclick="impAnterior()"><i class="ti ti-check"></i>Importar</button></div>
   </div>
   <div class="card">
     <div class="card-title"><i class="ti ti-list"></i>Faturamentos anteriores</div>
@@ -367,18 +393,18 @@ function setorAdj(s){return PASSEIOS_NORM_LIST.includes(normStr(s))?S_PASSEIOS:s
 // ── PERSIST ───────────────────────────────────────────────────────────
 function save(){
   try{
-    localStorage.setItem('sc_p',JSON.stringify(P));
-    localStorage.setItem('sc_v',JSON.stringify(V));
-    localStorage.setItem('sc_vi',JSON.stringify(VI));
-    localStorage.setItem('sc_metas',JSON.stringify(METAS));
-    localStorage.setItem('sc_ant',JSON.stringify(ANTERIOR));
-    localStorage.setItem('sc_nid',String(_nid));
+    localStorage.setItem('bip',JSON.stringify(P));
+    localStorage.setItem('biv',JSON.stringify(V));
+    localStorage.setItem('bivi',JSON.stringify(VI));
+    localStorage.setItem('bimetas',JSON.stringify(METAS));
+    localStorage.setItem('biant',JSON.stringify(ANTERIOR));
+    localStorage.setItem('bi_nid',String(_nid));
   }catch(e){}
 }
 function load(){
   try{
-    const p=localStorage.getItem('sc_p'),v=localStorage.getItem('sc_v'),vi=localStorage.getItem('sc_vi'),
-          m=localStorage.getItem('sc_metas'),a=localStorage.getItem('sc_ant'),nid=localStorage.getItem('sc_nid');
+    const p=localStorage.getItem('bip'),v=localStorage.getItem('biv'),vi=localStorage.getItem('bivi'),
+          m=localStorage.getItem('bimetas'),a=localStorage.getItem('biant'),nid=localStorage.getItem('bi_nid');
     if(p)P=JSON.parse(p);if(v)V=JSON.parse(v);if(vi)VI=JSON.parse(vi);
     if(m)METAS=JSON.parse(m);if(a)ANTERIOR=JSON.parse(a);
     if(nid)_nid=parseInt(nid)||1;
@@ -586,13 +612,63 @@ function delDia(d){if(!confirm('Remover o dia '+d+'?'))return;delete V[d];save()
 function renderHistV(){
   const dias=Object.keys(V).sort().reverse();const el=document.getElementById('histVendas');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum dia registrado ainda.</p></div>';return;}
-  let html=`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Fat. líquido</th><th>Visitantes</th><th>Ticket médio</th><th style="width:40px"></th></tr></thead><tbody>`;
+  // agrupa por dia+setor
+  let html=`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Setor</th><th>Fat. líquido</th><th>Ticket médio</th><th style="width:40px"></th></tr></thead><tbody>`;
   dias.forEach(d=>{
-    const fat=V[d].reduce((a,i)=>a+i.vLiq,0);const vi=VI[d]?VI[d].valido:0;
-    html+=`<tr><td><strong>${d}</strong></td><td style="font-weight:500">${fRF(fat)}</td><td>${vi||'—'}</td><td>${vi?fRF(fat/vi):'—'}</td>
-      <td><button class="del-btn" data-dia="${d}" onclick="delDia(this.dataset.dia)">×</button></td></tr>`;
+    const vi=VI[d]?VI[d].valido:0;
+    // agrupa por setor
+    const bySe={};
+    V[d].forEach(i=>{const s=setorAdj(i.setor);if(!bySe[s])bySe[s]=0;bySe[s]+=i.vLiq;});
+    const fatTotal=Object.values(bySe).reduce((a,v)=>a+v,0);
+    const setores=Object.keys(bySe).sort();
+    // linha de totais do dia (primeira linha)
+    html+=`<tr style="background:var(--surface2)">
+      <td><strong>${d}</strong></td>
+      <td style="font-size:11px;color:var(--text2)">Total do dia</td>
+      <td style="font-weight:600">${fRF(fatTotal)}</td>
+      <td style="font-weight:500">${vi?fRF(fatTotal/vi):'—'}</td>
+      <td><button class="del-btn" data-dia="${d}" onclick="delDia(this.dataset.dia)" title="Remover dia">×</button></td>
+    </tr>`;
+    // uma linha por setor
+    setores.forEach(s=>{
+      const v=bySe[s];const c=cor(s);
+      html+=`<tr>
+        <td style="color:var(--text3);font-size:12px;padding-left:20px">${d}</td>
+        <td><span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}28">${s}</span></td>
+        <td>${fRF(v)}</td>
+        <td>${vi?fRF(v/vi):'—'}</td>
+        <td></td>
+      </tr>`;
+    });
   });
-  html+='</tbody></table></div>';el.innerHTML=html;
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+  document.getElementById('btnExportVendas').style.display='';
+}
+function exportarVendasExcel(){
+  const dias=Object.keys(V).sort();
+  let csv='Data	Setor	Faturamento Líquido	Visitantes	Ticket Médio
+';
+  dias.forEach(d=>{
+    const vi=VI[d]?VI[d].valido:0;
+    const bySe={};
+    V[d].forEach(i=>{const s=setorAdj(i.setor);if(!bySe[s])bySe[s]=0;bySe[s]+=i.vLiq;});
+    const fatTotal=Object.values(bySe).reduce((a,v)=>a+v,0);
+    // linha total
+    csv+=`${d}	TOTAL	${fatTotal.toFixed(2).replace('.',',')}	${vi||''}	${vi?(fatTotal/vi).toFixed(2).replace('.',','):''}
+`;
+    // por setor
+    Object.keys(bySe).sort().forEach(s=>{
+      const v=bySe[s];
+      csv+=`${d}	${s}	${v.toFixed(2).replace('.',',')}	${vi||''}	${vi?(v/vi).toFixed(2).replace('.',','):''}
+`;
+    });
+  });
+  const bom='﻿';
+  const blob=new Blob([bom+csv],{type:'text/tab-separated-values;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='relatorio-vendas-'+hoje()+'.xls';a.click();
+  toast('Exportado!');
 }
 
 // ── VISITANTES ────────────────────────────────────────────────────────
@@ -641,6 +717,30 @@ function addMeta(){
   save();renderMetas();toast('Meta adicionada!');
 }
 function delMeta(k){if(!confirm('Remover esta meta?'))return;delete METAS[k];save();renderMetas();toast('Removida');}
+function impMetas(){
+  const raw=document.getElementById('metaImpTxt').value.trim();
+  if(!raw){toast('Cole a tabela primeiro','err');return;}
+  const lines=raw.split('\n').slice(1).filter(l=>l.trim());
+  let ok=0;
+  lines.forEach(l=>{
+    const p=l.split('\t');if(p.length<3)return;
+    const setor=(p[0]||'').trim();
+    let mesRaw=(p[1]||'').trim();
+    const val=parseN(p[2]);
+    if(!setor||!mesRaw||!val)return;
+    // aceita mm/aaaa ou aaaa-mm
+    let mes='';
+    const m1=mesRaw.match(/^(\d{2})\/( \d{4})$/);
+    const m1b=mesRaw.match(/^(\d{1,2})\/(\d{4})$/);
+    const m2=mesRaw.match(/^(\d{4})-(\d{2})$/);
+    if(m1b)mes=m1b[2]+'-'+m1b[1].padStart(2,'0');
+    else if(m2)mes=mesRaw;
+    if(!mes)return;
+    METAS[metaKey(setor,mes)]={setor,mes,val};ok++;
+  });
+  save();renderMetas();document.getElementById('metaImpTxt').value='';
+  toast(ok+' meta(s) importada(s)!');
+}
 function renderMetas(){
   const arr=Object.entries(METAS).sort((a,b)=>a[1].mes.localeCompare(b[1].mes)||a[1].setor.localeCompare(b[1].setor));
   const el=document.getElementById('metasWrap');
@@ -667,6 +767,22 @@ function addAnterior(){
   save();renderAnterior();toast('Faturamento anterior adicionado!');
 }
 function delAnt(k){if(!confirm('Remover este registro?'))return;delete ANTERIOR[k];save();renderAnterior();toast('Removido');}
+function impAnterior(){
+  const raw=document.getElementById('antImpTxt').value.trim();
+  if(!raw){toast('Cole a tabela primeiro','err');return;}
+  const lines=raw.split('\n').slice(1).filter(l=>l.trim());
+  let ok=0;
+  lines.forEach(l=>{
+    const p=l.split('\t');if(p.length<3)return;
+    const ano=(p[0]||'').trim();
+    const setor=(p[1]||'').trim();
+    const val=parseN(p[2]);
+    if(!ano||!setor||!val)return;
+    ANTERIOR[antKey(ano,setor)]={ano,setor,val};ok++;
+  });
+  save();renderAnterior();document.getElementById('antImpTxt').value='';
+  toast(ok+' registro(s) importado(s)!');
+}
 function renderAnterior(){
   const arr=Object.entries(ANTERIOR).sort((a,b)=>b[1].ano.localeCompare(a[1].ano)||a[1].setor.localeCompare(b[1].setor));
   const el=document.getElementById('anteriorWrap');
@@ -772,7 +888,20 @@ function renderDash(){
 
   const mesFmt=mes?`${ano}-${mes}`:null;
   const anoAnt=String(parseInt(ano)-1);
-  const metaGeral=mesFmt?(setorF&&setorF!==S_TOTAL?getMeta(setorF,mesFmt):getMeta(S_TOTAL,mesFmt)):null;
+  // meta: se mês selecionado usa mês, senão soma todas as metas do ano para o setor
+  let metaGeral=null;
+  if(mesFmt){
+    metaGeral=setorF&&setorF!==S_TOTAL?getMeta(setorF,mesFmt):getMeta(S_TOTAL,mesFmt);
+  } else {
+    // soma metas de todos os meses do ano para o setor selecionado
+    let soma=0,found=false;
+    for(let mi=1;mi<=12;mi++){
+      const mf=`${ano}-${String(mi).padStart(2,'0')}`;
+      const v=setorF&&setorF!==S_TOTAL?getMeta(setorF,mf):getMeta(S_TOTAL,mf);
+      if(v){soma+=v;found=true;}
+    }
+    if(found)metaGeral=soma;
+  }
   const antGeral=setorF&&setorF!==S_TOTAL?getAnt(setorF,ano):getAnt(S_TOTAL,ano);
 
   let kpiMeta='',kpiAnt='';
