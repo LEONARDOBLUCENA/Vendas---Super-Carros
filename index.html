@@ -240,7 +240,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
   <div class="card">
     <div class="card-title"><i class="ti ti-history"></i>Dias registrados
-      <button class="btn btn-sm" id="btnExportVendas" onclick="exportarVendasExcel()" style="margin-left:auto;display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
+      <div style="display:flex;gap:6px;margin-left:auto">
+        <button class="btn btn-sm" id="btnExportVendas" onclick="exportarVendasExcel()" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
+        <button class="btn btn-sm" id="btnLimparVendas" onclick="limparVendas()" style="display:none;color:var(--red)"><i class="ti ti-trash"></i>Limpar dados</button>
+      </div>
     </div>
     <div id="histVendas"><div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum dia registrado ainda.</p></div></div>
   </div>
@@ -270,7 +273,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="act"><button class="btn btn-p btn-sm" onclick="impVisit()"><i class="ti ti-check"></i>Importar</button></div>
   </div>
   <div class="card">
-    <div class="card-title"><i class="ti ti-calendar-stats"></i>Histórico</div>
+    <div class="card-title"><i class="ti ti-calendar-stats"></i>Histórico
+      <div style="display:flex;gap:6px;margin-left:auto">
+        <button class="btn btn-sm" id="btnExportVisit" onclick="exportarVisitExcel()" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
+        <button class="btn btn-sm" id="btnLimparVisit" onclick="limparVisit()" style="display:none;color:var(--red)"><i class="ti ti-trash"></i>Limpar dados</button>
+      </div>
+    </div>
     <div id="histVisit"><div class="empty"><i class="ti ti-users"></i><p>Nenhum registro ainda.</p></div></div>
   </div>
 </div>
@@ -309,7 +317,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="act"><button class="btn btn-p btn-sm" onclick="impMetas()"><i class="ti ti-check"></i>Importar</button></div>
   </div>
   <div class="card">
-    <div class="card-title"><i class="ti ti-list"></i>Metas cadastradas</div>
+    <div class="card-title"><i class="ti ti-list"></i>Metas cadastradas
+      <div style="display:flex;gap:6px;margin-left:auto">
+        <button class="btn btn-sm" id="btnExportMetas" onclick="exportarMetasExcel()" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
+        <button class="btn btn-sm" id="btnLimparMetas" onclick="limparMetas()" style="display:none;color:var(--red)"><i class="ti ti-trash"></i>Limpar dados</button>
+      </div>
+    </div>
     <div id="metasWrap"><div class="empty"><i class="ti ti-target"></i><p>Nenhuma meta cadastrada ainda.</p></div></div>
   </div>
 </div>
@@ -348,7 +361,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="act"><button class="btn btn-p btn-sm" onclick="impAnterior()"><i class="ti ti-check"></i>Importar</button></div>
   </div>
   <div class="card">
-    <div class="card-title"><i class="ti ti-list"></i>Faturamentos anteriores</div>
+    <div class="card-title"><i class="ti ti-list"></i>Faturamentos anteriores
+      <div style="display:flex;gap:6px;margin-left:auto">
+        <button class="btn btn-sm" id="btnExportAnt" onclick="exportarAntExcel()" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
+        <button class="btn btn-sm" id="btnLimparAnt" onclick="limparAnt()" style="display:none;color:var(--red)"><i class="ti ti-trash"></i>Limpar dados</button>
+      </div>
+    </div>
     <div id="anteriorWrap"><div class="empty"><i class="ti ti-clock"></i><p>Nenhum faturamento anterior cadastrado.</p></div></div>
   </div>
 </div>
@@ -644,6 +662,7 @@ function renderHistV(){
   html+='</tbody></table></div>';
   el.innerHTML=html;
   document.getElementById('btnExportVendas').style.display='';
+  document.getElementById('btnLimparVendas').style.display='';
 }
 function exportarVendasExcel(){
   const dias=Object.keys(V).sort();
@@ -699,6 +718,8 @@ function renderHistVI(){
       <td><button class="del-btn" data-dia="${d}" onclick="delVI(this.dataset.dia)">×</button></td></tr>`;
   });
   html+='</tbody></table></div>';el.innerHTML=html;
+  document.getElementById('btnExportVisit').style.display='';
+  document.getElementById('btnLimparVisit').style.display='';
 }
 
 // ── METAS ─────────────────────────────────────────────────────────────
@@ -751,6 +772,8 @@ function renderMetas(){
       <td><button class="del-btn" data-k="${k}" onclick="delMeta(this.dataset.k)">×</button></td></tr>`;
   });
   html+='</tbody></table></div>';el.innerHTML=html;
+  document.getElementById('btnExportMetas').style.display='';
+  document.getElementById('btnLimparMetas').style.display='';
 }
 
 // ── ANO ANTERIOR ──────────────────────────────────────────────────────
@@ -810,6 +833,77 @@ function renderAnterior(){
       +'<td><button class="del-btn" data-k="'+k+'" onclick="delAnt(this.dataset.k)">×</button></td></tr>';
   });
   html+='</tbody></table></div>';el.innerHTML=html;
+  document.getElementById('btnExportAnt').style.display='';
+  document.getElementById('btnLimparAnt').style.display='';
+}
+
+// ── EXPORTAR / LIMPAR ────────────────────────────────────────────────
+function exportarExcel(rows, filename){
+  const bom='﻿';
+  const sep=String.fromCharCode(9);const nl=String.fromCharCode(10);
+  const tsv=rows.map(r=>r.join(sep)).join(nl);
+  const blob=new Blob([bom+tsv],{type:'text/tab-separated-values;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+  toast('Exportado!');
+}
+
+function exportarVisitExcel(){
+  const rows=[['Data','Entradas','Vale Retorno','Visitantes Válidos']];
+  Object.keys(VI).sort().forEach(d=>{
+    const vi=VI[d];
+    rows.push([d,vi.entradas,vi.retorno,vi.valido]);
+  });
+  exportarExcel(rows,'visitantes-'+hoje()+'.xls');
+}
+
+function exportarMetasExcel(){
+  const rows=[['Mês/Ano','Setor','Meta']];
+  Object.values(METAS).sort((a,b)=>a.mes.localeCompare(b.mes)||a.setor.localeCompare(b.setor)).forEach(m=>{
+    const lbl=MNomes[parseInt(m.mes.slice(5))-1]+'/'+m.mes.slice(0,4);
+    rows.push([lbl,m.setor,m.val.toFixed(2).replace('.',',')]);
+  });
+  exportarExcel(rows,'metas-'+hoje()+'.xls');
+}
+
+function exportarAntExcel(){
+  const rows=[['Mês/Ano','Setor','Valor']];
+  Object.values(ANTERIOR).sort((a,b)=>a.mes.localeCompare(b.mes)||a.setor.localeCompare(b.setor)).forEach(a=>{
+    const lbl=MNomes[parseInt(a.mes.slice(5))-1]+'/'+a.mes.slice(0,4);
+    rows.push([lbl,a.setor,a.val.toFixed(2).replace('.',',')]);
+  });
+  exportarExcel(rows,'ano-anterior-'+hoje()+'.xls');
+}
+
+function limparVendas(){
+  if(!confirm('Apagar TODOS os dias de vendas registrados? Esta ação não pode ser desfeita.'))return;
+  V={};save();renderHistV();updFiltros();renderDash();
+  document.getElementById('btnExportVendas').style.display='none';
+  document.getElementById('btnLimparVendas').style.display='none';
+  toast('Dados de vendas apagados');
+}
+
+function limparVisit(){
+  if(!confirm('Apagar TODOS os registros de visitantes? Esta ação não pode ser desfeita.'))return;
+  VI={};save();renderHistVI();renderDash();
+  document.getElementById('btnExportVisit').style.display='none';
+  document.getElementById('btnLimparVisit').style.display='none';
+  toast('Dados de visitantes apagados');
+}
+
+function limparMetas(){
+  if(!confirm('Apagar TODAS as metas cadastradas? Esta ação não pode ser desfeita.'))return;
+  METAS={};save();renderMetas();
+  document.getElementById('btnExportMetas').style.display='none';
+  document.getElementById('btnLimparMetas').style.display='none';
+  toast('Metas apagadas');
+}
+
+function limparAnt(){
+  if(!confirm('Apagar TODOS os faturamentos do ano anterior? Esta ação não pode ser desfeita.'))return;
+  ANTERIOR={};save();renderAnterior();
+  document.getElementById('btnExportAnt').style.display='none';
+  document.getElementById('btnLimparAnt').style.display='none';
+  toast('Faturamentos anteriores apagados');
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────
