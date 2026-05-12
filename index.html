@@ -1067,26 +1067,25 @@ function renderDash(){
       <td>${tck}</td></tr>`;
   }).join('');
 
+  // KPI visitantes com comparativo
+  let kpiVisit='<div class="kpi"><div class="kpi-lbl">Visitantes</div>'
+    +'<div class="kpi-val">'+(tVisit?tVisit.toLocaleString():'—')+'</div>'
+    +'<div class="kpi-sub">Entradas − Vale Retorno</div>';
+  if(temVisitAnt&&tVisitAnt>0&&!dia){
+    const vv=((tVisit-tVisitAnt)/tVisitAnt*100).toFixed(1);
+    const sv=parseFloat(vv)>=0?'+':'';
+    const cvCor=parseFloat(vv)>=0?'color:var(--green)':'color:var(--red)';
+    kpiVisit+='<div style="font-size:11px;margin-top:4px"><span style="'+cvCor+'">'+sv+vv+'%</span> vs '+anoAnt+'</div>';
+  }
+  kpiVisit+='</div>';
+
   const g1=!mes&&!dia?`Faturamento mensal — ${ano}`:mes&&!dia?`Faturamento diário — ${MNomes[parseInt(mes)-1]} ${ano}`:`Faturamento por setor`;
   const g2=!mes&&!dia?`Ticket médio/visitante — ${ano}`:mes&&!dia?`Ticket diário — ${MNomes[parseInt(mes)-1]} ${ano}`:`Ticket por setor`;
 
   document.getElementById('dashContent').innerHTML=`
   <div class="kpi-grid">
     <div class="kpi"><div class="kpi-lbl">Faturamento líquido</div><div class="kpi-val">${fR(tLiq)}</div><div class="kpi-sub">${periLbl}</div></div>
-    ${(function(){
-      let vrVisit='';
-      if(temVisitAnt&&tVisitAnt>0&&!dia){
-        const vv=((tVisit-tVisitAnt)/tVisitAnt*100).toFixed(1);
-        const sv=parseFloat(vv)>=0?'+':'';
-        const cv=parseFloat(vv)>=0?'color:var(--green)':'color:var(--red)';
-        vrVisit='<div style="font-size:11px;margin-top:4px"><span style="'+cv+'">'+sv+vv+'%</span> vs '+anoAnt+'</div>';
-      }
-      return '<div class="kpi"><div class="kpi-lbl">Visitantes</div>'
-        +'<div class="kpi-val">'+(tVisit?tVisit.toLocaleString():'—')+'</div>'
-        +'<div class="kpi-sub">Entradas − Vale Retorno</div>'
-        +vrVisit
-        +'</div>';
-    })()}
+    ${kpiVisit}
     <div class="kpi"><div class="kpi-lbl">Ticket / visitante</div><div class="kpi-val">${tVisit?fR(ticket):'—'}</div><div class="kpi-sub">líquido ÷ visitantes</div></div>
 
     ${kpiMeta}${kpiAnt}
