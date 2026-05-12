@@ -647,25 +647,21 @@ function renderHistV(){
 }
 function exportarVendasExcel(){
   const dias=Object.keys(V).sort();
-  let csv='Data	Setor	Faturamento Líquido	Visitantes	Ticket Médio
-';
+  const rows=[['Data','Setor','Faturamento Liquido','Visitantes','Ticket Medio']];
   dias.forEach(d=>{
     const vi=VI[d]?VI[d].valido:0;
     const bySe={};
     V[d].forEach(i=>{const s=setorAdj(i.setor);if(!bySe[s])bySe[s]=0;bySe[s]+=i.vLiq;});
     const fatTotal=Object.values(bySe).reduce((a,v)=>a+v,0);
-    // linha total
-    csv+=`${d}	TOTAL	${fatTotal.toFixed(2).replace('.',',')}	${vi||''}	${vi?(fatTotal/vi).toFixed(2).replace('.',','):''}
-`;
-    // por setor
+    rows.push([d,'TOTAL',fatTotal.toFixed(2).replace('.',','),vi||'',vi?(fatTotal/vi).toFixed(2).replace('.',','):'']);
     Object.keys(bySe).sort().forEach(s=>{
       const v=bySe[s];
-      csv+=`${d}	${s}	${v.toFixed(2).replace('.',',')}	${vi||''}	${vi?(v/vi).toFixed(2).replace('.',','):''}
-`;
+      rows.push([d,s,v.toFixed(2).replace('.',','),vi||'',vi?(v/vi).toFixed(2).replace('.',','):'']);
     });
   });
   const bom='﻿';
-  const blob=new Blob([bom+csv],{type:'text/tab-separated-values;charset=utf-8'});
+  const tsv=rows.map(r=>r.join('\t')).join('\n');
+  const blob=new Blob([bom+tsv],{type:'text/tab-separated-values;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='relatorio-vendas-'+hoje()+'.xls';a.click();
   toast('Exportado!');
