@@ -905,11 +905,13 @@ function renderDash(){
   const tVisit=diasKey.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);
   const ticket=tVisit?tLiq/tVisit:0;
 
-  // Visitantes do mesmo período no ano anterior (para comparativo no KPI)
-  // Mapeia cada dia filtrado para o dia equivalente no ano anterior
+  const anoAnt=String(parseInt(ano)-1);
+  const mesFmt=mes?`${ano}-${mes}`:null;
+
+  // Visitantes do mesmo período no ano anterior
   let tVisitAnt=0,temVisitAnt=false;
   diasKey.forEach(function(d){
-    const dAnt=anoAnt+d.slice(4); // substitui o ano: 2025-05-01 → 2024-05-01
+    const dAnt=anoAnt+d.slice(4);
     if(VI[dAnt]){tVisitAnt+=VI[dAnt].valido;temVisitAnt=true;}
   });
   const bySe=agruparSe(itens);
@@ -923,9 +925,6 @@ function renderDash(){
 
   document.getElementById('dashSub').textContent=`${periLbl} · ${diasKey.length} dia(s)`;
   document.getElementById('btnPpt').style.display='flex';
-
-  const mesFmt=mes?`${ano}-${mes}`:null;
-  const anoAnt=String(parseInt(ano)-1);
 
   // ── META ──
   // Função auxiliar: busca meta de um mês para um setor (ou soma todos os setores se "Todos")
