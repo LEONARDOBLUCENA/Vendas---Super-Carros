@@ -904,6 +904,14 @@ function renderDash(){
   const tLiq=itens.reduce((a,i)=>a+i.vLiq,0);
   const tVisit=diasKey.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);
   const ticket=tVisit?tLiq/tVisit:0;
+
+  // Visitantes do mesmo período no ano anterior (para comparativo no KPI)
+  // Mapeia cada dia filtrado para o dia equivalente no ano anterior
+  let tVisitAnt=0,temVisitAnt=false;
+  diasKey.forEach(function(d){
+    const dAnt=anoAnt+d.slice(4); // substitui o ano: 2025-05-01 → 2024-05-01
+    if(VI[dAnt]){tVisitAnt+=VI[dAnt].valido;temVisitAnt=true;}
+  });
   const bySe=agruparSe(itens);
   const setores=Object.keys(bySe).sort((a,b)=>bySe[b].liq-bySe[a].liq);
 
@@ -1065,7 +1073,20 @@ function renderDash(){
   document.getElementById('dashContent').innerHTML=`
   <div class="kpi-grid">
     <div class="kpi"><div class="kpi-lbl">Faturamento líquido</div><div class="kpi-val">${fR(tLiq)}</div><div class="kpi-sub">${periLbl}</div></div>
-    <div class="kpi"><div class="kpi-lbl">Visitantes</div><div class="kpi-val">${tVisit?tVisit.toLocaleString():'—'}</div><div class="kpi-sub">Entradas − Vale Retorno</div></div>
+    ${(function(){
+      let vrVisit='';
+      if(temVisitAnt&&tVisitAnt>0&&!dia){
+        const vv=((tVisit-tVisitAnt)/tVisitAnt*100).toFixed(1);
+        const sv=parseFloat(vv)>=0?'+':'';
+        const cv=parseFloat(vv)>=0?'color:var(--green)':'color:var(--red)';
+        vrVisit='<div style="font-size:11px;margin-top:4px"><span style="'+cv+'">'+sv+vv+'%</span> vs '+anoAnt+'</div>';
+      }
+      return '<div class="kpi"><div class="kpi-lbl">Visitantes</div>'
+        +'<div class="kpi-val">'+(tVisit?tVisit.toLocaleString():'—')+'</div>'
+        +'<div class="kpi-sub">Entradas − Vale Retorno</div>'
+        +vrVisit
+        +'</div>';
+    })()}
     <div class="kpi"><div class="kpi-lbl">Ticket / visitante</div><div class="kpi-val">${tVisit?fR(ticket):'—'}</div><div class="kpi-sub">líquido ÷ visitantes</div></div>
 
     ${kpiMeta}${kpiAnt}
