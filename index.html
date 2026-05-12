@@ -240,7 +240,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
   <div class="card">
     <div class="card-title"><i class="ti ti-history"></i>Dias registrados
-      <button class="btn btn-sm" style="margin-left:auto" onclick="exportarVendasExcel()" id="btnExportVendas" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
+      <button class="btn btn-sm" id="btnExportVendas" onclick="exportarVendasExcel()" style="margin-left:auto;display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
     </div>
     <div id="histVendas"><div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum dia registrado ainda.</p></div></div>
   </div>
@@ -905,29 +905,35 @@ function renderDash(){
     const pct=Math.min((tLiq/metaGeral*100),999).toFixed(1);
     const falta=metaGeral-tLiq;
     const atingiu=tLiq>=metaGeral;
-    const cls=atingiu?'kpi-good':'kpi-bad';
     const barW=Math.min(100,(tLiq/metaGeral*100)).toFixed(1);
     const nomeSetor=setorF&&setorF!==S_TOTAL?' — '+setorF:'';
-    kpiMeta=`<div class="kpi" style="grid-column:span 2">
-      <div class="kpi-lbl">Meta do período${nomeSetor}</div>
-      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
-        <div class="kpi-val ${cls}">${pct}%</div>
-        <div style="font-size:12px;color:var(--text2)">${atingiu?'✓ Meta atingida':'Faltam '+fRF(falta)}</div>
-      </div>
-      <div style="height:6px;background:var(--surface2);border-radius:4px;overflow:hidden;margin-bottom:6px">
-        <div style="width:${barW}%;height:100%;background:${atingiu?'var(--green)':'var(--accent)'};border-radius:4px"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2)">
-        <span>Realizado: <strong style="color:var(--text)">${fRF(tLiq)}</strong></span>
-        <span>Meta: <strong style="color:var(--text)">${fRF(metaGeral)}</strong></span>
-      </div>
-    </div>`;
+    const corBarra=atingiu?'var(--green)':'var(--accent)';
+    const textoMeta=atingiu?'✓ Meta atingida':'Faltam '+fRF(falta);
+    const clsMeta=atingiu?'kpi-good':'kpi-bad';
+    kpiMeta='<div class="kpi" style="grid-column:span 2">'
+      +'<div class="kpi-lbl">Meta do período'+nomeSetor+'</div>'
+      +'<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">'
+      +'<div class="kpi-val '+clsMeta+'">'+pct+'%</div>'
+      +'<div style="font-size:12px;color:var(--text2)">'+textoMeta+'</div>'
+      +'</div>'
+      +'<div style="height:6px;background:var(--surface2);border-radius:4px;overflow:hidden;margin-bottom:6px">'
+      +'<div style="width:'+barW+'%;height:100%;background:'+corBarra+';border-radius:4px"></div>'
+      +'</div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2)">'
+      +'<span>Realizado: <b>'+fRF(tLiq)+'</b></span>'
+      +'<span>Meta: <b>'+fRF(metaGeral)+'</b></span>'
+      +'</div>'
+      +'</div>';
   }
   if(antGeral){
     const vr=((tLiq-antGeral)/antGeral*100).toFixed(1);
     const sinal=parseFloat(vr)>=0?'+':'';
-    const cls=parseFloat(vr)>=0?'kpi-good':'kpi-bad';
-    kpiAnt=`<div class="kpi"><div class="kpi-lbl">Vs. ano anterior (${anoAnt})</div><div class="kpi-val ${cls}">${sinal}${vr}%</div><div class="kpi-sub">Anterior: ${fRF(antGeral)} · Atual: ${fRF(tLiq)}</div></div>`;
+    const clsAnt=parseFloat(vr)>=0?'kpi-good':'kpi-bad';
+    kpiAnt='<div class="kpi">'
+      +'<div class="kpi-lbl">Vs. ano anterior ('+anoAnt+')</div>'
+      +'<div class="kpi-val '+clsAnt+'">'+sinal+vr+'%</div>'
+      +'<div class="kpi-sub">Anterior: '+fRF(antGeral)+' &middot; Atual: '+fRF(tLiq)+'</div>'
+      +'</div>';
   }
 
   let sLabels,sFat,sTick,sMeta;
