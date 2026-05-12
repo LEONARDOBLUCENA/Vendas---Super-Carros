@@ -1094,12 +1094,14 @@ function renderDash(){
   const anoAnt=String(parseInt(ano)-1);
   const mesFmt=mes?`${ano}-${mes}`:null;
 
-  // Visitantes do mesmo período no ano anterior
-  let tVisitAnt=0,temVisitAnt=false;
+  // Visitantes e faturamento do mesmo período no ano anterior
+  let tVisitAnt=0,temVisitAnt=false,tLiqAnt=0;
   diasKey.forEach(function(d){
     const dAnt=anoAnt+d.slice(4);
     if(VI[dAnt]){tVisitAnt+=VI[dAnt].valido;temVisitAnt=true;}
+    if(V[dAnt]){tLiqAnt+=V[dAnt].reduce(function(a,i){return a+i.vLiq;},0);}
   });
+  const ticketAnt=tVisitAnt&&tLiqAnt?tLiqAnt/tVisitAnt:0;
   const bySe=agruparSe(itens);
   const setores=Object.keys(bySe).sort((a,b)=>bySe[b].liq-bySe[a].liq);
 
@@ -1264,6 +1266,18 @@ function renderDash(){
   }
   kpiVisit+='</div>';
 
+  // KPI Ticket médio com comparativo
+  let kpiTicket='<div class="kpi"><div class="kpi-lbl">Ticket / visitante</div>'
+    +'<div class="kpi-val">'+(tVisit?fR(ticket):'—')+'</div>'
+    +'<div class="kpi-sub">líquido ÷ visitantes</div>';
+  if(ticketAnt>0&&tVisit&&!dia){
+    const vt=((ticket-ticketAnt)/ticketAnt*100).toFixed(1);
+    const st=parseFloat(vt)>=0?'+':'';
+    const ctCor=parseFloat(vt)>=0?'color:var(--green)':'color:var(--red)';
+    kpiTicket+='<div style="font-size:11px;margin-top:4px"><span style="'+ctCor+'">'+st+vt+'%</span> vs '+anoAnt+' ('+fRF(ticketAnt)+')</div>';
+  }
+  kpiTicket+='</div>';
+
   const g1=!mes&&!dia?`Faturamento mensal — ${ano}`:mes&&!dia?`Faturamento diário — ${MNomes[parseInt(mes)-1]} ${ano}`:`Faturamento por setor`;
   const g2=!mes&&!dia?`Ticket médio/visitante — ${ano}`:mes&&!dia?`Ticket diário — ${MNomes[parseInt(mes)-1]} ${ano}`:`Ticket por setor`;
 
@@ -1271,7 +1285,7 @@ function renderDash(){
   <div class="kpi-grid">
     <div class="kpi"><div class="kpi-lbl">Faturamento líquido</div><div class="kpi-val">${fR(tLiq)}</div><div class="kpi-sub">${periLbl}</div></div>
     ${kpiVisit}
-    <div class="kpi"><div class="kpi-lbl">Ticket / visitante</div><div class="kpi-val">${tVisit?fR(ticket):'—'}</div><div class="kpi-sub">líquido ÷ visitantes</div></div>
+    ${kpiTicket}
 
     ${kpiMeta}${kpiAnt}
   </div>
@@ -1551,6 +1565,18 @@ function renderDashExt(){
     return found?soma:null;
   }
   function somaAntExt(setor){
+    if(dia){
+      // dia específico: compara com mesmo dia do ano anterior
+      const dAnt=anoAnt+dia.slice(4);
+      // não temos dados diários do ano anterior, retorna null
+      return null;
+    }
+    if(mesFmt){
+      // mês específico: compara com mesmo mês do ano anterior
+      const mfAnt=anoAnt+'-'+mes;
+      return getAntMes(setor,mfAnt);
+    }
+    // ano inteiro: soma todos os meses do ano anterior
     let soma=0,found=false;
     for(let mi=1;mi<=12;mi++){
       const mf=anoAnt+'-'+String(mi).padStart(2,'0');
