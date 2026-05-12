@@ -1599,17 +1599,26 @@ function renderDashExt(){
       const pct=Math.min((fat/meta*100),999).toFixed(1);
       const barW=Math.min(100,(fat/meta*100)).toFixed(1);
       const atingiu=fat>=meta;
-      html+='<div style="margin-top:6px">'
-        +'<div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-bottom:4px">'
-        +'<div style="width:'+barW+'%;height:100%;background:'+(atingiu?'var(--green)':'#'+cor)+';border-radius:3px"></div></div>'
-        +'<div style="font-size:11px;color:var(--text2)">Meta: '+fRF(meta)+' &middot; <span style="color:'+(atingiu?'var(--green)':'var(--red)')+'">'+pct+'%</span></div>'
+      const falta=meta-fat;
+      const corMeta=atingiu?'var(--green)':'var(--red)';
+      html+='<div style="margin-top:8px">'
+        +'<div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-bottom:5px">'
+        +'<div style="width:'+barW+'%;height:100%;background:'+corMeta+';border-radius:3px"></div></div>'
+        +'<div style="font-size:11px;color:var(--text2);display:flex;justify-content:space-between">'
+        +'<span>Meta: <b>'+fRF(meta)+'</b></span>'
+        +'<span style="color:'+corMeta+'"><b>'+pct+'%</b> '+(atingiu?'✓ atingida':'| falta '+fRF(falta))+'</span>'
+        +'</div>'
         +'</div>';
     }
     if(ant&&!dia){
       const vr=((fat-ant)/ant*100).toFixed(1);
       const sinal=parseFloat(vr)>=0?'+':'';
       const corVr=parseFloat(vr)>=0?'var(--green)':'var(--red)';
-      html+='<div style="font-size:11px;color:var(--text2);margin-top:4px">Vs '+anoAnt+': <span style="color:'+corVr+'">'+sinal+vr+'%</span> ('+fRF(ant)+')</div>';
+      const periodoRef=mesFmt?MNomes[parseInt(mes)-1]+' '+anoAnt:anoAnt;
+      html+='<div style="font-size:11px;color:var(--text2);margin-top:5px;display:flex;justify-content:space-between">'
+        +'<span>Vs '+periodoRef+': <b>'+fRF(ant)+'</b></span>'
+        +'<span style="color:'+corVr+'"><b>'+sinal+vr+'%</b></span>'
+        +'</div>';
     }
     html+='</div>';
     return html;
