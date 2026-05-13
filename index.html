@@ -102,6 +102,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .del-btn:hover{color:var(--red);background:rgba(192,57,43,.08)}
 .bar-bg{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden}
 .bar-fill{height:100%;border-radius:3px}
+.mes-picker{position:relative;display:inline-block}
+.mes-picker-btn{padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;cursor:pointer;min-width:150px;display:flex;align-items:center;justify-content:space-between;gap:6px;user-select:none}
+.mes-picker-btn:hover{background:var(--surface3)}
+.mes-picker-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);box-shadow:var(--sh);z-index:200;min-width:200px;padding:8px 0}
+.mes-picker-dropdown.open{display:block}
+.mes-picker-actions{display:flex;gap:6px;padding:6px 10px 4px;border-bottom:1px solid var(--border)}
+.mes-picker-actions button{font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif}
+.mes-picker-actions button:hover{background:var(--surface3);color:var(--text)}
+.mes-picker-item{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:13px;color:var(--text)}
+.mes-picker-item:hover{background:var(--surface2)}
+.mes-picker-item input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--accent)}
 #toast{position:fixed;bottom:22px;right:22px;padding:10px 16px;border-radius:var(--r);font-size:13px;font-weight:500;color:#fff;opacity:0;transition:opacity .28s;pointer-events:none;z-index:9999;box-shadow:var(--sh)}
 </style>
 </head>
@@ -388,7 +399,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
   <div class="fbar">
     <div class="fbar-item"><label>Ano</label><select id="fAno" onchange="onFAno()"></select></div>
-    <div class="fbar-item"><label>Mês</label><select id="fMes" onchange="onFMes()"><option value="">Todos</option></select></div>
+    <div class="fbar-item">
+      <label>Meses</label>
+      <div class="mes-picker" id="mesPicker">
+        <div class="mes-picker-btn" onclick="toggleMesPicker()" id="mesPickerBtn">
+          <span id="mesPickerLbl">Todos os meses</span>
+          <i class="ti ti-chevron-down" style="font-size:12px"></i>
+        </div>
+        <div class="mes-picker-dropdown" id="mesPickerDrop">
+          <div class="mes-picker-actions">
+            <button onclick="selecionarTodosMeses()">Todos</button>
+            <button onclick="limparMeses()">Nenhum</button>
+            <button onclick="aplicarMeses()" style="background:var(--accent);color:#fff;border-color:var(--accent)">Aplicar</button>
+          </div>
+          <div id="mesPickerItems"></div>
+        </div>
+      </div>
+    </div>
     <div class="fbar-item"><label>Dia</label><select id="fDia" onchange="renderDash()"><option value="">Todos</option></select></div>
     <div class="fbar-item"><label>Setor</label><select id="fSetor" onchange="renderDash()"><option value="">Todos</option></select></div>
   </div>
@@ -1011,20 +1038,71 @@ function updFiltros(){
   if(anos.includes(cur))sA.value=cur;else sA.value=anos[anos.length-1];
   updMesDia();updSetoresFiltro();
 }
+// ── MULTI-PICKER DE MESES ──────────────────────────────────────────
+let mesesSelecionados=[]; // array de "MM" ex: ["01","02","03"]
+
 function updMesDia(){
   const ano=document.getElementById('fAno').value;
   const diasAno=Object.keys(V).filter(d=>d.startsWith(ano)).sort();
-  const meses=[...new Set(diasAno.map(d=>d.slice(5,7)))].sort();
-  const sM=document.getElementById('fMes'),curM=sM.value;
-  sM.innerHTML='<option value="">Todos</option>';
-  meses.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=MNomes[parseInt(m)-1];sM.appendChild(o);});
-  if(meses.includes(curM))sM.value=curM;
+  const mesesDisp=[...new Set(diasAno.map(d=>d.slice(5,7)))].sort();
+  const container=document.getElementById('mesPickerItems');
+  if(!container)return;
+  container.innerHTML='';
+  mesesDisp.forEach(m=>{
+    const item=document.createElement('label');
+    item.className='mes-picker-item';
+    const cb=document.createElement('input');
+    cb.type='checkbox';cb.value=m;
+    cb.checked=mesesSelecionados.includes(m);
+    cb.id='cbMes'+m;
+    item.appendChild(cb);
+    item.appendChild(document.createTextNode(MNomes[parseInt(m)-1]));
+    container.appendChild(item);
+  });
+  // limpa meses selecionados que não estão mais disponíveis
+  mesesSelecionados=mesesSelecionados.filter(m=>mesesDisp.includes(m));
+  updMesPickerLabel();
   updDia();
 }
+function toggleMesPicker(){
+  const d=document.getElementById('mesPickerDrop');
+  d.classList.toggle('open');
+}
+function selecionarTodosMeses(){
+  document.querySelectorAll('#mesPickerItems input[type=checkbox]').forEach(cb=>{cb.checked=true;});
+}
+function limparMeses(){
+  document.querySelectorAll('#mesPickerItems input[type=checkbox]').forEach(cb=>{cb.checked=false;});
+}
+function aplicarMeses(){
+  mesesSelecionados=[...document.querySelectorAll('#mesPickerItems input[type=checkbox]:checked')].map(cb=>cb.value);
+  document.getElementById('mesPickerDrop').classList.remove('open');
+  updMesPickerLabel();
+  updDia();
+  renderDash();
+}
+function updMesPickerLabel(){
+  const lbl=document.getElementById('mesPickerLbl');
+  if(!lbl)return;
+  if(mesesSelecionados.length===0)lbl.textContent='Todos os meses';
+  else if(mesesSelecionados.length===1)lbl.textContent=MNomes[parseInt(mesesSelecionados[0])-1];
+  else lbl.textContent=mesesSelecionados.map(m=>MNomes[parseInt(m)-1]).join(', ');
+}
+// Fecha o picker ao clicar fora
+document.addEventListener('click',function(e){
+  const picker=document.getElementById('mesPicker');
+  if(picker&&!picker.contains(e.target)){
+    document.getElementById('mesPickerDrop').classList.remove('open');
+  }
+});
 function updDia(){
-  const ano=document.getElementById('fAno').value,mes=document.getElementById('fMes').value;
-  const pref=mes?`${ano}-${mes}`:ano;
-  const diasF=Object.keys(V).filter(d=>d.startsWith(pref)).sort();
+  const ano=document.getElementById('fAno').value;
+  let diasF;
+  if(mesesSelecionados.length>0){
+    diasF=Object.keys(V).filter(d=>d.startsWith(ano)&&mesesSelecionados.includes(d.slice(5,7))).sort();
+  } else {
+    diasF=Object.keys(V).filter(d=>d.startsWith(ano)).sort();
+  }
   const sD=document.getElementById('fDia'),curD=sD.value;
   sD.innerHTML='<option value="">Todos</option>';
   diasF.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4);sD.appendChild(o);});
@@ -1045,13 +1123,16 @@ function updSetoresFiltro(){
   const oT=document.createElement('option');oT.value=S_TOTAL;oT.textContent='★ Salão Total (todos)';sel.appendChild(oT);
   if(cur)sel.value=cur;
 }
-function onFAno(){updMesDia();document.getElementById('fMes').value='';document.getElementById('fDia').value='';renderDash();}
-function onFMes(){updDia();document.getElementById('fDia').value='';renderDash();}
+function onFAno(){mesesSelecionados=[];updMesDia();updMesPickerLabel();document.getElementById('fDia').value='';renderDash();}
+// onFMes removido — substituído por multi-picker
 function getDias(){
-  const ano=document.getElementById('fAno').value,mes=document.getElementById('fMes').value,dia=document.getElementById('fDia').value;
+  const ano=document.getElementById('fAno').value;
+  const dia=document.getElementById('fDia').value;
   if(dia)return[dia];
-  const pref=mes?`${ano}-${mes}`:ano;
-  return Object.keys(V).filter(d=>d.startsWith(pref)).sort();
+  if(mesesSelecionados.length>0){
+    return Object.keys(V).filter(d=>d.startsWith(ano)&&mesesSelecionados.includes(d.slice(5,7))).sort();
+  }
+  return Object.keys(V).filter(d=>d.startsWith(ano)).sort();
 }
 function getItens(diasKey,setorF){
   const itens=[];
@@ -1096,7 +1177,8 @@ function renderDash(){
   const ticket=tVisit?tLiq/tVisit:0;
 
   const anoAnt=String(parseInt(ano)-1);
-  const mesFmt=mes?`${ano}-${mes}`:null;
+  // mesFmt: válido apenas quando exatamente 1 mês selecionado
+  const mesFmt=mesesSelecionados.length===1?`${ano}-${mesesSelecionados[0]}`:null;
 
   // Visitantes e faturamento do mesmo período no ano anterior
   let tVisitAnt=0,temVisitAnt=false,tLiqAnt=0;
@@ -1111,7 +1193,8 @@ function renderDash(){
 
   let periLbl;
   if(dia)periLbl=dia.slice(8)+'/'+dia.slice(5,7)+'/'+dia.slice(0,4);
-  else if(mes)periLbl=MNomes[parseInt(mes)-1]+' '+ano;
+  else if(mesesSelecionados.length===1)periLbl=MNomes[parseInt(mesesSelecionados[0])-1]+' '+ano;
+  else if(mesesSelecionados.length>1)periLbl=mesesSelecionados.map(m=>MNomes[parseInt(m)-1]).join('+')+' '+ano;
   else periLbl=ano;
   if(setorF&&setorF!==S_TOTAL)periLbl+=` · ${setorF}`;
 
@@ -1137,10 +1220,16 @@ function renderDash(){
   }
 
   let metaGeral=null;
-  if(mesFmt){
-    // mês específico selecionado
-    metaGeral=getMetaParaFiltro(setorF,mesFmt);
-  } else {
+  if(mesesSelecionados.length>0){
+    // soma metas dos meses selecionados
+    let soma=0,found=false;
+    mesesSelecionados.forEach(m=>{
+      const mf=`${ano}-${m}`;
+      const v=getMetaParaFiltro(setorF,mf);
+      if(v){soma+=v;found=true;}
+    });
+    if(found)metaGeral=soma;
+  } else if(!dia){
     // ano inteiro: soma metas de todos os meses do ano
     let soma=0,found=false;
     for(let mi=1;mi<=12;mi++){
@@ -1169,21 +1258,27 @@ function renderDash(){
   }
 
   let antGeral=null;
-  if(!mes&&!dia){
-    // ano inteiro: soma acumulado do ano anterior (apenas meses que existem)
-    let soma=0,found=false;
-    for(let mi=1;mi<=12;mi++){
-      const mf=`${anoAnt}-${String(mi).padStart(2,'0')}`;
-      const v=getAntParaFiltro(setorF,mf);
-      if(v){soma+=v;found=true;}
+  if(!dia){
+    if(mesesSelecionados.length>0){
+      // meses específicos: soma os mesmos meses do ano anterior
+      let soma=0,found=false;
+      mesesSelecionados.forEach(m=>{
+        const mf=`${anoAnt}-${m}`;
+        const v=getAntParaFiltro(setorF,mf);
+        if(v){soma+=v;found=true;}
+      });
+      if(found)antGeral=soma;
+    } else {
+      // ano inteiro
+      let soma=0,found=false;
+      for(let mi=1;mi<=12;mi++){
+        const mf=`${anoAnt}-${String(mi).padStart(2,'0')}`;
+        const v=getAntParaFiltro(setorF,mf);
+        if(v){soma+=v;found=true;}
+      }
+      if(found)antGeral=soma;
     }
-    if(found)antGeral=soma;
-  } else if(mesFmt){
-    // mês específico: compara com mesmo mês do ano anterior
-    const mfAnt=`${anoAnt}-${mes}`;
-    antGeral=getAntParaFiltro(setorF,mfAnt);
   }
-  // se dia selecionado: sem comparativo de ano anterior (não temos dados diários do passado)
 
   let kpiMeta='',kpiAnt='';
   if(metaGeral){
@@ -1222,18 +1317,22 @@ function renderDash(){
   }
 
   let sLabels,sFat,sTick,sMeta;
-  if(!mes&&!dia){
+  if(dia){
+    // dia específico: mostra por setor
+    sLabels=setores;sFat=setores.map(s=>+bySe[s].liq.toFixed(2));
+    sTick=setores.map(s=>tVisit?+(bySe[s].liq/tVisit).toFixed(2):0);sMeta=null;
+  } else if(mesesSelecionados.length===0){
+    // ano inteiro: gráfico mensal com todos os 12 meses
     sLabels=MNomes;
     sFat=MNomes.map((_,mi)=>{const pref=`${ano}-${String(mi+1).padStart(2,'0')}`;return +getItens(diasKey.filter(d=>d.startsWith(pref)),setorF).reduce((a,i)=>a+i.vLiq,0).toFixed(2);});
     sTick=MNomes.map((_,mi)=>{const pref=`${ano}-${String(mi+1).padStart(2,'0')}`;const dM=diasKey.filter(d=>d.startsWith(pref));const fat=getItens(dM,setorF).reduce((a,i)=>a+i.vLiq,0);const vis=dM.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);return vis?+(fat/vis).toFixed(2):0;});
     sMeta=MNomes.map((_,mi)=>{const mf=`${ano}-${String(mi+1).padStart(2,'0')}`;return getMetaParaFiltro(setorF,mf);});
-  } else if(mes&&!dia){
-    sLabels=diasKey.map(d=>d.slice(8));
+  } else {
+    // meses selecionados: gráfico diário dos dias dentro dos meses escolhidos
+    sLabels=diasKey.map(d=>d.slice(8)+'/'+d.slice(5,7));
     sFat=diasKey.map(d=>+getItens([d],setorF).reduce((a,i)=>a+i.vLiq,0).toFixed(2));
     sTick=diasKey.map(d=>{const fat=getItens([d],setorF).reduce((a,i)=>a+i.vLiq,0);const vis=VI[d]?VI[d].valido:0;return vis?+(fat/vis).toFixed(2):0;});
     sMeta=null;
-  } else {
-    sLabels=setores;sFat=setores.map(s=>+bySe[s].liq.toFixed(2));sTick=setores.map(s=>tVisit?+(bySe[s].liq/tVisit).toFixed(2):0);sMeta=null;
   }
 
   // ── Dados do ano anterior por mês (para gráfico comparativo) ──
@@ -1249,7 +1348,8 @@ function renderDash(){
 
   const rows=setores.map(s=>{
     const d=bySe[s];const pct=tLiq?(d.liq/tLiq*100).toFixed(1):0;const tck=tVisit?fRF(d.liq/tVisit):'—';const c=cor(s);
-    const mKey=mesFmt?getMeta(s,mesFmt):null;const aKey=mesFmt?getAntMes(s,`${anoAnt}-${mes}`):getAnt(s,anoAnt);
+    const mKey=mesesSelecionados.length===1?getMeta(s,mesFmt):null;
+    const aKey=mesesSelecionados.length===1?getAntMes(s,`${anoAnt}-${mesesSelecionados[0]}`):getAnt(s,anoAnt);
     const metaStr=mKey?`<span style="font-size:11px;color:var(--text2)"> / meta: ${fRF(mKey)}</span>`:'';
     const antStr=aKey?`<span style="font-size:11px;color:var(--text3)"> / ${anoAnt}: ${fRF(aKey)}</span>`:'';
     return`<tr><td><span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}28">${s}</span></td>
@@ -1282,8 +1382,14 @@ function renderDash(){
   }
   kpiTicket+='</div>';
 
-  const g1=!mes&&!dia?`Faturamento mensal — ${ano}`:mes&&!dia?`Faturamento diário — ${MNomes[parseInt(mes)-1]} ${ano}`:`Faturamento por setor`;
-  const g2=!mes&&!dia?`Ticket médio/visitante — ${ano}`:mes&&!dia?`Ticket diário — ${MNomes[parseInt(mes)-1]} ${ano}`:`Ticket por setor`;
+  const g1=dia?'Faturamento por setor':
+    mesesSelecionados.length===1?`Faturamento diário — ${MNomes[parseInt(mesesSelecionados[0])-1]} ${ano}`:
+    mesesSelecionados.length>1?`Faturamento diário — ${periLbl}`:
+    `Faturamento mensal — ${ano}`;
+  const g2=dia?'Ticket por setor':
+    mesesSelecionados.length===1?`Ticket diário — ${MNomes[parseInt(mesesSelecionados[0])-1]} ${ano}`:
+    mesesSelecionados.length>1?`Ticket diário — ${periLbl}`:
+    `Ticket médio/visitante — ${ano}`;
 
   document.getElementById('dashContent').innerHTML=`
   <div class="kpi-grid">
