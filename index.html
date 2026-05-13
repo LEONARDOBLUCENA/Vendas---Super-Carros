@@ -2302,20 +2302,32 @@ function renderHistComandas(){
   const totalVal=COMANDAS.reduce((a,c)=>a+c.valorTotal,0);
   if(res)res.textContent=COMANDAS.length+' comandas · '+fRF(totalVal);
   if(btn)btn.style.display='';
-  // agrupa por parceiro para exibição resumida
-  const byParc={};
-  COMANDAS.forEach(c=>{
-    const label=PARCEIROS[c.parceiro]?PARCEIROS[c.parceiro].label:c.parceiro;
-    if(!byParc[label])byParc[label]={qtd:0,val:0};
-    byParc[label].qtd++;byParc[label].val+=c.valorTotal;
-  });
-  const parcs=Object.entries(byParc).sort((a,b)=>b[1].val-a[1].val);
-  let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Parceiro</th><th>Comandas</th><th>Valor total</th></tr></thead><tbody>';
-  parcs.forEach(([label,d])=>{
-    html+='<tr><td><b>'+label+'</b></td><td>'+d.qtd+'</td><td style="font-weight:500">'+fRF(d.val)+'</td></tr>';
+  // exibe igual à pré-visualização: uma linha por comanda ordenada por data
+  const sorted=[...COMANDAS].sort((a,b)=>a.data.localeCompare(b.data)||a.id.localeCompare(b.id));
+  let html='<div class="tbl-wrap"><table class="tbl"><thead><tr>'
+    +'<th>Data</th><th>ID Comanda</th><th>Nro. Comanda</th><th>Parceiro</th><th>Itens</th><th>Valor Total</th>'
+    +'<th style="width:40px"></th>'
+    +'</tr></thead><tbody>';
+  sorted.forEach(com=>{
+    const label=PARCEIROS[com.parceiro]?PARCEIROS[com.parceiro].label:(com.parceiro||'—');
+    const cv=cor(label);
+    html+='<tr>'
+      +'<td>'+com.data+'</td>'
+      +'<td style="font-family:monospace;font-size:12px;color:var(--text2)">'+com.id+'</td>'
+      +'<td style="font-size:12px">'+com.nro+'</td>'
+      +'<td><span class="badge" style="background:'+cv+'18;color:'+cv+';border:1px solid '+cv+'28">'+label+'</span></td>'
+      +'<td style="color:var(--text2)">'+com.itens.length+'</td>'
+      +'<td style="font-weight:600">'+fRF(com.valorTotal)+'</td>'
+      +'<td><button class="del-btn" data-id="'+com.id+'" onclick="delComanda(this.dataset.id)">×</button></td>'
+      +'</tr>';
   });
   html+='</tbody></table></div>';
   el.innerHTML=html;
+}
+function delComanda(id){
+  if(!confirm('Remover a comanda '+id+'?'))return;
+  COMANDAS=COMANDAS.filter(c=>c.id!==id);
+  save();renderHistComandas();updFiltrosParc();renderDashParc();toast('Comanda removida');
 }
 
 function exportarComandasExcel(){
