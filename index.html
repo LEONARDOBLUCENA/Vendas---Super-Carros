@@ -1346,21 +1346,12 @@ function getAntMes(s,mesFmt){
   const k=antKey(mesFmt,s);
   return ANTERIOR[k]?ANTERIOR[k].val:null;
 }
-function killCharts(){charts.forEach(c=>c.destroy());charts=[];}
+function killCharts(){charts.forEach(c=>{try{c.destroy();}catch(e){}});charts=[];}
 
 function renderDash(){
   if(!Object.keys(V).length)return;
-  // Atualiza apenas anos e setores, sem recriar o picker de meses
-  if(Object.keys(V).length){
-    const dias=Object.keys(V).sort();
-    const anos=[...new Set(dias.map(d=>d.slice(0,4)))];
-    const sA=document.getElementById('fAno');
-    if(sA&&!sA.value){
-      sA.innerHTML=anos.map(a=>`<option value="${a}">${a}</option>`).join('');
-      sA.value=anos[anos.length-1];
-    }
-    updSetoresFiltro();
-  }
+  // Atualiza setores sem recriar picker de meses
+  updSetoresFiltro();
   killCharts();
   const ano=document.getElementById('fAno').value,dia=document.getElementById('fDia').value,setorF=document.getElementById('fSetor').value;
   const mes=mesesSelecionados.length===1?mesesSelecionados[0]:null;
@@ -1689,7 +1680,7 @@ function addPontoManual(){
   if(!PONTOS[d])PONTOS[d]=0;
   PONTOS[d]+=v;
   document.getElementById('pontosVal').value='';
-  save();renderHistPontos();updFiltrosExt();toast('Registro adicionado!');
+  save();renderHistPontos();if(document.getElementById('sc-dashext').classList.contains('on')){updFiltrosExt();renderDashExt();}toast('Registro adicionado!');
 }
 function addSiteManual(){
   const d=document.getElementById('siteData').value;
@@ -1698,7 +1689,7 @@ function addSiteManual(){
   if(!SITE[d])SITE[d]=0;
   SITE[d]+=v;
   document.getElementById('siteVal').value='';
-  save();renderHistSite();updFiltrosExt();toast('Registro adicionado!');
+  save();renderHistSite();if(document.getElementById('sc-dashext').classList.contains('on')){updFiltrosExt();renderDashExt();}toast('Registro adicionado!');
 }
 function impPontos(){
   const raw=document.getElementById('pontosTxt').value.trim();
@@ -1808,7 +1799,7 @@ function addDiversoManual(){
   if(!DIVERSOS[d][setor])DIVERSOS[d][setor]=0;
   DIVERSOS[d][setor]+=v;
   document.getElementById('diversosVal').value='';
-  save();renderHistDiversos();updFiltrosExt();toast('Registro adicionado!');
+  save();renderHistDiversos();if(document.getElementById('sc-dashext').classList.contains('on')){updFiltrosExt();renderDashExt();}toast('Registro adicionado!');
 }
 
 function impDiversos(){
@@ -1959,7 +1950,7 @@ function getExtFiltrados(){
   return{diasP,diasS,diasD,ano,mes,dia,canal,pref};
 }
 
-function killChartsExt(){chartsExt.forEach(c=>c.destroy());chartsExt=[];}
+function killChartsExt(){chartsExt.forEach(c=>{try{c.destroy();}catch(e){}});chartsExt=[];}
 
 function getMetaExt(setor,mf){
   // reutiliza a mesma tabela de METAS com setores "Pontos Externos" e "Site Oficial"
@@ -1976,7 +1967,6 @@ function renderDashExt(){
     document.getElementById('dashextContent').innerHTML='<div class="empty"><i class="ti ti-chart-dots"></i><p>Importe dados de Pontos Externos, Site Oficial e/ou Faturamentos Diversos para ver o dashboard</p></div>';
     return;
   }
-  updFiltrosExt();
   killChartsExt();
 
   const{diasP,diasS,diasD,ano,mes,dia,canal,pref}=getExtFiltrados();
@@ -2391,7 +2381,7 @@ function getComandasFiltradas(){
   return COMANDAS.filter(c=>c.data.startsWith(pref)&&(!parcF||c.parceiro===parcF));
 }
 
-function killChartsParc(){chartsParc.forEach(c=>c.destroy());chartsParc=[];}
+function killChartsParc(){chartsParc.forEach(c=>{try{c.destroy();}catch(e){}});chartsParc=[];}
 
 function renderDashParc(){
   if(!COMANDAS.length){
@@ -2489,7 +2479,19 @@ function renderDashParc(){
   chartsParc.push(cParcDona);
 }
 // ── INIT ─────────────────────────────────────────────────────────────
-function renderAll(){renderProds();renderAjustado();renderHistV();renderHistVI();renderMetas();renderAnterior();renderHistPontos();renderHistSite();renderHistDiversos();renderListaParceiros();renderHistComandas();updFiltros();updFiltrosExt();updFiltrosParc();}
+function renderAll(){
+  // Renderiza apenas listas e históricos — dashboards só quando a aba for aberta
+  renderProds();renderAjustado();
+  renderHistV();renderHistVI();
+  renderMetas();renderAnterior();
+  renderHistPontos();renderHistSite();renderHistDiversos();
+  renderListaParceiros();renderHistComandas();
+  // Filtros: apenas o principal (mais leve)
+  updFiltros();
+  // Ext e Parc só se tiverem dados
+  if(Object.keys(PONTOS).length||Object.keys(SITE).length||Object.keys(DIVERSOS).length)updFiltrosExt();
+  if(COMANDAS.length)updFiltrosParc();
+}
 load();
 document.getElementById('dataVisit').value=hoje();
 document.getElementById('pontosData').value=hoje();
