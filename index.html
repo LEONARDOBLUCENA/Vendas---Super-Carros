@@ -1274,18 +1274,21 @@ function renderDash(){
 
   // ── META ──
   // Função auxiliar: busca meta de um mês para um setor (ou soma todos os setores se "Todos")
+  // Setores que pertencem ao Dashboard Externos — excluídos do Dashboard principal
+  const SETORES_EXT_EXCLUIR=['Pontos Externos','Site Oficial'];
+
   function getMetaParaFiltro(setor, mf){
     if(setor&&setor!==S_TOTAL){
-      // setor específico: busca direta, ou tenta S_TOTAL se não achar
+      // setor específico: busca direta
       return getMeta(setor,mf)||getMeta(S_TOTAL,mf);
     }
     // "Todos": primeiro tenta S_TOTAL cadastrado
     const vTotal=getMeta(S_TOTAL,mf);
     if(vTotal)return vTotal;
-    // senão soma todos os setores individuais cadastrados para esse mês
+    // senão soma setores individuais — excluindo os externos
     let soma=0,found=false;
     Object.values(METAS).forEach(function(m){
-      if(m.mes===mf&&m.setor!==S_TOTAL){soma+=m.val;found=true;}
+      if(m.mes===mf&&m.setor!==S_TOTAL&&!SETORES_EXT_EXCLUIR.includes(m.setor)){soma+=m.val;found=true;}
     });
     return found?soma:null;
   }
@@ -1320,10 +1323,10 @@ function renderDash(){
     // "Todos": primeiro tenta S_TOTAL
     const vTotal=getAntMes(S_TOTAL,mf);
     if(vTotal)return vTotal;
-    // senão soma todos os setores individuais
+    // senão soma setores individuais — excluindo os externos
     let soma=0,found=false;
     Object.values(ANTERIOR).forEach(function(a){
-      if(a.mes===mf&&a.setor!==S_TOTAL){soma+=a.val;found=true;}
+      if(a.mes===mf&&a.setor!==S_TOTAL&&!SETORES_EXT_EXCLUIR.includes(a.setor)){soma+=a.val;found=true;}
     });
     return found?soma:null;
   }
