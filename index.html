@@ -1337,8 +1337,13 @@ function renderDash(){
   } else if(mesesSelecionados.length===0){
     // ano inteiro: gráfico mensal com todos os 12 meses
     sLabels=MNomes;
-    sFat=MNomes.map((_,mi)=>{const pref=`${ano}-${String(mi+1).padStart(2,'0')}`;return +getItens(diasKey.filter(d=>d.startsWith(pref)),setorF).reduce((a,i)=>a+i.vLiq,0).toFixed(2);});
-    sTick=MNomes.map((_,mi)=>{const pref=`${ano}-${String(mi+1).padStart(2,'0')}`;const dM=diasKey.filter(d=>d.startsWith(pref));const fat=getItens(dM,setorF).reduce((a,i)=>a+i.vLiq,0);const vis=dM.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);return vis?+(fat/vis).toFixed(2):0;});
+    sFat=MNomes.map((_,mi)=>{
+      const pref=`${ano}-${String(mi+1).padStart(2,'0')}`;
+      // usa TODOS os dias do ano para o mês, não apenas diasKey
+      const diasMes=Object.keys(V).filter(d=>d.startsWith(pref));
+      return +getItens(diasMes,setorF).reduce((a,i)=>a+i.vLiq,0).toFixed(2);
+    });
+    sTick=MNomes.map((_,mi)=>{const pref=`${ano}-${String(mi+1).padStart(2,'0')}`;const dM=Object.keys(V).filter(d=>d.startsWith(pref));const fat=getItens(dM,setorF).reduce((a,i)=>a+i.vLiq,0);const vis=dM.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);return vis?+(fat/vis).toFixed(2):0;});
     sMeta=MNomes.map((_,mi)=>{const mf=`${ano}-${String(mi+1).padStart(2,'0')}`;return getMetaParaFiltro(setorF,mf);});
   } else {
     // meses selecionados: gráfico diário dos dias dentro dos meses escolhidos
@@ -1349,11 +1354,20 @@ function renderDash(){
   }
 
   // ── Dados do ano anterior por mês (para gráfico comparativo) ──
+  // Primeiro tenta usar dados reais de vendas do anoAnt (V)
+  // Se não tiver, tenta a tabela ANTERIOR cadastrada manualmente
   const sAntMes=MNomes.map((_,mi)=>{
-    const mf=anoAnt+'-'+String(mi+1).padStart(2,'0');
-    return getAntParaFiltro(setorF,mf);
+    const pref=anoAnt+'-'+String(mi+1).padStart(2,'0');
+    // busca nos dados reais de vendas do ano anterior
+    const diasAnt=Object.keys(V).filter(d=>d.startsWith(pref));
+    if(diasAnt.length>0){
+      const fatAnt=getItens(diasAnt,setorF).reduce((a,i)=>a+i.vLiq,0);
+      if(fatAnt>0)return +fatAnt.toFixed(2);
+    }
+    // fallback: tabela ANTERIOR cadastrada manualmente
+    return getAntParaFiltro(setorF,pref);
   });
-  const temAntAnual=sAntMes.some(v=>v!==null)&&!mes&&!dia;
+  const temAntAnual=sAntMes.some(v=>v!==null&&v>0)&&mesesSelecionados.length===0&&!dia;
 
   const isDark=matchMedia('(prefers-color-scheme:dark)').matches;
   const gc=isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.05)',tc=isDark?'#888':'#999';
