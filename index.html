@@ -132,9 +132,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="nav-btn" onclick="goTab('visit')"><i class="ti ti-users"></i>Visitantes</button>
     <button class="nav-btn" onclick="goTab('metas')"><i class="ti ti-target"></i>Metas</button>
     <button class="nav-btn" onclick="goTab('anterior')"><i class="ti ti-clock"></i>Ano anterior</button>
-    <div class="nav-sec">Canais externos</div>
+    <div class="nav-sec">Outros Faturamentos</div>
     <button class="nav-btn" onclick="goTab('pontos')"><i class="ti ti-map-pin"></i>Pontos Externos</button>
     <button class="nav-btn" onclick="goTab('site')"><i class="ti ti-world"></i>Site Oficial</button>
+    <button class="nav-btn" onclick="goTab('diversos')"><i class="ti ti-coins"></i>Faturamentos Diversos</button>
     <div class="nav-sec">Resultados</div>
     <button class="nav-btn" onclick="goTab('dash')"><i class="ti ti-chart-bar"></i>Dashboard</button>
     <button class="nav-btn" onclick="goTab('dashext')"><i class="ti ti-chart-dots"></i>Dashboard Externos</button>
@@ -496,6 +497,44 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
 </div>
 
+<!-- FATURAMENTOS DIVERSOS -->
+<div id="sc-diversos" class="screen">
+  <div class="topbar">
+    <div><div class="page-title">Faturamentos Diversos</div>
+    <div class="page-sub">Outros faturamentos por setor</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-circle-plus"></i>Adicionar manualmente</div>
+    <div class="g4" style="align-items:flex-end">
+      <div class="field" style="margin:0"><label>Data</label><input type="date" id="diversosData"></div>
+      <div class="field" style="margin:0"><label>Setor</label><input type="text" id="diversosSetor" placeholder="Ex: Estacionamento" list="diversosSetorDL"><datalist id="diversosSetorDL"></datalist></div>
+      <div class="field" style="margin:0"><label>Valor líquido (R$)</label><input type="number" id="diversosVal" placeholder="0,00" min="0" step="0.01"></div>
+      <div><button class="btn btn-p" style="width:100%" onclick="addDiversoManual()"><i class="ti ti-plus"></i>Adicionar</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-table-import"></i>Importar do Excel</div>
+    <div class="alert alert-info"><i class="ti ti-info-circle"></i>
+      <span>Cole com cabeçalho na linha 1 (ignorado). Formato:<br>
+      <span style="font-family:'DM Mono',monospace;font-size:11px">Data [tab] Setor [tab] Valor Líquido</span><br>
+      Ex: <span style="font-family:'DM Mono',monospace;font-size:11px">01/05/2025 [tab] Estacionamento [tab] 1500.00</span></span>
+    </div>
+    <div class="field"><label>Tabela copiada do Excel</label>
+      <textarea id="diversosTxt" placeholder="Data	Setor	Valor Líquido&#10;01/05/2025	Estacionamento	1500.00&#10;01/05/2025	Convênios	800.00"></textarea>
+    </div>
+    <div class="act"><button class="btn btn-p btn-sm" onclick="impDiversos()"><i class="ti ti-check"></i>Importar</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-history"></i>Registros
+      <div style="display:flex;gap:6px;margin-left:auto">
+        <button class="btn btn-sm" id="btnExportDiversos" onclick="exportarDiversosExcel()" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
+        <button class="btn btn-sm" id="btnLimparDiversos" onclick="limparDiversos()" style="display:none;color:var(--red)"><i class="ti ti-trash"></i>Limpar dados</button>
+      </div>
+    </div>
+    <div id="histDiversos"><div class="empty"><i class="ti ti-coins"></i><p>Nenhum registro ainda.</p></div></div>
+  </div>
+</div>
+
 <!-- DASHBOARD EXTERNOS -->
 <div id="sc-dashext" class="screen">
   <div class="topbar">
@@ -511,10 +550,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <option value="">Todos</option>
         <option value="pontos">Pontos Externos</option>
         <option value="site">Site Oficial</option>
+        <option value="diversos">Faturamentos Diversos</option>
       </select>
     </div>
   </div>
-  <div id="dashextContent"><div class="empty"><i class="ti ti-chart-dots"></i><p>Importe dados de Pontos Externos e/ou Site Oficial para ver o dashboard</p></div></div>
+  <div id="dashextContent"><div class="empty"><i class="ti ti-chart-dots"></i><p>Importe dados de Pontos Externos, Site Oficial e/ou Faturamentos Diversos para ver o dashboard</p></div></div>
 </div>
 
 
@@ -523,7 +563,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <script>
 // ── ESTADO ────────────────────────────────────────────────────────────
-let P={}, V={}, VI={}, METAS={}, ANTERIOR={}, PONTOS={}, SITE={}, pending=null, charts=[], chartsExt=[];
+let P={}, V={}, VI={}, METAS={}, ANTERIOR={}, PONTOS={}, SITE={}, DIVERSOS={}, pending=null, charts=[], chartsExt=[];
 let _nid=1;
 function novaKey(){return 'p'+(++_nid);}
 
@@ -549,6 +589,7 @@ function save(){
     localStorage.setItem('biant',JSON.stringify(ANTERIOR));
     localStorage.setItem('bipontos',JSON.stringify(PONTOS));
     localStorage.setItem('bisite',JSON.stringify(SITE));
+    localStorage.setItem('bidiversos',JSON.stringify(DIVERSOS));
     localStorage.setItem('bi_nid',String(_nid));
   }catch(e){}
 }
@@ -556,10 +597,10 @@ function load(){
   try{
     const p=localStorage.getItem('bip'),v=localStorage.getItem('biv'),vi=localStorage.getItem('bivi'),
           m=localStorage.getItem('bimetas'),a=localStorage.getItem('biant'),nid=localStorage.getItem('bi_nid'),
-          po=localStorage.getItem('bipontos'),si=localStorage.getItem('bisite');
+          po=localStorage.getItem('bipontos'),si=localStorage.getItem('bisite'),di=localStorage.getItem('bidiversos');
     if(p)P=JSON.parse(p);if(v)V=JSON.parse(v);if(vi)VI=JSON.parse(vi);
     if(m)METAS=JSON.parse(m);if(a)ANTERIOR=JSON.parse(a);
-    if(po)PONTOS=JSON.parse(po);if(si)SITE=JSON.parse(si);
+    if(po)PONTOS=JSON.parse(po);if(si)SITE=JSON.parse(si);if(di)DIVERSOS=JSON.parse(di);
     if(nid)_nid=parseInt(nid)||1;
     let mig=false;
     Object.keys(P).forEach(k=>{if(!k.startsWith('p')){const nk=novaKey();P[nk]=P[k];delete P[k];mig=true;}});
@@ -567,7 +608,7 @@ function load(){
   }catch(e){}
 }
 function exportar(){
-  const b=new Blob([JSON.stringify({P,V,VI,METAS,ANTERIOR,PONTOS,SITE,_nid,ver:2,at:new Date().toISOString()},null,2)],{type:'application/json'});
+  const b=new Blob([JSON.stringify({P,V,VI,METAS,ANTERIOR,PONTOS,SITE,DIVERSOS,_nid,ver:3,at:new Date().toISOString()},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='super-carros-'+hoje()+'.json';a.click();
   toast('Backup exportado!');
 }
@@ -578,7 +619,7 @@ function importar(e){
     const d=JSON.parse(ev.target.result);
     if(d.P)P=d.P;if(d.V)V=d.V;if(d.VI)VI=d.VI;
     if(d.METAS)METAS=d.METAS;if(d.ANTERIOR)ANTERIOR=d.ANTERIOR;
-    if(d.PONTOS)PONTOS=d.PONTOS;if(d.SITE)SITE=d.SITE;
+    if(d.PONTOS)PONTOS=d.PONTOS;if(d.SITE)SITE=d.SITE;if(d.DIVERSOS)DIVERSOS=d.DIVERSOS;
     if(d._nid)_nid=d._nid;
     save();renderAll();toast('Backup restaurado!');
   }catch(_){toast('Arquivo inválido','err');}};
@@ -602,7 +643,7 @@ function parseData(s){
 function toast(msg,t){const el=document.getElementById('toast');el.textContent=msg;el.style.background=t==='err'?'#c0392b':t==='warn'?'#b45309':'#0e7d55';el.style.opacity='1';clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',2800);}
 function tog(id){const c=document.getElementById(id);c.style.display=c.style.display==='none'?'block':'none';}
 
-const NAV_IDS=['class','ajustado','vendas','visit','metas','anterior','pontos','site','dash','dashext'];
+const NAV_IDS=['class','ajustado','vendas','visit','metas','anterior','pontos','site','diversos','dash','dashext'];
 function goTab(t){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
@@ -613,6 +654,7 @@ function goTab(t){
   if(t==='dash'){updFiltros();renderDash();}
   if(t==='pontos')renderHistPontos();
   if(t==='site')renderHistSite();
+  if(t==='diversos')renderHistDiversos();
   if(t==='dashext'){updFiltrosExt();renderDashExt();}
   if(t==='metas')renderMetas();
   if(t==='anterior')renderAnterior();
@@ -1627,11 +1669,118 @@ function limparSite(){
 }
 
 // ── DASHBOARD EXTERNOS ────────────────────────────────────────────────
+// ── FATURAMENTOS DIVERSOS ─────────────────────────────────────────────
+// DIVERSOS: { "2025-05-01": { "Estacionamento": 1500, "Convênios": 800 } }
+
+function addDiversoManual(){
+  const d=document.getElementById('diversosData').value;
+  const setor=document.getElementById('diversosSetor').value.trim();
+  const v=parseFloat(document.getElementById('diversosVal').value)||0;
+  if(!d||!setor||!v){toast('Preencha data, setor e valor','err');return;}
+  if(!DIVERSOS[d])DIVERSOS[d]={};
+  if(!DIVERSOS[d][setor])DIVERSOS[d][setor]=0;
+  DIVERSOS[d][setor]+=v;
+  document.getElementById('diversosVal').value='';
+  save();renderHistDiversos();updFiltrosExt();toast('Registro adicionado!');
+}
+
+function impDiversos(){
+  const raw=document.getElementById('diversosTxt').value.trim();
+  if(!raw){toast('Cole a tabela primeiro','err');return;}
+  const todasLinhas=raw.split('\n').filter(l=>l.trim());
+  const primeira=todasLinhas[0]?todasLinhas[0].split('\t'):[];
+  const primeiraData=parseData((primeira[0]||'').trim());
+  const lines=primeiraData?todasLinhas:todasLinhas.slice(1);
+  let ok=0;
+  lines.forEach(l=>{
+    const p=l.split('\t');if(p.length<3)return;
+    const d=parseData((p[0]||'').trim());
+    const setor=(p[1]||'').trim();
+    const v=parseN(p[2]);
+    if(!d||!setor||!v)return;
+    if(!DIVERSOS[d])DIVERSOS[d]={};
+    if(!DIVERSOS[d][setor])DIVERSOS[d][setor]=0;
+    DIVERSOS[d][setor]+=v;ok++;
+  });
+  save();renderHistDiversos();document.getElementById('diversosTxt').value='';
+  updFiltrosExt();
+  if(ok>0)toast(ok+' registro(s) importado(s)!');
+  else toast('Nenhum registro importado. Verifique o formato.','err');
+}
+
+function renderHistDiversos(){
+  const dias=Object.keys(DIVERSOS).sort().reverse();
+  const el=document.getElementById('histDiversos');
+  if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-coins"></i><p>Nenhum registro ainda.</p></div>';return;}
+  // atualiza datalist de setores
+  const setoresDiversos=[...new Set(dias.flatMap(d=>Object.keys(DIVERSOS[d])))].sort();
+  const dl=document.getElementById('diversosSetorDL');
+  if(dl){dl.innerHTML='';setoresDiversos.forEach(s=>{const o=document.createElement('option');o.value=s;dl.appendChild(o);});}
+  let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Setor</th><th>Valor líquido</th><th style="width:40px"></th></tr></thead><tbody>';
+  dias.forEach(d=>{
+    const setores=Object.keys(DIVERSOS[d]).sort();
+    const totDia=Object.values(DIVERSOS[d]).reduce((a,v)=>a+v,0);
+    html+='<tr style="background:var(--surface2)"><td><strong>'+d+'</strong></td><td style="font-size:11px;color:var(--text2)">Total</td><td style="font-weight:600">'+fRF(totDia)+'</td>'
+      +'<td><button class="del-btn" data-dia="'+d+'" onclick="delDiversoDia(this.dataset.dia)">×</button></td></tr>';
+    setores.forEach(s=>{
+      const cv=cor(s);
+      html+='<tr><td style="color:var(--text3);font-size:12px;padding-left:20px">'+d+'</td>'
+        +'<td><span class="badge" style="background:'+cv+'18;color:'+cv+';border:1px solid '+cv+'28">'+s+'</span></td>'
+        +'<td>'+fRF(DIVERSOS[d][s])+'</td>'
+        +'<td><button class="del-btn" data-dia="'+d+'" data-setor="'+s+'" onclick="delDiversoItem(this.dataset.dia,this.dataset.setor)">×</button></td></tr>';
+    });
+  });
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+  document.getElementById('btnExportDiversos').style.display='';
+  document.getElementById('btnLimparDiversos').style.display='';
+}
+
+function delDiversoDia(d){
+  if(!confirm('Remover todos os registros do dia '+d+'?'))return;
+  delete DIVERSOS[d];save();renderHistDiversos();updFiltrosExt();renderDashExt();toast('Removido');
+}
+function delDiversoItem(d,setor){
+  if(!confirm('Remover "'+setor+'" do dia '+d+'?'))return;
+  delete DIVERSOS[d][setor];
+  if(Object.keys(DIVERSOS[d]).length===0)delete DIVERSOS[d];
+  save();renderHistDiversos();updFiltrosExt();renderDashExt();toast('Removido');
+}
+function exportarDiversosExcel(){
+  const rows=[['Data','Setor','Valor Líquido']];
+  Object.keys(DIVERSOS).sort().forEach(d=>{
+    Object.keys(DIVERSOS[d]).sort().forEach(s=>{
+      rows.push([d,s,DIVERSOS[d][s].toFixed(2).replace('.',',')]);
+    });
+  });
+  exportarExcel(rows,'faturamentos-diversos-'+hoje()+'.xls');
+}
+function limparDiversos(){
+  if(!confirm('Apagar TODOS os registros de Faturamentos Diversos?'))return;
+  DIVERSOS={};save();renderHistDiversos();updFiltrosExt();renderDashExt();
+  document.getElementById('btnExportDiversos').style.display='none';
+  document.getElementById('btnLimparDiversos').style.display='none';
+  toast('Dados apagados');
+}
+
+// Helper: faturamento total de DIVERSOS num dia/setor
+function getDiversosFat(pref, setorFiltro){
+  let soma=0;
+  Object.keys(DIVERSOS).filter(d=>d.startsWith(pref)).forEach(d=>{
+    if(setorFiltro&&setorFiltro!=='diversos'){
+      soma+=DIVERSOS[d][setorFiltro]||0;
+    } else {
+      soma+=Object.values(DIVERSOS[d]).reduce((a,v)=>a+v,0);
+    }
+  });
+  return soma;
+}
+
 function getExtDias(canal){
-  // retorna todos os dias disponíveis para o canal filtrado
   const diasP=canal===''||canal==='pontos'?Object.keys(PONTOS):[];
   const diasS=canal===''||canal==='site'?Object.keys(SITE):[];
-  return [...new Set([...diasP,...diasS])].sort();
+  const diasD=canal===''||canal==='diversos'?Object.keys(DIVERSOS):[];
+  return [...new Set([...diasP,...diasS,...diasD])].sort();
 }
 
 function updFiltrosExt(){
@@ -1679,7 +1828,8 @@ function getExtFiltrados(){
   const pref=dia?dia:mes?ano+'-'+mes:ano;
   const diasP=Object.keys(PONTOS).filter(d=>d.startsWith(pref)).sort();
   const diasS=Object.keys(SITE).filter(d=>d.startsWith(pref)).sort();
-  return{diasP,diasS,ano,mes,dia,canal,pref};
+  const diasD=Object.keys(DIVERSOS).filter(d=>d.startsWith(pref)).sort();
+  return{diasP,diasS,diasD,ano,mes,dia,canal,pref};
 }
 
 function killChartsExt(){chartsExt.forEach(c=>c.destroy());chartsExt=[];}
@@ -1694,22 +1844,23 @@ function getAntExt(setor,anoRef){
 }
 
 function renderDashExt(){
-  const temDados=Object.keys(PONTOS).length>0||Object.keys(SITE).length>0;
+  const temDados=Object.keys(PONTOS).length>0||Object.keys(SITE).length>0||Object.keys(DIVERSOS).length>0;
   if(!temDados){
-    document.getElementById('dashextContent').innerHTML='<div class="empty"><i class="ti ti-chart-dots"></i><p>Importe dados de Pontos Externos e/ou Site Oficial para ver o dashboard</p></div>';
+    document.getElementById('dashextContent').innerHTML='<div class="empty"><i class="ti ti-chart-dots"></i><p>Importe dados de Pontos Externos, Site Oficial e/ou Faturamentos Diversos para ver o dashboard</p></div>';
     return;
   }
   updFiltrosExt();
   killChartsExt();
 
-  const{diasP,diasS,ano,mes,dia,canal,pref}=getExtFiltrados();
+  const{diasP,diasS,diasD,ano,mes,dia,canal,pref}=getExtFiltrados();
   const anoAnt=String(parseInt(ano)-1);
   const mesFmt=mes?ano+'-'+mes:null;
 
   // Faturamento por canal
   const fatP=canal===''||canal==='pontos'?diasP.reduce((a,d)=>a+(PONTOS[d]||0),0):0;
   const fatS=canal===''||canal==='site'?diasS.reduce((a,d)=>a+(SITE[d]||0),0):0;
-  const fatTotal=fatP+fatS;
+  const fatD=canal===''||canal==='diversos'?diasD.reduce((a,d)=>a+Object.values(DIVERSOS[d]||{}).reduce((x,v)=>x+v,0),0):0;
+  const fatTotal=fatP+fatS+fatD;
 
   // Label período
   let periLbl;
@@ -1804,6 +1955,7 @@ function renderDashExt(){
   }
   if(canal===''||canal==='pontos') kpisHtml+=kpiCanal('Pontos Externos',fatP,metaP,antP,'C0392B');
   if(canal===''||canal==='site')   kpisHtml+=kpiCanal('Site Oficial',fatS,metaS,antS,'0891B2');
+  if(canal===''||canal==='diversos') kpisHtml+=kpiCanal('Fat. Diversos',fatD,null,null,'7F4FC0');
   kpisHtml+='</div>';
 
   // Série temporal
@@ -1835,9 +1987,23 @@ function renderDashExt(){
     sDataS=[0,+fatS.toFixed(2)];
   }
 
+  // série DIVERSOS por período
+  let sDataD;
+  if(!mes&&!dia){
+    sDataD=MNomes.map((_,mi)=>{
+      const pf=ano+'-'+String(mi+1).padStart(2,'0');
+      return +Object.keys(DIVERSOS).filter(d=>d.startsWith(pf)).reduce((a,d)=>a+Object.values(DIVERSOS[d]).reduce((x,v)=>x+v,0),0).toFixed(2);
+    });
+  } else if(mes&&!dia){
+    const todosDias=[...new Set([...diasP,...diasS,...diasD])].sort();
+    sDataD=todosDias.map(d=>+Object.values(DIVERSOS[d]||{}).reduce((a,v)=>a+v,0).toFixed(2));
+  } else {
+    sDataD=[0,0,+fatD.toFixed(2)];
+  }
   const datasets=[];
   if(canal===''||canal==='pontos') datasets.push({label:'Pontos Externos',data:sDataP,backgroundColor:'rgba(192,57,43,0.8)',borderColor:'C0392B',borderRadius:4});
   if(canal===''||canal==='site')   datasets.push({label:'Site Oficial',data:sDataS,backgroundColor:'rgba(8,145,178,0.8)',borderColor:'0891B2',borderRadius:4});
+  if(canal===''||canal==='diversos') datasets.push({label:'Fat. Diversos',data:sDataD,backgroundColor:'rgba(127,79,192,0.8)',borderColor:'7F4FC0',borderRadius:4});
 
   const g1Lbl=!mes&&!dia?'Faturamento mensal — '+ano:mes&&!dia?'Faturamento diário — '+MNomes[parseInt(mes)-1]+' '+ano:'Faturamento por canal';
 
@@ -1854,11 +2020,12 @@ function renderDashExt(){
 }
 
 // ── INIT ─────────────────────────────────────────────────────────────
-function renderAll(){renderProds();renderAjustado();renderHistV();renderHistVI();renderMetas();renderAnterior();renderHistPontos();renderHistSite();updFiltros();updFiltrosExt();}
+function renderAll(){renderProds();renderAjustado();renderHistV();renderHistVI();renderMetas();renderAnterior();renderHistPontos();renderHistSite();renderHistDiversos();updFiltros();updFiltrosExt();}
 load();
 document.getElementById('dataVisit').value=hoje();
 document.getElementById('pontosData').value=hoje();
 document.getElementById('siteData').value=hoje();
+  document.getElementById('diversosData').value=hoje();
 renderAll();
 if(Object.keys(V).length)document.getElementById('btnPpt').style.display='flex';
 document.getElementById('brandSub').textContent=Object.keys(V).length?Object.keys(V).length+' dia(s) registrado(s)':'Sistema de gestão';
