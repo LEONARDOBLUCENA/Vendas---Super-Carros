@@ -429,6 +429,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="page-sub">Faturamento dos pontos de venda externos</div></div>
   </div>
   <div class="card">
+    <div class="card-title"><i class="ti ti-circle-plus"></i>Adicionar manualmente</div>
+    <div class="g3" style="align-items:flex-end">
+      <div class="field" style="margin:0"><label>Data</label><input type="date" id="pontosData"></div>
+      <div class="field" style="margin:0"><label>Valor líquido (R$)</label><input type="number" id="pontosVal" placeholder="0,00" min="0" step="0.01"></div>
+      <div><button class="btn btn-p" style="width:100%" onclick="addPontoManual()"><i class="ti ti-plus"></i>Adicionar</button></div>
+    </div>
+  </div>
+  <div class="card">
     <div class="card-title"><i class="ti ti-table-import"></i>Importar do Excel</div>
     <div class="alert alert-info"><i class="ti ti-info-circle"></i>
       <span>Cole com cabeçalho na linha 1 (ignorado). Formato:<br>
@@ -456,6 +464,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="topbar">
     <div><div class="page-title">Site Oficial</div>
     <div class="page-sub">Faturamento do site oficial</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-circle-plus"></i>Adicionar manualmente</div>
+    <div class="g3" style="align-items:flex-end">
+      <div class="field" style="margin:0"><label>Data</label><input type="date" id="siteData"></div>
+      <div class="field" style="margin:0"><label>Valor líquido (R$)</label><input type="number" id="siteVal" placeholder="0,00" min="0" step="0.01"></div>
+      <div><button class="btn btn-p" style="width:100%" onclick="addSiteManual()"><i class="ti ti-plus"></i>Adicionar</button></div>
+    </div>
   </div>
   <div class="card">
     <div class="card-title"><i class="ti ti-table-import"></i>Importar do Excel</div>
@@ -1497,6 +1513,24 @@ function gerarApres(){
 }
 
 // ── PONTOS EXTERNOS ──────────────────────────────────────────────────
+function addPontoManual(){
+  const d=document.getElementById('pontosData').value;
+  const v=parseFloat(document.getElementById('pontosVal').value)||0;
+  if(!d||!v){toast('Preencha data e valor','err');return;}
+  if(!PONTOS[d])PONTOS[d]=0;
+  PONTOS[d]+=v;
+  document.getElementById('pontosVal').value='';
+  save();renderHistPontos();updFiltrosExt();toast('Registro adicionado!');
+}
+function addSiteManual(){
+  const d=document.getElementById('siteData').value;
+  const v=parseFloat(document.getElementById('siteVal').value)||0;
+  if(!d||!v){toast('Preencha data e valor','err');return;}
+  if(!SITE[d])SITE[d]=0;
+  SITE[d]+=v;
+  document.getElementById('siteVal').value='';
+  save();renderHistSite();updFiltrosExt();toast('Registro adicionado!');
+}
 function impPontos(){
   const raw=document.getElementById('pontosTxt').value.trim();
   if(!raw){toast('Cole a tabela primeiro','err');return;}
@@ -1823,6 +1857,8 @@ function renderDashExt(){
 function renderAll(){renderProds();renderAjustado();renderHistV();renderHistVI();renderMetas();renderAnterior();renderHistPontos();renderHistSite();updFiltros();updFiltrosExt();}
 load();
 document.getElementById('dataVisit').value=hoje();
+document.getElementById('pontosData').value=hoje();
+document.getElementById('siteData').value=hoje();
 renderAll();
 if(Object.keys(V).length)document.getElementById('btnPpt').style.display='flex';
 document.getElementById('brandSub').textContent=Object.keys(V).length?Object.keys(V).length+' dia(s) registrado(s)':'Sistema de gestão';
