@@ -1180,7 +1180,8 @@ function renderDash(){
     updSetoresFiltro();
   }
   killCharts();
-  const ano=document.getElementById('fAno').value,mes=document.getElementById('fMes').value,dia=document.getElementById('fDia').value,setorF=document.getElementById('fSetor').value;
+  const ano=document.getElementById('fAno').value,dia=document.getElementById('fDia').value,setorF=document.getElementById('fSetor').value;
+  const mes=mesesSelecionados.length===1?mesesSelecionados[0]:null;
   const diasKey=getDias();
   if(!diasKey.length){document.getElementById('dashContent').innerHTML='<div class="empty"><i class="ti ti-filter-off"></i><p>Nenhum dado para o filtro selecionado</p></div>';return;}
   const itens=getItens(diasKey,setorF);
