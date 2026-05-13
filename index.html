@@ -136,9 +136,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="nav-btn" onclick="goTab('pontos')"><i class="ti ti-map-pin"></i>Pontos Externos</button>
     <button class="nav-btn" onclick="goTab('site')"><i class="ti ti-world"></i>Site Oficial</button>
     <button class="nav-btn" onclick="goTab('diversos')"><i class="ti ti-coins"></i>Faturamentos Diversos</button>
+    <div class="nav-sec">Parceiros</div>
+    <button class="nav-btn" onclick="goTab('parceiros')"><i class="ti ti-users-group"></i>Cadastro de Parceiros</button>
+    <button class="nav-btn" onclick="goTab('comandas')"><i class="ti ti-file-invoice"></i>Relatório de Comandas</button>
     <div class="nav-sec">Resultados</div>
     <button class="nav-btn" onclick="goTab('dash')"><i class="ti ti-chart-bar"></i>Dashboard</button>
     <button class="nav-btn" onclick="goTab('dashext')"><i class="ti ti-chart-dots"></i>Dashboard Externos</button>
+    <button class="nav-btn" onclick="goTab('dashparc')"><i class="ti ti-handshake"></i>Dashboard Parceiros</button>
   </nav>
   <div class="sidebar-foot">
     <button class="btn btn-sm" onclick="exportar()"><i class="ti ti-download"></i>Backup</button>
@@ -558,12 +562,124 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 
+<!-- CADASTRO DE PARCEIROS -->
+<div id="sc-parceiros" class="screen">
+  <div class="topbar">
+    <div><div class="page-title">Cadastro de Parceiros</div>
+    <div class="page-sub">Cadastre os nomes exatos como aparecem na coluna Produto do relatório</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-circle-plus"></i>Adicionar parceiro</div>
+    <div class="alert alert-info"><i class="ti ti-info-circle"></i>
+      <span>O <strong>nome do parceiro</strong> deve ser idêntico ao texto que aparece na coluna <strong>Produto</strong> do relatório de comandas.</span>
+    </div>
+    <div class="g2">
+      <div class="field"><label>Nome do parceiro (como aparece no Produto)</label>
+        <input id="inParcNome" placeholder="Ex: HOTEL MARINA" onkeydown="if(event.key==='Enter')addParceiro()">
+      </div>
+      <div class="field"><label>Nome de exibição (opcional)</label>
+        <input id="inParcLabel" placeholder="Ex: Hotel Marina (nome amigável)">
+      </div>
+    </div>
+    <div class="act">
+      <button class="btn btn-p btn-sm" onclick="addParceiro()"><i class="ti ti-plus"></i>Adicionar</button>
+      <button class="btn btn-sm" onclick="tog('parcImp')"><i class="ti ti-table-import"></i>Importar lista</button>
+    </div>
+  </div>
+  <div class="card" id="parcImp" style="display:none">
+    <div class="card-title"><i class="ti ti-table-import"></i>Importar lista do Excel</div>
+    <div class="alert alert-info"><i class="ti ti-info-circle"></i>
+      <span>Com cabeçalho na linha 1 (ignorado):<br>
+      <span style="font-family:'DM Mono',monospace;font-size:11px">Nome no Produto [tab] Nome de exibição</span><br>
+      O nome de exibição é opcional.</span>
+    </div>
+    <div class="field"><label>Tabela copiada</label>
+      <textarea id="parcImpTxt" placeholder="Nome no Produto	Nome exibição&#10;HOTEL MARINA	Hotel Marina&#10;AGENCIA XYZ	Agência XYZ"></textarea>
+    </div>
+    <div class="act">
+      <button class="btn btn-p btn-sm" onclick="impParceiros()"><i class="ti ti-check"></i>Importar</button>
+      <button class="btn btn-sm" onclick="tog('parcImp')">Cancelar</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-list"></i>Parceiros cadastrados <span id="parcCnt" style="color:var(--text3);font-weight:400;font-size:11px;margin-left:3px"></span></div>
+    <div id="parcEmpty" class="empty"><i class="ti ti-users-group"></i><p>Nenhum parceiro cadastrado ainda.</p></div>
+    <div id="parcWrap" style="display:none">
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Nome no Produto</th><th>Nome de exibição</th><th style="width:40px"></th></tr></thead>
+        <tbody id="parcBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<!-- RELATÓRIO DE COMANDAS -->
+<div id="sc-comandas" class="screen">
+  <div class="topbar">
+    <div><div class="page-title">Relatório de Comandas</div>
+    <div class="page-sub">Importe o relatório — o sistema identifica parceiros e calcula o valor total por comanda</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-table-import"></i>Importar relatório</div>
+    <div class="alert alert-info"><i class="ti ti-info-circle"></i>
+      <span>Cole com cabeçalho na linha 1 (ignorado). Colunas esperadas:<br>
+      <span style="font-family:'DM Mono',monospace;font-size:11px">ID Comanda · Nro.comanda · Dh.comanda · Dh.finalizado · Dh.cancelamento · Nro.item · ID · Produto · Und. · Qtd. · Vl.líquido</span><br>
+      O sistema calcula <strong>Valor Total = Qtd × Vl.líquido</strong> e agrupa por comanda para identificar o parceiro.</span>
+    </div>
+    <div class="field"><label>Tabela copiada do Excel (com cabeçalho)</label>
+      <textarea id="comandasTxt" style="min-height:130px" placeholder="ID Comanda	Nro. comanda	Dh.comanda	Dh.finalizado	Dh.cancelamento	Nro.item	ID	Produto	Und.	Qtd.	Vl.líquido"></textarea>
+    </div>
+    <div class="act">
+      <button class="btn btn-p" onclick="procComandas()"><i class="ti ti-cpu"></i>Processar</button>
+      <button class="btn btn-sm" onclick="limparComandas()" style="color:var(--red)"><i class="ti ti-trash"></i>Limpar dados</button>
+    </div>
+  </div>
+  <div class="card" id="prevComandas" style="display:none">
+    <div class="card-title"><i class="ti ti-eye"></i>Pré-visualização</div>
+    <div id="prevComandasAlerta"></div>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Data</th><th>ID Comanda</th><th>Parceiro</th><th>Itens</th><th>Valor Total Comanda</th></tr></thead>
+        <tbody id="prevComandasBody"></tbody>
+      </table>
+    </div>
+    <div class="sep"></div>
+    <div class="act">
+      <button class="btn btn-p" onclick="salvarComandas()"><i class="ti ti-device-floppy"></i>Salvar</button>
+      <button class="btn" onclick="document.getElementById('prevComandas').style.display='none'">Cancelar</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-history"></i>Comandas registradas
+      <div style="display:flex;gap:6px;margin-left:auto">
+        <span id="comandasResumo" style="font-size:12px;color:var(--text2);align-self:center"></span>
+        <button class="btn btn-sm" id="btnExportComandas" onclick="exportarComandasExcel()" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
+      </div>
+    </div>
+    <div id="histComandas"><div class="empty"><i class="ti ti-file-invoice"></i><p>Nenhuma comanda registrada ainda.</p></div></div>
+  </div>
+</div>
+
+<!-- DASHBOARD PARCEIROS -->
+<div id="sc-dashparc" class="screen">
+  <div class="topbar">
+    <div><div class="page-title">Dashboard Parceiros</div>
+    <div class="page-sub" id="dashparcSub">Análise de rentabilidade por parceiro</div></div>
+  </div>
+  <div class="fbar">
+    <div class="fbar-item"><label>Ano</label><select id="fParcAno" onchange="onFParcAno()"></select></div>
+    <div class="fbar-item"><label>Mês</label><select id="fParcMes" onchange="onFParcMes()"><option value="">Todos</option></select></div>
+    <div class="fbar-item"><label>Dia</label><select id="fParcDia" onchange="renderDashParc()"><option value="">Todos</option></select></div>
+    <div class="fbar-item"><label>Parceiro</label><select id="fParcNome" onchange="renderDashParc()"><option value="">Todos</option></select></div>
+  </div>
+  <div id="dashparcContent"><div class="empty"><i class="ti ti-handshake"></i><p>Importe o relatório de comandas para ver o dashboard</p></div></div>
+</div>
+
 </main>
-<div id="toast"></div>
 
 <script>
 // ── ESTADO ────────────────────────────────────────────────────────────
-let P={}, V={}, VI={}, METAS={}, ANTERIOR={}, PONTOS={}, SITE={}, DIVERSOS={}, pending=null, charts=[], chartsExt=[];
+let P={}, V={}, VI={}, METAS={}, ANTERIOR={}, PONTOS={}, SITE={}, DIVERSOS={}, PARCEIROS={}, COMANDAS=[], pending=null, pendingCom=null, charts=[], chartsExt=[], chartsParc=[];
 let _nid=1;
 function novaKey(){return 'p'+(++_nid);}
 
@@ -590,6 +706,8 @@ function save(){
     localStorage.setItem('bipontos',JSON.stringify(PONTOS));
     localStorage.setItem('bisite',JSON.stringify(SITE));
     localStorage.setItem('bidiversos',JSON.stringify(DIVERSOS));
+    localStorage.setItem('biparceiros',JSON.stringify(PARCEIROS));
+    localStorage.setItem('bicomandas',JSON.stringify(COMANDAS));
     localStorage.setItem('bi_nid',String(_nid));
   }catch(e){}
 }
@@ -597,10 +715,12 @@ function load(){
   try{
     const p=localStorage.getItem('bip'),v=localStorage.getItem('biv'),vi=localStorage.getItem('bivi'),
           m=localStorage.getItem('bimetas'),a=localStorage.getItem('biant'),nid=localStorage.getItem('bi_nid'),
-          po=localStorage.getItem('bipontos'),si=localStorage.getItem('bisite'),di=localStorage.getItem('bidiversos');
+          po=localStorage.getItem('bipontos'),si=localStorage.getItem('bisite'),di=localStorage.getItem('bidiversos'),
+          parc=localStorage.getItem('biparceiros'),com=localStorage.getItem('bicomandas');
     if(p)P=JSON.parse(p);if(v)V=JSON.parse(v);if(vi)VI=JSON.parse(vi);
     if(m)METAS=JSON.parse(m);if(a)ANTERIOR=JSON.parse(a);
     if(po)PONTOS=JSON.parse(po);if(si)SITE=JSON.parse(si);if(di)DIVERSOS=JSON.parse(di);
+    if(parc)PARCEIROS=JSON.parse(parc);if(com)COMANDAS=JSON.parse(com);
     if(nid)_nid=parseInt(nid)||1;
     let mig=false;
     Object.keys(P).forEach(k=>{if(!k.startsWith('p')){const nk=novaKey();P[nk]=P[k];delete P[k];mig=true;}});
@@ -608,7 +728,7 @@ function load(){
   }catch(e){}
 }
 function exportar(){
-  const b=new Blob([JSON.stringify({P,V,VI,METAS,ANTERIOR,PONTOS,SITE,DIVERSOS,_nid,ver:3,at:new Date().toISOString()},null,2)],{type:'application/json'});
+  const b=new Blob([JSON.stringify({P,V,VI,METAS,ANTERIOR,PONTOS,SITE,DIVERSOS,PARCEIROS,COMANDAS,_nid,ver:4,at:new Date().toISOString()},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='super-carros-'+hoje()+'.json';a.click();
   toast('Backup exportado!');
 }
@@ -620,6 +740,7 @@ function importar(e){
     if(d.P)P=d.P;if(d.V)V=d.V;if(d.VI)VI=d.VI;
     if(d.METAS)METAS=d.METAS;if(d.ANTERIOR)ANTERIOR=d.ANTERIOR;
     if(d.PONTOS)PONTOS=d.PONTOS;if(d.SITE)SITE=d.SITE;if(d.DIVERSOS)DIVERSOS=d.DIVERSOS;
+    if(d.PARCEIROS)PARCEIROS=d.PARCEIROS;if(d.COMANDAS)COMANDAS=d.COMANDAS;
     if(d._nid)_nid=d._nid;
     save();renderAll();toast('Backup restaurado!');
   }catch(_){toast('Arquivo inválido','err');}};
@@ -643,7 +764,7 @@ function parseData(s){
 function toast(msg,t){const el=document.getElementById('toast');el.textContent=msg;el.style.background=t==='err'?'#c0392b':t==='warn'?'#b45309':'#0e7d55';el.style.opacity='1';clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',2800);}
 function tog(id){const c=document.getElementById(id);c.style.display=c.style.display==='none'?'block':'none';}
 
-const NAV_IDS=['class','ajustado','vendas','visit','metas','anterior','pontos','site','diversos','dash','dashext'];
+const NAV_IDS=['class','ajustado','vendas','visit','metas','anterior','pontos','site','diversos','parceiros','comandas','dash','dashext','dashparc'];
 function goTab(t){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
@@ -656,6 +777,9 @@ function goTab(t){
   if(t==='site')renderHistSite();
   if(t==='diversos')renderHistDiversos();
   if(t==='dashext'){updFiltrosExt();renderDashExt();}
+  if(t==='parceiros')renderListaParceiros();
+  if(t==='comandas')renderHistComandas();
+  if(t==='dashparc'){updFiltrosParc();renderDashParc();}
   if(t==='metas')renderMetas();
   if(t==='anterior')renderAnterior();
 }
@@ -2022,8 +2146,338 @@ function renderDashExt(){
   chartsExt.push(cExt);
 }
 
+
+// ── PARCEIROS ─────────────────────────────────────────────────────────
+// PARCEIROS: { "HOTEL MARINA": { nome: "HOTEL MARINA", label: "Hotel Marina" } }
+// COMANDAS: [ { id, nro, data, parceiro, itens, valorTotal } ]
+
+function addParceiro(){
+  const nome=document.getElementById('inParcNome').value.trim().toUpperCase();
+  const label=document.getElementById('inParcLabel').value.trim()||nome;
+  if(!nome){toast('Preencha o nome do parceiro','err');return;}
+  PARCEIROS[nome]={nome,label};
+  document.getElementById('inParcNome').value='';document.getElementById('inParcLabel').value='';
+  save();renderListaParceiros();toast('"'+label+'" adicionado!');
+}
+function delParceiro(nome){
+  if(!confirm('Remover parceiro "'+PARCEIROS[nome].label+'"?'))return;
+  delete PARCEIROS[nome];save();renderListaParceiros();toast('Removido');
+}
+function impParceiros(){
+  const raw=document.getElementById('parcImpTxt').value.trim();
+  if(!raw){toast('Cole a tabela primeiro','err');return;}
+  const lines=raw.split('\n').filter(l=>l.trim());
+  const primeira=(lines[0]||'').split('\t');
+  // detecta cabeçalho: se primeiro campo não for um nome de parceiro válido
+  const startIdx=primeira[0]&&primeira[0].length>1&&!/^(nome|produto|parceiro)/i.test(primeira[0])?0:1;
+  let ok=0;
+  lines.slice(startIdx).forEach(l=>{
+    const p=l.split('\t');if(!p[0])return;
+    const nome=p[0].trim().toUpperCase();
+    const label=(p[1]||'').trim()||nome;
+    if(nome){PARCEIROS[nome]={nome,label};ok++;}
+  });
+  save();renderListaParceiros();tog('parcImp');document.getElementById('parcImpTxt').value='';
+  toast(ok+' parceiro(s) importado(s)!');
+}
+function renderListaParceiros(){
+  const arr=Object.values(PARCEIROS).sort((a,b)=>a.label.localeCompare(b.label));
+  document.getElementById('parcCnt').textContent=arr.length?'('+arr.length+')':'';
+  const em=document.getElementById('parcEmpty'),wr=document.getElementById('parcWrap');
+  if(!arr.length){em.style.display='block';wr.style.display='none';return;}
+  em.style.display='none';wr.style.display='block';
+  const tb=document.getElementById('parcBody');tb.innerHTML='';
+  arr.forEach(p=>{
+    const tr=document.createElement('tr');
+    const tdN=document.createElement('td');tdN.style.fontFamily="'DM Mono',monospace";tdN.style.fontSize='12px';tdN.textContent=p.nome;
+    const tdL=document.createElement('td');tdL.textContent=p.label;
+    const tdA=document.createElement('td');
+    const btn=document.createElement('button');btn.className='del-btn';btn.innerHTML='×';btn.title='Remover';
+    btn.dataset.key=p.nome;
+    btn.addEventListener('click',function(){delParceiro(this.dataset.key);});
+    tdA.appendChild(btn);
+    tr.appendChild(tdN);tr.appendChild(tdL);tr.appendChild(tdA);tb.appendChild(tr);
+  });
+}
+
+// ── RELATÓRIO DE COMANDAS ─────────────────────────────────────────────
+function procComandas(){
+  const raw=document.getElementById('comandasTxt').value.trim();
+  if(!raw){toast('Cole o relatório primeiro','err');return;}
+  const lines=raw.split('\n').map(l=>l.split('\t'));
+  const dados=lines.slice(1).filter(r=>r.length>=11&&(r[0]||'').trim());
+  if(!dados.length){toast('Nenhuma linha encontrada após o cabeçalho','err');return;}
+
+  // Colunas: 0=ID Comanda, 1=Nro.comanda, 2=Dh.comanda, 3=Dh.finalizado,
+  //          4=Dh.cancelamento, 5=Nro.item, 6=ID, 7=Produto, 8=Und., 9=Qtd., 10=Vl.líquido
+
+  // Passo 1: monta mapa de comandas com todos os itens
+  const mapComandas={};
+  dados.forEach(r=>{
+    const idCom=(r[0]||'').trim();
+    if(!idCom)return;
+    const dtRaw=(r[2]||r[3]||'').trim();
+    const data=parseData(dtRaw.slice(0,10))||dtRaw.slice(0,10);
+    const produto=(r[7]||'').trim().toUpperCase();
+    const qtd=parseN(r[9]);
+    const vlLiq=parseN(r[10]);
+    const valTotal=qtd*vlLiq;
+    if(!mapComandas[idCom])mapComandas[idCom]={id:idCom,nro:(r[1]||'').trim(),data,itens:[],parceiro:null,valorTotal:0};
+    mapComandas[idCom].itens.push({produto,qtd,vlLiq,valTotal});
+    mapComandas[idCom].valorTotal+=valTotal;
+    // verifica se este produto é um parceiro
+    if(PARCEIROS[produto]&&!mapComandas[idCom].parceiro){
+      mapComandas[idCom].parceiro=produto;
+    }
+  });
+
+  const todas=Object.values(mapComandas);
+  const comParceiro=todas.filter(c=>c.parceiro);
+  const semParceiro=todas.filter(c=>!c.parceiro);
+
+  pendingCom=comParceiro;
+
+  // Preview
+  const tb=document.getElementById('prevComandasBody');tb.innerHTML='';
+  let totGeral=0;
+  comParceiro.slice(0,50).forEach(com=>{
+    const label=PARCEIROS[com.parceiro]?PARCEIROS[com.parceiro].label:com.parceiro;
+    totGeral+=com.valorTotal;
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+com.data+'</td>'
+      +'<td style="font-family:monospace;font-size:12px">'+com.id+'</td>'
+      +'<td><b>'+label+'</b></td>'
+      +'<td style="color:var(--text2)">'+com.itens.length+'</td>'
+      +'<td style="font-weight:600">'+fRF(com.valorTotal)+'</td>';
+    tb.appendChild(tr);
+  });
+  if(comParceiro.length>50){
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td colspan="5" style="color:var(--text3);font-size:12px;text-align:center">...e mais '+(comParceiro.length-50)+' comandas</td>';
+    tb.appendChild(tr);
+  }
+
+  const al=document.getElementById('prevComandasAlerta');
+  const pcts=comParceiro.length>0?((comParceiro.length/todas.length)*100).toFixed(1):0;
+  let alertHtml='<div class="alert alert-ok"><i class="ti ti-circle-check"></i><span>'
+    +'<b>'+comParceiro.length+'</b> comanda(s) com parceiro identificado de '+todas.length+' total ('+pcts+'%)</span></div>';
+  if(semParceiro.length>0){
+    alertHtml+='<div class="alert alert-warn"><i class="ti ti-info-circle"></i><span>'
+      +'<b>'+semParceiro.length+'</b> comanda(s) sem parceiro (não serão importadas). '
+      +'Cadastre mais parceiros na aba Parceiros se necessário.</span></div>';
+  }
+  al.innerHTML=alertHtml;
+  document.getElementById('prevComandas').style.display='block';
+  document.getElementById('prevComandas').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function salvarComandas(){
+  if(!pendingCom)return;
+  // Adiciona as novas comandas evitando duplicatas por ID
+  const idsExist=new Set(COMANDAS.map(c=>c.id));
+  let novos=0;
+  pendingCom.forEach(c=>{
+    if(!idsExist.has(c.id)){COMANDAS.push(c);novos++;}
+  });
+  pendingCom=null;
+  document.getElementById('prevComandas').style.display='none';
+  document.getElementById('comandasTxt').value='';
+  save();renderHistComandas();updFiltrosParc();
+  toast(novos+' comanda(s) salvas!');
+}
+
+function limparComandas(){
+  if(!confirm('Apagar TODAS as comandas? Esta ação não pode ser desfeita.'))return;
+  COMANDAS=[];save();renderHistComandas();updFiltrosParc();renderDashParc();toast('Dados apagados');
+}
+
+function renderHistComandas(){
+  const el=document.getElementById('histComandas');
+  const res=document.getElementById('comandasResumo');
+  const btn=document.getElementById('btnExportComandas');
+  if(!COMANDAS.length){
+    el.innerHTML='<div class="empty"><i class="ti ti-file-invoice"></i><p>Nenhuma comanda registrada ainda.</p></div>';
+    if(res)res.textContent='';if(btn)btn.style.display='none';return;
+  }
+  const totalVal=COMANDAS.reduce((a,c)=>a+c.valorTotal,0);
+  if(res)res.textContent=COMANDAS.length+' comandas · '+fRF(totalVal);
+  if(btn)btn.style.display='';
+  // agrupa por parceiro para exibição resumida
+  const byParc={};
+  COMANDAS.forEach(c=>{
+    const label=PARCEIROS[c.parceiro]?PARCEIROS[c.parceiro].label:c.parceiro;
+    if(!byParc[label])byParc[label]={qtd:0,val:0};
+    byParc[label].qtd++;byParc[label].val+=c.valorTotal;
+  });
+  const parcs=Object.entries(byParc).sort((a,b)=>b[1].val-a[1].val);
+  let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Parceiro</th><th>Comandas</th><th>Valor total</th></tr></thead><tbody>';
+  parcs.forEach(([label,d])=>{
+    html+='<tr><td><b>'+label+'</b></td><td>'+d.qtd+'</td><td style="font-weight:500">'+fRF(d.val)+'</td></tr>';
+  });
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+function exportarComandasExcel(){
+  const rows=[['Data','ID Comanda','Nro.Comanda','Parceiro','Itens','Valor Total']];
+  COMANDAS.forEach(c=>{
+    const label=PARCEIROS[c.parceiro]?PARCEIROS[c.parceiro].label:c.parceiro;
+    rows.push([c.data,c.id,c.nro,label,c.itens.length,c.valorTotal.toFixed(2).replace('.',',')]);
+  });
+  exportarExcel(rows,'comandas-parceiros-'+hoje()+'.xls');
+}
+
+// ── DASHBOARD PARCEIROS ───────────────────────────────────────────────
+function updFiltrosParc(){
+  if(!COMANDAS.length)return;
+  const anos=[...new Set(COMANDAS.map(c=>c.data.slice(0,4)))].sort();
+  const sA=document.getElementById('fParcAno'),cur=sA?sA.value:'';
+  if(!sA)return;
+  sA.innerHTML=anos.map(a=>'<option value="'+a+'">'+a+'</option>').join('');
+  if(anos.includes(cur))sA.value=cur;else sA.value=anos[anos.length-1];
+  updFiltrosParcMesDia();
+  // parceiros disponíveis
+  const parcSet=new Set(COMANDAS.map(c=>c.parceiro).filter(Boolean));
+  const sel=document.getElementById('fParcNome'),curP=sel?sel.value:'';
+  if(!sel)return;
+  sel.innerHTML='<option value="">Todos</option>';
+  [...parcSet].sort().forEach(p=>{
+    const label=PARCEIROS[p]?PARCEIROS[p].label:p;
+    const o=document.createElement('option');o.value=p;o.textContent=label;sel.appendChild(o);
+  });
+  if(curP)sel.value=curP;
+}
+function updFiltrosParcMesDia(){
+  const ano=document.getElementById('fParcAno').value;
+  const comsAno=COMANDAS.filter(c=>c.data.startsWith(ano));
+  const meses=[...new Set(comsAno.map(c=>c.data.slice(5,7)))].sort();
+  const sM=document.getElementById('fParcMes'),curM=sM.value;
+  sM.innerHTML='<option value="">Todos</option>';
+  meses.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=MNomes[parseInt(m)-1];sM.appendChild(o);});
+  if(meses.includes(curM))sM.value=curM;
+  updFiltrosParcDia();
+}
+function updFiltrosParcDia(){
+  const ano=document.getElementById('fParcAno').value;
+  const mes=document.getElementById('fParcMes').value;
+  const pref=mes?ano+'-'+mes:ano;
+  const dias=[...new Set(COMANDAS.filter(c=>c.data.startsWith(pref)).map(c=>c.data))].sort();
+  const sD=document.getElementById('fParcDia'),curD=sD.value;
+  sD.innerHTML='<option value="">Todos</option>';
+  dias.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4);sD.appendChild(o);});
+  if(dias.includes(curD))sD.value=curD;
+}
+function onFParcAno(){updFiltrosParcMesDia();document.getElementById('fParcMes').value='';document.getElementById('fParcDia').value='';renderDashParc();}
+function onFParcMes(){updFiltrosParcDia();document.getElementById('fParcDia').value='';renderDashParc();}
+
+function getComandasFiltradas(){
+  const ano=document.getElementById('fParcAno').value;
+  const mes=document.getElementById('fParcMes').value;
+  const dia=document.getElementById('fParcDia').value;
+  const parcF=document.getElementById('fParcNome').value;
+  const pref=dia?dia:mes?ano+'-'+mes:ano;
+  return COMANDAS.filter(c=>c.data.startsWith(pref)&&(!parcF||c.parceiro===parcF));
+}
+
+function killChartsParc(){chartsParc.forEach(c=>c.destroy());chartsParc=[];}
+
+function renderDashParc(){
+  if(!COMANDAS.length){
+    document.getElementById('dashparcContent').innerHTML='<div class="empty"><i class="ti ti-handshake"></i><p>Importe o relatório de comandas para ver o dashboard</p></div>';
+    return;
+  }
+  updFiltrosParc();killChartsParc();
+
+  const ano=document.getElementById('fParcAno').value;
+  const mes=document.getElementById('fParcMes').value;
+  const dia=document.getElementById('fParcDia').value;
+  const parcF=document.getElementById('fParcNome').value;
+  const coms=getComandasFiltradas();
+
+  if(!coms.length){
+    document.getElementById('dashparcContent').innerHTML='<div class="empty"><i class="ti ti-filter-off"></i><p>Nenhum dado para o filtro selecionado</p></div>';
+    return;
+  }
+
+  const totalVal=coms.reduce((a,c)=>a+c.valorTotal,0);
+  const totalComs=coms.length;
+
+  // agrupa por parceiro
+  const byParc={};
+  coms.forEach(c=>{
+    const label=PARCEIROS[c.parceiro]?PARCEIROS[c.parceiro].label:(c.parceiro||'Sem parceiro');
+    if(!byParc[label])byParc[label]={qtd:0,val:0,key:c.parceiro};
+    byParc[label].qtd++;byParc[label].val+=c.valorTotal;
+  });
+  const parcs=Object.entries(byParc).sort((a,b)=>b[1].val-a[1].val);
+
+  // label período
+  let periLbl;
+  if(dia)periLbl=dia.slice(8)+'/'+dia.slice(5,7)+'/'+dia.slice(0,4);
+  else if(mes)periLbl=MNomes[parseInt(mes)-1]+' '+ano;
+  else periLbl=ano;
+  if(parcF&&PARCEIROS[parcF])periLbl+=' · '+PARCEIROS[parcF].label;
+
+  document.getElementById('dashparcSub').textContent=periLbl+' · '+totalComs+' comanda(s)';
+
+  // série temporal
+  const isDark=matchMedia('(prefers-color-scheme:dark)').matches;
+  const gc=isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.05)',tc=isDark?'#888':'#999';
+  const bO={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:10,family:"'DM Sans'"}}},
+            y:{grid:{color:gc},ticks:{color:tc,font:{size:10,family:"'DM Sans'"},callback:function(v){return fR(v);}}}}};
+
+  // tabela de parceiros
+  const rows=parcs.map(([label,d])=>{
+    const pct=totalVal?(d.val/totalVal*100).toFixed(1):0;
+    const tktMedio=d.qtd?fRF(d.val/d.qtd):'—';
+    const c=cor(label);
+    return '<tr>'
+      +'<td><span class="badge" style="background:'+c+'18;color:'+c+';border:1px solid '+c+'28">'+label+'</span></td>'
+      +'<td style="font-weight:500">'+fRF(d.val)+'</td>'
+      +'<td>'+d.qtd+'</td>'
+      +'<td>'+tktMedio+'</td>'
+      +'<td><div style="display:flex;align-items:center;gap:7px"><div class="bar-bg"><div class="bar-fill" style="width:'+pct+'%;background:'+c+'"></div></div><span style="font-size:11px;color:var(--text2);min-width:34px">'+pct+'%</span></div></td>'
+      +'</tr>';
+  }).join('');
+
+  document.getElementById('dashparcContent').innerHTML=
+    '<div class="kpi-grid">'
+    +'<div class="kpi"><div class="kpi-lbl">Faturamento total</div><div class="kpi-val">'+fR(totalVal)+'</div><div class="kpi-sub">'+periLbl+'</div></div>'
+    +'<div class="kpi"><div class="kpi-lbl">Comandas</div><div class="kpi-val">'+totalComs+'</div><div class="kpi-sub">com parceiro identificado</div></div>'
+    +'<div class="kpi"><div class="kpi-lbl">Ticket médio / comanda</div><div class="kpi-val">'+fR(totalVal/totalComs)+'</div><div class="kpi-sub">valor médio por comanda</div></div>'
+    +'<div class="kpi"><div class="kpi-lbl">Parceiros ativos</div><div class="kpi-val">'+parcs.length+'</div><div class="kpi-sub">no período</div></div>'
+    +'</div>'
+
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px">'
+    +'<div class="card" style="margin:0"><div class="card-title"><i class="ti ti-chart-bar"></i>Faturamento por parceiro</div>'
+    +'<div class="legend">'+parcs.slice(0,8).map(([l])=>'<span class="leg"><span class="leg-dot" style="background:'+cor(l)+'"></span>'+l+'</span>').join('')+'</div>'
+    +'<div style="position:relative;height:'+Math.max(160,parcs.length*42+50)+'px"><canvas id="cParcBar"></canvas></div></div>'
+
+    +'<div class="card" style="margin:0"><div class="card-title"><i class="ti ti-chart-donut"></i>Participação dos parceiros</div>'
+    +'<div style="position:relative;height:'+Math.max(200,parcs.length*28+80)+'px"><canvas id="cParcDona"></canvas></div></div>'
+    +'</div>'
+
+    +'<div class="card"><div class="card-title"><i class="ti ti-table"></i>Detalhamento por parceiro</div>'
+    +'<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Parceiro</th><th>Faturamento</th><th>Comandas</th><th>Ticket médio</th><th>Participação</th></tr></thead>'
+    +'<tbody>'+rows+'</tbody></table></div></div>';
+
+  // Gráfico barras
+  const cParcBar=new Chart(document.getElementById('cParcBar'),{type:'bar',indexAxis:'y',
+    data:{labels:parcs.map(([l])=>l),datasets:[{data:parcs.map(([,d])=>+d.val.toFixed(2)),backgroundColor:parcs.map(([l])=>cor(l)),borderRadius:4}]},
+    options:{...bO,scales:{x:{...bO.scales.x,ticks:{...bO.scales.x.ticks,callback:function(v){return fR(v);}}},y:bO.scales.y}}
+  });
+  chartsParc.push(cParcBar);
+
+  // Gráfico donut
+  const cParcDona=new Chart(document.getElementById('cParcDona'),{type:'doughnut',
+    data:{labels:parcs.map(([l])=>l),datasets:[{data:parcs.map(([,d])=>+d.val.toFixed(2)),backgroundColor:parcs.map(([l])=>cor(l)),borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{color:tc,font:{size:10,family:"'DM Sans'"},boxWidth:10}}}}
+  });
+  chartsParc.push(cParcDona);
+}
 // ── INIT ─────────────────────────────────────────────────────────────
-function renderAll(){renderProds();renderAjustado();renderHistV();renderHistVI();renderMetas();renderAnterior();renderHistPontos();renderHistSite();renderHistDiversos();updFiltros();updFiltrosExt();}
+function renderAll(){renderProds();renderAjustado();renderHistV();renderHistVI();renderMetas();renderAnterior();renderHistPontos();renderHistSite();renderHistDiversos();renderListaParceiros();renderHistComandas();updFiltros();updFiltrosExt();updFiltrosParc();}
 load();
 document.getElementById('dataVisit').value=hoje();
 document.getElementById('pontosData').value=hoje();
