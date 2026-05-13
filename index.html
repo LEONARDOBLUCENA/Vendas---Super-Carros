@@ -1030,6 +1030,9 @@ function limparAnt(){
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────
+// ── MULTI-PICKER DE MESES ──────────────────────────────────────────
+let mesesSelecionados=[]; // array de "MM" ex: ["01","02","03"]
+
 function updFiltros(){
   const dias=Object.keys(V).sort();if(!dias.length)return;
   const anos=[...new Set(dias.map(d=>d.slice(0,4)))];
@@ -1038,8 +1041,6 @@ function updFiltros(){
   if(anos.includes(cur))sA.value=cur;else sA.value=anos[anos.length-1];
   updMesDia();updSetoresFiltro();
 }
-// ── MULTI-PICKER DE MESES ──────────────────────────────────────────
-let mesesSelecionados=[]; // array de "MM" ex: ["01","02","03"]
 
 function updMesDia(){
   const ano=document.getElementById('fAno').value;
@@ -1167,7 +1168,18 @@ function killCharts(){charts.forEach(c=>c.destroy());charts=[];}
 
 function renderDash(){
   if(!Object.keys(V).length)return;
-  updFiltros();killCharts();
+  // Atualiza apenas anos e setores, sem recriar o picker de meses
+  if(Object.keys(V).length){
+    const dias=Object.keys(V).sort();
+    const anos=[...new Set(dias.map(d=>d.slice(0,4)))];
+    const sA=document.getElementById('fAno');
+    if(sA&&!sA.value){
+      sA.innerHTML=anos.map(a=>`<option value="${a}">${a}</option>`).join('');
+      sA.value=anos[anos.length-1];
+    }
+    updSetoresFiltro();
+  }
+  killCharts();
   const ano=document.getElementById('fAno').value,mes=document.getElementById('fMes').value,dia=document.getElementById('fDia').value,setorF=document.getElementById('fSetor').value;
   const diasKey=getDias();
   if(!diasKey.length){document.getElementById('dashContent').innerHTML='<div class="empty"><i class="ti ti-filter-off"></i><p>Nenhum dado para o filtro selecionado</p></div>';return;}
