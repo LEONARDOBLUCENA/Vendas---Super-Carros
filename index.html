@@ -733,9 +733,22 @@ function save(){
     localStorage.setItem('bisite',JSON.stringify(SITE));
     localStorage.setItem('bidiversos',JSON.stringify(DIVERSOS));
     localStorage.setItem('biparceiros',JSON.stringify(PARCEIROS));
-    localStorage.setItem('bicomandas',JSON.stringify(COMANDAS));
+    // salva comandas de forma compacta para economizar espaço no localStorage
+    const _comsCompact=COMANDAS.map(function(c){
+      return{id:c.id,nro:c.nro,data:c.data,parceiro:c.parceiro,valorTotal:c.valorTotal,nItens:c.itens?c.itens.length:0};
+    });
+    localStorage.setItem('bicomandas',JSON.stringify(_comsCompact));
     localStorage.setItem('bi_nid',String(_nid));
-  }catch(e){}
+  }catch(e){
+    if(e.name==='QuotaExceededError'||e.code===22){
+      // localStorage cheio — tenta salvar sem os itens detalhados das comandas
+      try{
+        const comsCompact=COMANDAS.map(function(c){return{id:c.id,nro:c.nro,data:c.data,parceiro:c.parceiro,valorTotal:c.valorTotal,itens:c.itens.length};});
+        localStorage.setItem('bicomandas',JSON.stringify(comsCompact));
+        console.warn('BI: comandas salvas em modo compacto por limite de storage');
+      }catch(e2){console.error('BI: erro ao salvar comandas',e2);}
+    }
+  }
 }
 function load(){
   try{
@@ -746,12 +759,32 @@ function load(){
     if(p)P=JSON.parse(p);if(v)V=JSON.parse(v);if(vi)VI=JSON.parse(vi);
     if(m)METAS=JSON.parse(m);if(a)ANTERIOR=JSON.parse(a);if(fu)FUNCS=JSON.parse(fu);
     if(po)PONTOS=JSON.parse(po);if(si)SITE=JSON.parse(si);if(di)DIVERSOS=JSON.parse(di);
-    if(parc)PARCEIROS=JSON.parse(parc);if(com)COMANDAS=JSON.parse(com);
+    if(parc)PARCEIROS=JSON.parse(parc);
+    if(com){
+      const _coms=JSON.parse(com);
+      // compatibilidade: converte formato compacto (nItens) para formato completo
+      COMANDAS=_coms.map(function(c){
+        return{
+          id:c.id,nro:c.nro||'',data:c.data,parceiro:c.parceiro,
+          valorTotal:c.valorTotal,
+          itens:c.itens||Array(c.nItens||0).fill({produto:'',qtd:0,vlLiq:0,valTotal:0})
+        };
+      });
+    }
     if(nid)_nid=parseInt(nid)||1;
     let mig=false;
     Object.keys(P).forEach(k=>{if(!k.startsWith('p')){const nk=novaKey();P[nk]=P[k];delete P[k];mig=true;}});
     if(mig)save();
-  }catch(e){}
+  }catch(e){
+    if(e.name==='QuotaExceededError'||e.code===22){
+      // localStorage cheio — tenta salvar sem os itens detalhados das comandas
+      try{
+        const comsCompact=COMANDAS.map(function(c){return{id:c.id,nro:c.nro,data:c.data,parceiro:c.parceiro,valorTotal:c.valorTotal,itens:c.itens.length};});
+        localStorage.setItem('bicomandas',JSON.stringify(comsCompact));
+        console.warn('BI: comandas salvas em modo compacto por limite de storage');
+      }catch(e2){console.error('BI: erro ao salvar comandas',e2);}
+    }
+  }
 }
 function exportar(){
   const b=new Blob([JSON.stringify({P,V,VI,METAS,ANTERIOR,PONTOS,SITE,DIVERSOS,FUNCS,PARCEIROS,COMANDAS,_nid,ver:5,at:new Date().toISOString()},null,2)],{type:'application/json'});
