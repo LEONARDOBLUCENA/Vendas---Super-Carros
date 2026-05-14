@@ -1423,7 +1423,7 @@ function updSetoresFiltro(){
   // aplica setorAdj para garantir Carona/Direção → Passeios no filtro
   Object.values(V).forEach(dia=>dia.forEach(i=>{
     const s=setorAdj(i.setor);
-    if(s!=='(não classificado)')setoresSet.add(s);
+    if(!SETORES_EXCLUIR_DASH.includes(s))setoresSet.add(s);
   }));
   const setores=[...setoresSet].sort();
   const sel=document.getElementById('fSetor'),cur=sel.value;
@@ -1444,11 +1444,12 @@ function getDias(){
   }
   return Object.keys(V).filter(d=>d.startsWith(ano)).sort();
 }
+const SETORES_EXCLUIR_DASH=['(não classificado)','Eventos'];
 function getItens(diasKey,setorF){
   const itens=[];
   diasKey.forEach(d=>V[d].forEach(i=>{
-    const s=setorAdj(i.setor); // normaliza sempre
-    if(s==='(não classificado)')return;
+    const s=setorAdj(i.setor);
+    if(SETORES_EXCLUIR_DASH.includes(s))return;
     if(!setorF||setorF===S_TOTAL||s===setorF)itens.push({...i,setor:s,data:d});
   }));
   return itens;
@@ -1683,7 +1684,7 @@ function renderDash(){
   const gc=isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.05)',tc=isDark?'#888':'#999';
   const bO={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:11,family:"'DM Sans'"}}},y:{grid:{color:gc},ticks:{color:tc,font:{size:11,family:"'DM Sans'"}}}}};
 
-  const rows=setores.map(s=>{
+  const rowsArr=setores.map(s=>{
     const d=bySe[s];const pct=tLiq?(d.liq/tLiq*100).toFixed(1):0;const tck=tVisit?fRF(d.liq/tVisit):'—';const c=cor(s);
     const mKey=mesesSelecionados.length===1?getMeta(s,mesFmt):null;
     const aKey=mesesSelecionados.length===1?getAntMes(s,`${anoAnt}-${mesesSelecionados[0]}`):getAnt(s,anoAnt);
@@ -1693,7 +1694,15 @@ function renderDash(){
       <td>${fRF(d.liq)}${metaStr}${antStr}</td>
       <td><div style="display:flex;align-items:center;gap:7px"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${c}"></div></div><span style="font-size:11px;color:var(--text2);min-width:34px">${pct}%</span></div></td>
       <td>${tck}</td></tr>`;
-  }).join('');
+  });
+  // Linha de TOTAL
+  const totalTicket=tVisit?fRF(tLiq/tVisit):'—';
+  rowsArr.push(`<tr style="background:var(--surface2);font-weight:600">
+    <td><span style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Total</span></td>
+    <td>${fRF(tLiq)}</td>
+    <td><div style="display:flex;align-items:center;gap:7px"><div class="bar-bg"><div class="bar-fill" style="width:100%;background:var(--accent)"></div></div><span style="font-size:11px;color:var(--text2);min-width:34px">100%</span></div></td>
+    <td>${totalTicket}</td></tr>`);
+  const rows=rowsArr.join('');
 
   // KPI Funcionários e Eficiência
   // KPI Funcionários + Eficiência — sempre calcula independente do filtro
