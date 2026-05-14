@@ -131,6 +131,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="nav-btn" onclick="goTab('vendas')"><i class="ti ti-clipboard-list"></i>Relatório de vendas</button>
     <button class="nav-btn" onclick="goTab('visit')"><i class="ti ti-users"></i>Visitantes</button>
     <button class="nav-btn" onclick="goTab('metas')"><i class="ti ti-target"></i>Metas</button>
+    <button class="nav-btn" onclick="goTab('funcs')"><i class="ti ti-id-badge"></i>Funcionários</button>
     <div class="nav-sec">Outros Faturamentos</div>
     <button class="nav-btn" onclick="goTab('pontos')"><i class="ti ti-map-pin"></i>Pontos Externos</button>
     <button class="nav-btn" onclick="goTab('site')"><i class="ti ti-world"></i>Site Oficial</button>
@@ -299,6 +300,30 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
     </div>
     <div id="histVisit"><div class="empty"><i class="ti ti-users"></i><p>Nenhum registro ainda.</p></div></div>
+  </div>
+</div>
+
+<!-- FUNCIONÁRIOS -->
+<div id="sc-funcs" class="screen">
+  <div class="topbar">
+    <div><div class="page-title">Funcionários</div>
+    <div class="page-sub">Cadastre o número de funcionários por mês para calcular eficiência no dashboard</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-circle-plus"></i>Adicionar</div>
+    <div class="g3" style="align-items:flex-end">
+      <div class="field" style="margin:0"><label>Mês/Ano</label><input type="month" id="funcsAnoMes"></div>
+      <div class="field" style="margin:0"><label>Nº de funcionários</label><input type="number" id="funcsQtd" placeholder="Ex: 42" min="1" step="1"></div>
+      <div><button class="btn btn-p" style="width:100%" onclick="addFunc()"><i class="ti ti-plus"></i>Adicionar</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-list"></i>Histórico
+      <div style="display:flex;gap:6px;margin-left:auto">
+        <button class="btn btn-sm" id="btnLimparFuncs" onclick="limparFuncs()" style="display:none;color:var(--red)"><i class="ti ti-trash"></i>Limpar</button>
+      </div>
+    </div>
+    <div id="funcsWrap"><div class="empty"><i class="ti ti-id-badge"></i><p>Nenhum registro ainda.</p></div></div>
   </div>
 </div>
 
@@ -678,7 +703,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <script>
 // ── ESTADO ────────────────────────────────────────────────────────────
-let P={}, V={}, VI={}, METAS={}, ANTERIOR={}, PONTOS={}, SITE={}, DIVERSOS={}, PARCEIROS={}, COMANDAS=[], pending=null, pendingCom=null, charts=[], chartsExt=[], chartsParc=[];
+let P={}, V={}, VI={}, METAS={}, ANTERIOR={}, PONTOS={}, SITE={}, DIVERSOS={}, FUNCS={}, PARCEIROS={}, COMANDAS=[], pending=null, pendingCom=null, charts=[], chartsExt=[], chartsParc=[];
 let _nid=1;
 function novaKey(){return 'p'+(++_nid);}
 
@@ -701,6 +726,7 @@ function save(){
     localStorage.setItem('biv',JSON.stringify(V));
     localStorage.setItem('bivi',JSON.stringify(VI));
     localStorage.setItem('bimetas',JSON.stringify(METAS));
+    localStorage.setItem('bifuncs',JSON.stringify(FUNCS));
     localStorage.setItem('biant',JSON.stringify(ANTERIOR));
     localStorage.setItem('bipontos',JSON.stringify(PONTOS));
     localStorage.setItem('bisite',JSON.stringify(SITE));
@@ -713,11 +739,11 @@ function save(){
 function load(){
   try{
     const p=localStorage.getItem('bip'),v=localStorage.getItem('biv'),vi=localStorage.getItem('bivi'),
-          m=localStorage.getItem('bimetas'),a=localStorage.getItem('biant'),nid=localStorage.getItem('bi_nid'),
+          m=localStorage.getItem('bimetas'),a=localStorage.getItem('biant'),fu=localStorage.getItem('bifuncs'),nid=localStorage.getItem('bi_nid'),
           po=localStorage.getItem('bipontos'),si=localStorage.getItem('bisite'),di=localStorage.getItem('bidiversos'),
           parc=localStorage.getItem('biparceiros'),com=localStorage.getItem('bicomandas');
     if(p)P=JSON.parse(p);if(v)V=JSON.parse(v);if(vi)VI=JSON.parse(vi);
-    if(m)METAS=JSON.parse(m);if(a)ANTERIOR=JSON.parse(a);
+    if(m)METAS=JSON.parse(m);if(a)ANTERIOR=JSON.parse(a);if(fu)FUNCS=JSON.parse(fu);
     if(po)PONTOS=JSON.parse(po);if(si)SITE=JSON.parse(si);if(di)DIVERSOS=JSON.parse(di);
     if(parc)PARCEIROS=JSON.parse(parc);if(com)COMANDAS=JSON.parse(com);
     if(nid)_nid=parseInt(nid)||1;
@@ -727,7 +753,7 @@ function load(){
   }catch(e){}
 }
 function exportar(){
-  const b=new Blob([JSON.stringify({P,V,VI,METAS,ANTERIOR,PONTOS,SITE,DIVERSOS,PARCEIROS,COMANDAS,_nid,ver:4,at:new Date().toISOString()},null,2)],{type:'application/json'});
+  const b=new Blob([JSON.stringify({P,V,VI,METAS,ANTERIOR,PONTOS,SITE,DIVERSOS,FUNCS,PARCEIROS,COMANDAS,_nid,ver:5,at:new Date().toISOString()},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='super-carros-'+hoje()+'.json';a.click();
   toast('Backup exportado!');
 }
@@ -737,7 +763,7 @@ function importar(e){
   r.onload=ev=>{try{
     const d=JSON.parse(ev.target.result);
     if(d.P)P=d.P;if(d.V)V=d.V;if(d.VI)VI=d.VI;
-    if(d.METAS)METAS=d.METAS;if(d.ANTERIOR)ANTERIOR=d.ANTERIOR;
+    if(d.METAS)METAS=d.METAS;if(d.ANTERIOR)ANTERIOR=d.ANTERIOR;if(d.FUNCS)FUNCS=d.FUNCS;
     if(d.PONTOS)PONTOS=d.PONTOS;if(d.SITE)SITE=d.SITE;if(d.DIVERSOS)DIVERSOS=d.DIVERSOS;
     if(d.PARCEIROS)PARCEIROS=d.PARCEIROS;if(d.COMANDAS)COMANDAS=d.COMANDAS;
     if(d._nid)_nid=d._nid;
@@ -763,7 +789,7 @@ function parseData(s){
 function toast(msg,t){const el=document.getElementById('toast');el.textContent=msg;el.style.background=t==='err'?'#c0392b':t==='warn'?'#b45309':'#0e7d55';el.style.opacity='1';clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',2800);}
 function tog(id){const c=document.getElementById(id);c.style.display=c.style.display==='none'?'block':'none';}
 
-const NAV_IDS=['class','ajustado','vendas','visit','metas','pontos','site','diversos','parceiros','comandas','dash','dashext','dashparc'];
+const NAV_IDS=['class','ajustado','vendas','visit','metas','funcs','pontos','site','diversos','parceiros','comandas','dash','dashext','dashparc'];
 function goTab(t){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
@@ -780,6 +806,7 @@ function goTab(t){
   if(t==='comandas')renderHistComandas();
   if(t==='dashparc'){updFiltrosParc();renderDashParc();}
   if(t==='metas')renderMetas();
+  if(t==='funcs')renderFuncs();
 }
 
 // ── CLASSIFICAÇÃO ─────────────────────────────────────────────────────
@@ -1023,6 +1050,57 @@ function renderHistVI(){
   html+='</tbody></table></div>';el.innerHTML=html;
   document.getElementById('btnExportVisit').style.display='';
   document.getElementById('btnLimparVisit').style.display='';
+}
+
+// ── FUNCIONÁRIOS ─────────────────────────────────────────────────────
+// FUNCS: { "2025-05": 42, "2025-06": 44 }
+
+function addFunc(){
+  const mes=document.getElementById('funcsAnoMes').value;
+  const qtd=parseInt(document.getElementById('funcsQtd').value)||0;
+  if(!mes||!qtd){toast('Preencha mês e número de funcionários','err');return;}
+  FUNCS[mes]=qtd;
+  document.getElementById('funcsQtd').value='';
+  save();renderFuncs();toast('Registrado!');
+}
+function delFunc(mes){
+  if(!confirm('Remover registro de '+MNomes[parseInt(mes.slice(5))-1]+' '+mes.slice(0,4)+'?'))return;
+  delete FUNCS[mes];save();renderFuncs();toast('Removido');
+}
+function limparFuncs(){
+  if(!confirm('Apagar todos os registros de funcionários?'))return;
+  FUNCS={};save();renderFuncs();
+  document.getElementById('btnLimparFuncs').style.display='none';
+  toast('Dados apagados');
+}
+function getFuncs(mes){
+  // retorna nº funcionários para um mês específico (yyyy-mm)
+  if(FUNCS[mes])return FUNCS[mes];
+  return null;
+}
+function getFuncsMedia(meses){
+  // retorna média de funcionários para um array de meses ["2025-01","2025-02",...]
+  const vals=meses.map(m=>FUNCS[m]).filter(v=>v);
+  if(!vals.length)return null;
+  return Math.round(vals.reduce((a,v)=>a+v,0)/vals.length);
+}
+function renderFuncs(){
+  const arr=Object.entries(FUNCS).sort((a,b)=>b[0].localeCompare(a[0]));
+  const el=document.getElementById('funcsWrap');
+  const btn=document.getElementById('btnLimparFuncs');
+  if(!arr.length){
+    el.innerHTML='<div class="empty"><i class="ti ti-id-badge"></i><p>Nenhum registro ainda.</p></div>';
+    if(btn)btn.style.display='none';return;
+  }
+  if(btn)btn.style.display='';
+  let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Mês/Ano</th><th>Funcionários</th><th style="width:40px"></th></tr></thead><tbody>';
+  arr.forEach(([mes,qtd])=>{
+    const lbl=MNomes[parseInt(mes.slice(5))-1]+' '+mes.slice(0,4);
+    html+='<tr><td><strong>'+lbl+'</strong></td><td>'+qtd+'</td>'
+      +'<td><button class="del-btn" data-mes="'+mes+'" onclick="delFunc(this.dataset.mes)">×</button></td></tr>';
+  });
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
 }
 
 // ── METAS ─────────────────────────────────────────────────────────────
@@ -1566,6 +1644,25 @@ function renderDash(){
       <td>${tck}</td></tr>`;
   }).join('');
 
+  // KPI Funcionários e Eficiência
+  let kpiFuncs='';
+  const mesesDash=mesesSelecionados.length>0?mesesSelecionados:
+    (!dia?[...new Set(diasKey.map(d=>d.slice(5,7)))].map(m=>ano+'-'+m):[]);
+  const nFuncs=!dia?getFuncsMedia(mesesDash):null;
+  if(nFuncs){
+    const efic=tLiq/nFuncs;
+    kpiFuncs='<div class="kpi">'
+      +'<div class="kpi-lbl">Funcionários</div>'
+      +'<div class="kpi-val">'+nFuncs+'</div>'
+      +'<div class="kpi-sub">média no período</div>'
+      +'</div>'
+      +'<div class="kpi">'
+      +'<div class="kpi-lbl">Eficiência / funcionário</div>'
+      +'<div class="kpi-val">'+fR(efic)+'</div>'
+      +'<div class="kpi-sub">faturamento ÷ funcionários</div>'
+      +'</div>';
+  }
+
   // KPI visitantes com comparativo
   let kpiVisit='<div class="kpi"><div class="kpi-lbl">Visitantes</div>'
     +'<div class="kpi-val">'+(tVisit?tVisit.toLocaleString():'—')+'</div>'
@@ -1602,6 +1699,7 @@ function renderDash(){
   document.getElementById('dashContent').innerHTML=`
   <div class="kpi-grid">
     <div class="kpi"><div class="kpi-lbl">Faturamento líquido</div><div class="kpi-val">${fR(tLiq)}</div><div class="kpi-sub">${periLbl}</div></div>
+    ${kpiFuncs}
     ${kpiVisit}
     ${kpiTicket}
 
@@ -2485,7 +2583,7 @@ function renderAll(){
   // Renderiza apenas listas e históricos — dashboards só quando a aba for aberta
   renderProds();renderAjustado();
   renderHistV();renderHistVI();
-  renderMetas();renderAnterior();
+  renderMetas();renderAnterior();renderFuncs();
   renderHistPontos();renderHistSite();renderHistDiversos();
   renderListaParceiros();renderHistComandas();
   // Filtros: apenas o principal (mais leve)
