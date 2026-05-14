@@ -131,7 +131,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="nav-btn" onclick="goTab('vendas')"><i class="ti ti-clipboard-list"></i>Relatório de vendas</button>
     <button class="nav-btn" onclick="goTab('visit')"><i class="ti ti-users"></i>Visitantes</button>
     <button class="nav-btn" onclick="goTab('metas')"><i class="ti ti-target"></i>Metas</button>
-    <button class="nav-btn" onclick="goTab('anterior')"><i class="ti ti-clock"></i>Ano anterior</button>
     <div class="nav-sec">Outros Faturamentos</div>
     <button class="nav-btn" onclick="goTab('pontos')"><i class="ti ti-map-pin"></i>Pontos Externos</button>
     <button class="nav-btn" onclick="goTab('site')"><i class="ti ti-world"></i>Site Oficial</button>
@@ -764,7 +763,7 @@ function parseData(s){
 function toast(msg,t){const el=document.getElementById('toast');el.textContent=msg;el.style.background=t==='err'?'#c0392b':t==='warn'?'#b45309':'#0e7d55';el.style.opacity='1';clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',2800);}
 function tog(id){const c=document.getElementById(id);c.style.display=c.style.display==='none'?'block':'none';}
 
-const NAV_IDS=['class','ajustado','vendas','visit','metas','anterior','pontos','site','diversos','parceiros','comandas','dash','dashext','dashparc'];
+const NAV_IDS=['class','ajustado','vendas','visit','metas','pontos','site','diversos','parceiros','comandas','dash','dashext','dashparc'];
 function goTab(t){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
@@ -781,7 +780,6 @@ function goTab(t){
   if(t==='comandas')renderHistComandas();
   if(t==='dashparc'){updFiltrosParc();renderDashParc();}
   if(t==='metas')renderMetas();
-  if(t==='anterior')renderAnterior();
 }
 
 // ── CLASSIFICAÇÃO ─────────────────────────────────────────────────────
@@ -1330,21 +1328,27 @@ function agruparSe(itens){
   const b={};itens.forEach(i=>{if(!b[i.setor])b[i.setor]={liq:0,qtd:0};b[i.setor].liq+=i.vLiq;b[i.setor].qtd+=i.qtd;});return b;
 }
 function getMeta(s,m){const k=metaKey(s,m);return METAS[k]?METAS[k].val:null;}
-function getAnt(s,mes){
-  // se recebe mês específico (yyyy-mm), busca direto
-  if(mes&&mes.length===7)return ANTERIOR[antKey(mes,s)]?ANTERIOR[antKey(mes,s)].val:null;
-  // se recebe ano (yyyy), soma todos os meses
-  const ano=mes;
-  let soma=0,found=false;
-  Object.values(ANTERIOR).forEach(function(a){
-    if(a.mes&&a.mes.startsWith(ano)&&a.setor===s){soma+=a.val;found=true;}
-  });
-  return found?soma:null;
+function getAnt(s,anoRef){
+  // soma todos os meses do anoRef em V para o setor s
+  const diasAno=Object.keys(V).filter(d=>d.startsWith(anoRef));
+  if(!diasAno.length)return null;
+  if(s&&s!==S_TOTAL){
+    const fat=getItens(diasAno,s).reduce((a,i)=>a+i.vLiq,0);
+    return fat>0?fat:null;
+  }
+  const fat=diasAno.reduce((a,d)=>a+V[d].reduce((s,i)=>s+i.vLiq,0),0);
+  return fat>0?fat:null;
 }
 function getAntMes(s,mesFmt){
-  // busca faturamento anterior para um mês específico
-  const k=antKey(mesFmt,s);
-  return ANTERIOR[k]?ANTERIOR[k].val:null;
+  // busca faturamento de um mês específico diretamente em V (vendas reais)
+  const diasMes=Object.keys(V).filter(d=>d.startsWith(mesFmt));
+  if(!diasMes.length)return null;
+  if(s&&s!==S_TOTAL){
+    const fat=getItens(diasMes,s).reduce((a,i)=>a+i.vLiq,0);
+    return fat>0?fat:null;
+  }
+  const fat=diasMes.reduce((a,d)=>a+V[d].reduce((s,i)=>s+i.vLiq,0),0);
+  return fat>0?fat:null;
 }
 function killCharts(){charts.forEach(c=>{try{c.destroy();}catch(e){}});charts=[];}
 
@@ -1431,19 +1435,20 @@ function renderDash(){
 
   // ── ANO ANTERIOR ──
   // Função auxiliar: busca faturamento anterior de um mês para um setor (ou soma todos)
+  // Busca faturamento do ano anterior diretamente do relatório de vendas (V)
   function getAntParaFiltro(setor, mf){
+    // mf = "2024-05" — busca todos os dias desse mês no ano anterior em V
+    const diasMes=Object.keys(V).filter(d=>d.startsWith(mf));
+    if(!diasMes.length)return null;
     if(setor&&setor!==S_TOTAL){
-      return getAntMes(setor,mf)||getAntMes(S_TOTAL,mf);
+      const fat=getItens(diasMes,setor).reduce((a,i)=>a+i.vLiq,0);
+      return fat>0?fat:null;
     }
-    // "Todos": primeiro tenta S_TOTAL
-    const vTotal=getAntMes(S_TOTAL,mf);
-    if(vTotal)return vTotal;
-    // senão soma setores individuais — excluindo os externos
-    let soma=0,found=false;
-    Object.values(ANTERIOR).forEach(function(a){
-      if(a.mes===mf&&a.setor!==S_TOTAL&&!SETORES_EXT_EXCLUIR.includes(a.setor)){soma+=a.val;found=true;}
-    });
-    return found?soma:null;
+    // Todos os setores (excluindo externos)
+    const fat=diasMes.reduce((a,d)=>{
+      return a+V[d].filter(i=>!SETORES_EXT_EXCLUIR.includes(setorAdj(i.setor))).reduce((s,i)=>s+i.vLiq,0);
+    },0);
+    return fat>0?fat:null;
   }
 
   let antGeral=null;
@@ -2004,23 +2009,20 @@ function renderDashExt(){
     return found?soma:null;
   }
   function somaAntExt(setor){
-    if(dia){
-      // dia específico: compara com mesmo dia do ano anterior
-      const dAnt=anoAnt+dia.slice(4);
-      // não temos dados diários do ano anterior, retorna null
-      return null;
-    }
+    // Pontos Externos e Site Oficial não têm dados em V
+    // buscamos em ANTERIOR (cadastrado manualmente)
+    if(dia)return null;
     if(mesFmt){
-      // mês específico: compara com mesmo mês do ano anterior
       const mfAnt=anoAnt+'-'+mes;
-      return getAntMes(setor,mfAnt);
+      const k=antKey(mfAnt,setor);
+      return ANTERIOR[k]?ANTERIOR[k].val:null;
     }
-    // ano inteiro: soma todos os meses do ano anterior
+    // ano inteiro
     let soma=0,found=false;
     for(let mi=1;mi<=12;mi++){
       const mf=anoAnt+'-'+String(mi).padStart(2,'0');
-      const v=getAntMes(setor,mf);
-      if(v){soma+=v;found=true;}
+      const k=antKey(mf,setor);
+      if(ANTERIOR[k]){soma+=ANTERIOR[k].val;found=true;}
     }
     return found?soma:null;
   }
