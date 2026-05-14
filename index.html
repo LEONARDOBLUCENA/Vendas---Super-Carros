@@ -320,6 +320,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="card">
     <div class="card-title"><i class="ti ti-list"></i>Histórico
       <div style="display:flex;gap:6px;margin-left:auto">
+        <button class="btn btn-sm" id="btnExportFuncs" onclick="exportarFuncsExcel()" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
         <button class="btn btn-sm" id="btnLimparFuncs" onclick="limparFuncs()" style="display:none;color:var(--red)"><i class="ti ti-trash"></i>Limpar</button>
       </div>
     </div>
@@ -1071,6 +1072,7 @@ function limparFuncs(){
   if(!confirm('Apagar todos os registros de funcionários?'))return;
   FUNCS={};save();renderFuncs();
   document.getElementById('btnLimparFuncs').style.display='none';
+  const bef=document.getElementById('btnExportFuncs');if(bef)bef.style.display='none';
   toast('Dados apagados');
 }
 function getFuncs(mes){
@@ -1084,6 +1086,14 @@ function getFuncsMedia(meses){
   if(!vals.length)return null;
   return Math.round(vals.reduce((a,v)=>a+v,0)/vals.length);
 }
+function exportarFuncsExcel(){
+  const rows=[['Mês/Ano','Funcionários']];
+  Object.entries(FUNCS).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([mes,qtd])=>{
+    const lbl=MNomes[parseInt(mes.slice(5))-1]+'/'+mes.slice(0,4);
+    rows.push([lbl,qtd]);
+  });
+  exportarExcel(rows,'funcionarios-'+hoje()+'.xls');
+}
 function renderFuncs(){
   const arr=Object.entries(FUNCS).sort((a,b)=>b[0].localeCompare(a[0]));
   const el=document.getElementById('funcsWrap');
@@ -1093,6 +1103,8 @@ function renderFuncs(){
     if(btn)btn.style.display='none';return;
   }
   if(btn)btn.style.display='';
+  const btnExp=document.getElementById('btnExportFuncs');
+  if(btnExp)btnExp.style.display='';
   let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Mês/Ano</th><th>Funcionários</th><th style="width:40px"></th></tr></thead><tbody>';
   arr.forEach(([mes,qtd])=>{
     const lbl=MNomes[parseInt(mes.slice(5))-1]+' '+mes.slice(0,4);
@@ -1645,21 +1657,23 @@ function renderDash(){
   }).join('');
 
   // KPI Funcionários e Eficiência
+  // KPI Funcionários + Eficiência — sempre calcula independente do filtro
+  let mesesDashF=[];
+  if(mesesSelecionados.length>0){
+    mesesDashF=mesesSelecionados.map(m=>ano+'-'+m);
+  } else if(dia){
+    mesesDashF=[dia.slice(0,7)];
+  } else {
+    mesesDashF=[...new Set(diasKey.map(d=>d.slice(0,7)))];
+  }
+  const nFuncs=getFuncsMedia(mesesDashF);
   let kpiFuncs='';
-  const mesesDash=mesesSelecionados.length>0?mesesSelecionados:
-    (!dia?[...new Set(diasKey.map(d=>d.slice(5,7)))].map(m=>ano+'-'+m):[]);
-  const nFuncs=!dia?getFuncsMedia(mesesDash):null;
   if(nFuncs){
     const efic=tLiq/nFuncs;
     kpiFuncs='<div class="kpi">'
       +'<div class="kpi-lbl">Funcionários</div>'
       +'<div class="kpi-val">'+nFuncs+'</div>'
-      +'<div class="kpi-sub">média no período</div>'
-      +'</div>'
-      +'<div class="kpi">'
-      +'<div class="kpi-lbl">Eficiência / funcionário</div>'
-      +'<div class="kpi-val">'+fR(efic)+'</div>'
-      +'<div class="kpi-sub">faturamento ÷ funcionários</div>'
+      +'<div class="kpi-sub">Eficiência: <strong>'+fR(efic)+'</strong>/func.</div>'
       +'</div>';
   }
 
@@ -2392,6 +2406,8 @@ function renderHistComandas(){
   const totalVal=COMANDAS.reduce((a,c)=>a+c.valorTotal,0);
   if(res)res.textContent=COMANDAS.length+' comandas · '+fRF(totalVal);
   if(btn)btn.style.display='';
+  const btnExp=document.getElementById('btnExportFuncs');
+  if(btnExp)btnExp.style.display='';
   // exibe igual à pré-visualização: uma linha por comanda ordenada por data
   const sorted=[...COMANDAS].sort((a,b)=>a.data.localeCompare(b.data)||a.id.localeCompare(b.id));
   let html='<div class="tbl-wrap"><table class="tbl"><thead><tr>'
