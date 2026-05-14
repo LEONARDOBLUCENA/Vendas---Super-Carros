@@ -1080,8 +1080,14 @@ function getFuncs(mes){
   if(FUNCS[mes])return FUNCS[mes];
   return null;
 }
+function getFuncsSoma(meses){
+  // retorna SOMA de funcionários para os meses (acumulado)
+  const vals=meses.map(m=>FUNCS[m]).filter(v=>v);
+  if(!vals.length)return null;
+  return vals.reduce((a,v)=>a+v,0);
+}
 function getFuncsMedia(meses){
-  // retorna média de funcionários para um array de meses ["2025-01","2025-02",...]
+  // retorna MÉDIA (para compatibilidade com 1 mês ou ano inteiro)
   const vals=meses.map(m=>FUNCS[m]).filter(v=>v);
   if(!vals.length)return null;
   return Math.round(vals.reduce((a,v)=>a+v,0)/vals.length);
@@ -1666,14 +1672,16 @@ function renderDash(){
   } else {
     mesesDashF=[...new Set(diasKey.map(d=>d.slice(0,7)))];
   }
-  const nFuncs=getFuncsMedia(mesesDashF);
+  // Soma quando múltiplos meses, direto quando 1 mês ou dia
+  const nFuncs=mesesDashF.length>1?getFuncsSoma(mesesDashF):getFuncsMedia(mesesDashF);
+  const sublblFuncs=mesesDashF.length>1?'acumulado '+mesesDashF.length+' meses':'no período';
   let kpiFuncs='';
   if(nFuncs){
     const efic=tLiq/nFuncs;
     kpiFuncs='<div class="kpi">'
       +'<div class="kpi-lbl">Funcionários</div>'
       +'<div class="kpi-val">'+nFuncs+'</div>'
-      +'<div class="kpi-sub">Eficiência: <strong>'+fR(efic)+'</strong>/func.</div>'
+      +'<div class="kpi-sub">'+sublblFuncs+' · Efic.: <strong>'+fR(efic)+'</strong>/func.</div>'
       +'</div>';
   }
 
