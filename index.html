@@ -139,6 +139,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="nav-sec">Parceiros</div>
     <button class="nav-btn" onclick="goTab('parceiros')"><i class="ti ti-users-group"></i>Cadastro de Parceiros</button>
     <button class="nav-btn" onclick="goTab('comandas')"><i class="ti ti-file-invoice"></i>Relatório de Comandas</button>
+    <div class="nav-sec">Precificação</div>
+    <button class="nav-btn" onclick="goTab('feriados')"><i class="ti ti-calendar-event"></i>Feriados</button>
+    <button class="nav-btn" onclick="goTab('precos')"><i class="ti ti-coin"></i>Precificação</button>
     <div class="nav-sec">Resultados</div>
     <button class="nav-btn" onclick="goTab('dash')"><i class="ti ti-chart-bar"></i>Dashboard</button>
     <button class="nav-btn" onclick="goTab('dashext')"><i class="ti ti-chart-dots"></i>Dashboard Externos</button>
@@ -587,6 +590,81 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 
+<!-- FERIADOS -->
+<div id="sc-feriados" class="screen">
+  <div class="topbar">
+    <div><div class="page-title">Feriados</div>
+    <div class="page-sub">Cadastre feriados para considerar na precificação dinâmica</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-circle-plus"></i>Adicionar feriado</div>
+    <div class="g3" style="align-items:flex-end">
+      <div class="field" style="margin:0"><label>Data</label><input type="date" id="feriadoData"></div>
+      <div class="field" style="margin:0"><label>Nome</label><input type="text" id="feriadoNome" placeholder="Ex: Natal, Carnaval..." onkeydown="if(event.key==='Enter')addFeriado()"></div>
+      <div><button class="btn btn-p" style="width:100%" onclick="addFeriado()"><i class="ti ti-plus"></i>Adicionar</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-list"></i>Feriados cadastrados</div>
+    <div id="feriadosWrap"><div class="empty"><i class="ti ti-calendar-event"></i><p>Nenhum feriado cadastrado ainda.</p></div></div>
+  </div>
+</div>
+
+<!-- PRECIFICAÇÃO -->
+<div id="sc-precos" class="screen">
+  <div class="topbar">
+    <div><div class="page-title">Precificação</div>
+    <div class="page-sub">Cadastre os carros e gere preços dinâmicos semanais</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
+    <div class="card" style="margin:0">
+      <div class="card-title"><i class="ti ti-car"></i>Cadastro de carros</div>
+      <div class="g2">
+        <div class="field"><label>Modelo do carro</label><input id="carroModelo" placeholder="Ex: Ferrari 488" onkeydown="if(event.key==='Enter')addCarro()"></div>
+        <div class="field"><label>Preço base Carona (R$)</label><input type="number" id="carroCarona" placeholder="0,00" min="0" step="0.01"></div>
+      </div>
+      <div class="field"><label>Preço base Drive (R$)</label><input type="number" id="carroDrive" placeholder="0,00" min="0" step="0.01"></div>
+      <div class="act">
+        <button class="btn btn-p btn-sm" onclick="addCarro()"><i class="ti ti-plus"></i>Adicionar</button>
+      </div>
+      <div class="sep"></div>
+      <div id="carrosWrap"><div class="empty" style="padding:20px"><i class="ti ti-car"></i><p>Nenhum carro cadastrado.</p></div></div>
+    </div>
+
+    <div class="card" style="margin:0">
+      <div class="card-title"><i class="ti ti-sparkles"></i>Gerar precificação dinâmica</div>
+      <div class="alert alert-info"><i class="ti ti-info-circle"></i>
+        <span>Com base no histórico de faturamento por <strong>dia da semana</strong> e <strong>mês do ano</strong>, o sistema calcula 3 faixas de preço para cada carro nos próximos 7 dias.<br><br>
+        <strong>Mínimo</strong> = base ajustada pelo índice histórico<br>
+        <strong>Sugerido</strong> = mínimo +15%<br>
+        <strong>Premium</strong> = mínimo +35%</span>
+      </div>
+      <div class="field"><label>Data de início da semana</label><input type="date" id="precDataInicio"></div>
+      <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:4px" onclick="gerarPrecificacao()">
+        <i class="ti ti-sparkles"></i>Gerar precificação dinâmica
+      </button>
+    </div>
+  </div>
+
+  <div class="card" id="precResultCard" style="display:none;margin-top:13px">
+    <div class="card-title"><i class="ti ti-table"></i>Precificação gerada
+      <div style="display:flex;gap:6px;margin-left:auto">
+        <button class="btn btn-sm" onclick="salvarPrecificacao()"><i class="ti ti-device-floppy"></i>Salvar histórico</button>
+        <button class="btn btn-sm" onclick="exportarPrecExcel()"><i class="ti ti-table-export"></i>Exportar Excel</button>
+      </div>
+    </div>
+    <div id="precResultado"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-history"></i>Histórico de precificações
+      <button class="btn btn-sm" id="btnExportHistPrec" onclick="exportarHistPrecExcel()" style="display:none;margin-left:auto"><i class="ti ti-table-export"></i>Exportar Excel</button>
+    </div>
+    <div id="histPrecWrap"><div class="empty"><i class="ti ti-coin"></i><p>Nenhuma precificação gerada ainda.</p></div></div>
+  </div>
+</div>
+
 <!-- CADASTRO DE PARCEIROS -->
 <div id="sc-parceiros" class="screen">
   <div class="topbar">
@@ -704,7 +782,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <script>
 // ── ESTADO ────────────────────────────────────────────────────────────
-let P={}, V={}, VI={}, METAS={}, ANTERIOR={}, PONTOS={}, SITE={}, DIVERSOS={}, FUNCS={}, PARCEIROS={}, COMANDAS=[], pending=null, pendingCom=null, charts=[], chartsExt=[], chartsParc=[];
+let P={}, V={}, VI={}, METAS={}, ANTERIOR={}, PONTOS={}, SITE={}, DIVERSOS={}, FUNCS={}, FERIADOS={}, CARROS={}, HIST_PREC=[], PARCEIROS={}, COMANDAS=[], pending=null, pendingCom=null, charts=[], chartsExt=[], chartsParc=[];
 let _nid=1;
 function novaKey(){return 'p'+(++_nid);}
 
@@ -728,6 +806,9 @@ function save(){
     localStorage.setItem('bivi',JSON.stringify(VI));
     localStorage.setItem('bimetas',JSON.stringify(METAS));
     localStorage.setItem('bifuncs',JSON.stringify(FUNCS));
+    localStorage.setItem('biferiados',JSON.stringify(FERIADOS));
+    localStorage.setItem('bicarros',JSON.stringify(CARROS));
+    localStorage.setItem('bihistprec',JSON.stringify(HIST_PREC));
     localStorage.setItem('biant',JSON.stringify(ANTERIOR));
     localStorage.setItem('bipontos',JSON.stringify(PONTOS));
     localStorage.setItem('bisite',JSON.stringify(SITE));
@@ -753,11 +834,13 @@ function save(){
 function load(){
   try{
     const p=localStorage.getItem('bip'),v=localStorage.getItem('biv'),vi=localStorage.getItem('bivi'),
-          m=localStorage.getItem('bimetas'),a=localStorage.getItem('biant'),fu=localStorage.getItem('bifuncs'),nid=localStorage.getItem('bi_nid'),
+          m=localStorage.getItem('bimetas'),a=localStorage.getItem('biant'),fu=localStorage.getItem('bifuncs'),
+          fer=localStorage.getItem('biferiados'),car=localStorage.getItem('bicarros'),hp=localStorage.getItem('bihistprec'),nid=localStorage.getItem('bi_nid'),
           po=localStorage.getItem('bipontos'),si=localStorage.getItem('bisite'),di=localStorage.getItem('bidiversos'),
           parc=localStorage.getItem('biparceiros'),com=localStorage.getItem('bicomandas');
     if(p)P=JSON.parse(p);if(v)V=JSON.parse(v);if(vi)VI=JSON.parse(vi);
     if(m)METAS=JSON.parse(m);if(a)ANTERIOR=JSON.parse(a);if(fu)FUNCS=JSON.parse(fu);
+    if(fer)FERIADOS=JSON.parse(fer);if(car)CARROS=JSON.parse(car);if(hp)HIST_PREC=JSON.parse(hp);
     if(po)PONTOS=JSON.parse(po);if(si)SITE=JSON.parse(si);if(di)DIVERSOS=JSON.parse(di);
     if(parc)PARCEIROS=JSON.parse(parc);
     if(com){
@@ -787,7 +870,7 @@ function load(){
   }
 }
 function exportar(){
-  const b=new Blob([JSON.stringify({P,V,VI,METAS,ANTERIOR,PONTOS,SITE,DIVERSOS,FUNCS,PARCEIROS,COMANDAS,_nid,ver:5,at:new Date().toISOString()},null,2)],{type:'application/json'});
+  const b=new Blob([JSON.stringify({P,V,VI,METAS,ANTERIOR,PONTOS,SITE,DIVERSOS,FUNCS,FERIADOS,CARROS,HIST_PREC,PARCEIROS,COMANDAS,_nid,ver:6,at:new Date().toISOString()},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='super-carros-'+hoje()+'.json';a.click();
   toast('Backup exportado!');
 }
@@ -798,6 +881,7 @@ function importar(e){
     const d=JSON.parse(ev.target.result);
     if(d.P)P=d.P;if(d.V)V=d.V;if(d.VI)VI=d.VI;
     if(d.METAS)METAS=d.METAS;if(d.ANTERIOR)ANTERIOR=d.ANTERIOR;if(d.FUNCS)FUNCS=d.FUNCS;
+    if(d.FERIADOS)FERIADOS=d.FERIADOS;if(d.CARROS)CARROS=d.CARROS;if(d.HIST_PREC)HIST_PREC=d.HIST_PREC;
     if(d.PONTOS)PONTOS=d.PONTOS;if(d.SITE)SITE=d.SITE;if(d.DIVERSOS)DIVERSOS=d.DIVERSOS;
     if(d.PARCEIROS)PARCEIROS=d.PARCEIROS;if(d.COMANDAS)COMANDAS=d.COMANDAS;
     if(d._nid)_nid=d._nid;
@@ -823,7 +907,7 @@ function parseData(s){
 function toast(msg,t){const el=document.getElementById('toast');el.textContent=msg;el.style.background=t==='err'?'#c0392b':t==='warn'?'#b45309':'#0e7d55';el.style.opacity='1';clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',2800);}
 function tog(id){const c=document.getElementById(id);c.style.display=c.style.display==='none'?'block':'none';}
 
-const NAV_IDS=['class','ajustado','vendas','visit','metas','funcs','pontos','site','diversos','parceiros','comandas','dash','dashext','dashparc'];
+const NAV_IDS=['class','ajustado','vendas','visit','metas','funcs','pontos','site','diversos','parceiros','comandas','feriados','precos','dash','dashext','dashparc'];
 function goTab(t){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
@@ -837,6 +921,8 @@ function goTab(t){
   if(t==='diversos')renderHistDiversos();
   if(t==='dashext'){updFiltrosExt();renderDashExt();}
   if(t==='parceiros')renderListaParceiros();
+  if(t==='feriados')renderFeriados();
+  if(t==='precos'){renderPrecos();renderHistPrecos();}
   if(t==='comandas')renderHistComandas();
   if(t==='dashparc'){updFiltrosParc();renderDashParc();}
   if(t==='metas')renderMetas();
@@ -1640,24 +1726,31 @@ function renderDash(){
       +'</div>';
   }
 
+  // ── pré-calcula fat/vis por mês em 1 único loop (performance) ──
+  const _cacheAno={};
+  Object.keys(V).filter(d=>d.startsWith(ano)).forEach(d=>{
+    const mm=d.slice(5,7);
+    if(!_cacheAno[mm])_cacheAno[mm]={liq:0,vis:0};
+    V[d].forEach(i=>{
+      const s=setorAdj(i.setor);
+      if(SETORES_EXCLUIR_DASH.includes(s))return;
+      if(!setorF||setorF===S_TOTAL||s===setorF)_cacheAno[mm].liq+=i.vLiq;
+    });
+    _cacheAno[mm].vis+=(VI[d]?VI[d].valido:0);
+  });
+
   let sLabels,sFat,sTick,sMeta;
   if(dia){
-    // dia específico: mostra por setor
     sLabels=setores;sFat=setores.map(s=>+bySe[s].liq.toFixed(2));
     sTick=setores.map(s=>tVisit?+(bySe[s].liq/tVisit).toFixed(2):0);sMeta=null;
   } else if(mesesSelecionados.length===0){
-    // ano inteiro: gráfico mensal com todos os 12 meses
+    // ano inteiro: usa cache — apenas 1 loop já feito acima
     sLabels=MNomes;
-    sFat=MNomes.map((_,mi)=>{
-      const pref=`${ano}-${String(mi+1).padStart(2,'0')}`;
-      // usa TODOS os dias do ano para o mês, não apenas diasKey
-      const diasMes=Object.keys(V).filter(d=>d.startsWith(pref));
-      return +getItens(diasMes,setorF).reduce((a,i)=>a+i.vLiq,0).toFixed(2);
-    });
-    sTick=MNomes.map((_,mi)=>{const pref=`${ano}-${String(mi+1).padStart(2,'0')}`;const dM=Object.keys(V).filter(d=>d.startsWith(pref));const fat=getItens(dM,setorF).reduce((a,i)=>a+i.vLiq,0);const vis=dM.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);return vis?+(fat/vis).toFixed(2):0;});
+    sFat=MNomes.map((_,mi)=>{const mm=String(mi+1).padStart(2,'0');return +(_cacheAno[mm]?_cacheAno[mm].liq:0).toFixed(2);});
+    sTick=MNomes.map((_,mi)=>{const mm=String(mi+1).padStart(2,'0');const e=_cacheAno[mm];return e&&e.vis?+(e.liq/e.vis).toFixed(2):0;});
     sMeta=MNomes.map((_,mi)=>{const mf=`${ano}-${String(mi+1).padStart(2,'0')}`;return getMetaParaFiltro(setorF,mf);});
   } else {
-    // meses selecionados: gráfico diário dos dias dentro dos meses escolhidos
+    // meses selecionados: gráfico diário
     sLabels=diasKey.map(d=>d.slice(8)+'/'+d.slice(5,7));
     sFat=diasKey.map(d=>+getItens([d],setorF).reduce((a,i)=>a+i.vLiq,0).toFixed(2));
     sTick=diasKey.map(d=>{const fat=getItens([d],setorF).reduce((a,i)=>a+i.vLiq,0);const vis=VI[d]?VI[d].valido:0;return vis?+(fat/vis).toFixed(2):0;});
@@ -1667,16 +1760,21 @@ function renderDash(){
   // ── Dados do ano anterior por mês (para gráfico comparativo) ──
   // Primeiro tenta usar dados reais de vendas do anoAnt (V)
   // Se não tiver, tenta a tabela ANTERIOR cadastrada manualmente
+  // pré-calcula ano anterior em 1 loop
+  const _cacheAnt={};
+  Object.keys(V).filter(d=>d.startsWith(anoAnt)).forEach(d=>{
+    const mm=d.slice(5,7);
+    if(!_cacheAnt[mm])_cacheAnt[mm]=0;
+    V[d].forEach(i=>{
+      const s=setorAdj(i.setor);
+      if(SETORES_EXCLUIR_DASH.includes(s))return;
+      if(!setorF||setorF===S_TOTAL||s===setorF)_cacheAnt[mm]+=i.vLiq;
+    });
+  });
   const sAntMes=MNomes.map((_,mi)=>{
-    const pref=anoAnt+'-'+String(mi+1).padStart(2,'0');
-    // busca nos dados reais de vendas do ano anterior
-    const diasAnt=Object.keys(V).filter(d=>d.startsWith(pref));
-    if(diasAnt.length>0){
-      const fatAnt=getItens(diasAnt,setorF).reduce((a,i)=>a+i.vLiq,0);
-      if(fatAnt>0)return +fatAnt.toFixed(2);
-    }
-    // fallback: tabela ANTERIOR cadastrada manualmente
-    return getAntParaFiltro(setorF,pref);
+    const mm=String(mi+1).padStart(2,'0');
+    if(_cacheAnt[mm]&&_cacheAnt[mm]>0)return +_cacheAnt[mm].toFixed(2);
+    return getAntParaFiltro(setorF,anoAnt+'-'+mm);
   });
   const temAntAnual=sAntMes.some(v=>v!==null&&v>0)&&mesesSelecionados.length===0&&!dia;
 
@@ -2301,6 +2399,226 @@ function renderDashExt(){
 }
 
 
+// ── FERIADOS ──────────────────────────────────────────────────────────
+// FERIADOS: { "2025-12-25": "Natal", "2026-01-01": "Ano Novo" }
+function addFeriado(){
+  const d=document.getElementById('feriadoData').value;
+  const nome=document.getElementById('feriadoNome').value.trim();
+  if(!d||!nome){toast('Preencha data e nome','err');return;}
+  FERIADOS[d]=nome;
+  document.getElementById('feriadoNome').value='';
+  save();renderFeriados();toast('Feriado adicionado!');
+}
+function delFeriado(d){
+  if(!confirm('Remover feriado "'+FERIADOS[d]+'"?'))return;
+  delete FERIADOS[d];save();renderFeriados();toast('Removido');
+}
+function renderFeriados(){
+  const arr=Object.entries(FERIADOS).sort((a,b)=>a[0].localeCompare(b[0]));
+  const el=document.getElementById('feriadosWrap');
+  if(!arr.length){el.innerHTML='<div class="empty"><i class="ti ti-calendar-event"></i><p>Nenhum feriado cadastrado ainda.</p></div>';return;}
+  let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Nome</th><th style="width:40px"></th></tr></thead><tbody>';
+  arr.forEach(([d,nome])=>{
+    const dt=d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4);
+    html+='<tr><td><strong>'+dt+'</strong></td><td>'+nome+'</td>'
+      +'<td><button class="del-btn" data-d="'+d+'" onclick="delFeriado(this.dataset.d)">×</button></td></tr>';
+  });
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+function isFeriado(dataStr){return !!FERIADOS[dataStr];}
+
+// ── CARROS / PRECIFICAÇÃO ─────────────────────────────────────────────
+// CARROS: { "Ferrari 488": { modelo: "Ferrari 488", carona: 350, drive: 500 } }
+// HIST_PREC: [ { geradoEm, dataInicio, itens: [{data,diaSem,carro,minCarona,sugCarona,premCarona,minDrive,sugDrive,premDrive}] } ]
+
+const DIAS_SEM=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+function addCarro(){
+  const modelo=document.getElementById('carroModelo').value.trim();
+  const carona=parseFloat(document.getElementById('carroCarona').value)||0;
+  const drive=parseFloat(document.getElementById('carroDrive').value)||0;
+  if(!modelo||!carona||!drive){toast('Preencha modelo e preços base','err');return;}
+  CARROS[modelo]={modelo,carona,drive};
+  document.getElementById('carroModelo').value='';
+  document.getElementById('carroCarona').value='';
+  document.getElementById('carroDrive').value='';
+  save();renderPrecos();toast('"'+modelo+'" adicionado!');
+}
+function delCarro(modelo){
+  if(!confirm('Remover "'+modelo+'"?'))return;
+  delete CARROS[modelo];save();renderPrecos();toast('Removido');
+}
+function renderPrecos(){
+  const arr=Object.values(CARROS).sort((a,b)=>a.modelo.localeCompare(b.modelo));
+  const el=document.getElementById('carrosWrap');
+  if(!arr.length){el.innerHTML='<div class="empty" style="padding:20px"><i class="ti ti-car"></i><p>Nenhum carro cadastrado.</p></div>';return;}
+  let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Modelo</th><th>Base Carona</th><th>Base Drive</th><th style="width:40px"></th></tr></thead><tbody>';
+  arr.forEach(car=>{
+    html+='<tr><td><strong>'+car.modelo+'</strong></td><td>'+fRF(car.carona)+'</td><td>'+fRF(car.drive)+'</td>'
+      +'<td><button class="del-btn" data-m="'+car.modelo+'" onclick="delCarro(this.dataset.m)">×</button></td></tr>';
+  });
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+function calcIndiceHistorico(dataStr){
+  // Calcula índice de demanda para uma data específica baseado no histórico
+  // Retorna valor entre 0.7 (dia fraco) e 1.4 (dia muito forte)
+  const dow=new Date(dataStr+'T12:00:00').getDay(); // 0=dom, 6=sab
+  const mm=dataStr.slice(5,7);
+  const ehFeriado=isFeriado(dataStr);
+
+  // Coleta faturamentos históricos para mesmo dia da semana + mesmo mês
+  const ticketsMesmoDia=[];
+  const ticketsTodos=[];
+
+  Object.keys(V).forEach(d=>{
+    const viDia=VI[d]?VI[d].valido:0;
+    if(!viDia)return;
+    const fat=V[d].filter(i=>{const s=setorAdj(i.setor);return!SETORES_EXCLUIR_DASH.includes(s);}).reduce((a,i)=>a+i.vLiq,0);
+    if(!fat)return;
+    const tk=fat/viDia;
+    ticketsTodos.push(tk);
+    const dDow=new Date(d+'T12:00:00').getDay();
+    const dMm=d.slice(5,7);
+    if(dDow===dow&&dMm===mm)ticketsMesmoDia.push(tk);
+  });
+
+  if(!ticketsTodos.length)return 1.0;
+
+  const mediaTodos=ticketsTodos.reduce((a,v)=>a+v,0)/ticketsTodos.length;
+  const base=ticketsMesmoDia.length>=3
+    ?ticketsMesmoDia.reduce((a,v)=>a+v,0)/ticketsMesmoDia.length
+    :mediaTodos;
+
+  let indice=base/mediaTodos;
+  // Feriado: boost de 20%
+  if(ehFeriado)indice*=1.2;
+  // Limita entre 0.7 e 1.5
+  return Math.min(1.5,Math.max(0.7,indice));
+}
+
+let _precAtual=null; // precificação gerada aguardando salvar
+
+function gerarPrecificacao(){
+  const carros=Object.values(CARROS);
+  if(!carros.length){toast('Cadastre ao menos um carro primeiro','err');return;}
+  if(!Object.keys(V).length){toast('Importe dados de vendas para calcular o histórico','err');return;}
+
+  const dataInicioEl=document.getElementById('precDataInicio');
+  const dataInicio=dataInicioEl.value||hoje();
+
+  // Gera para os próximos 7 dias
+  const itens=[];
+  for(let i=0;i<7;i++){
+    const dt=new Date(dataInicio+'T12:00:00');
+    dt.setDate(dt.getDate()+i);
+    const dataStr=dt.toISOString().slice(0,10);
+    const diaSem=DIAS_SEM[dt.getDay()];
+    const indice=calcIndiceHistorico(dataStr);
+    const nomeFer=FERIADOS[dataStr]?(' 🎉 '+FERIADOS[dataStr]):'';
+
+    carros.forEach(car=>{
+      const minC=Math.ceil(car.carona*indice/5)*5;  // arredonda para múltiplo de 5
+      const minD=Math.ceil(car.drive*indice/5)*5;
+      itens.push({
+        data:dataStr,diaSem:diaSem+nomeFer,carro:car.modelo,indice:+indice.toFixed(2),
+        minCarona:minC,sugCarona:Math.ceil(minC*1.15/5)*5,premCarona:Math.ceil(minC*1.35/5)*5,
+        minDrive:minD,sugDrive:Math.ceil(minD*1.15/5)*5,premDrive:Math.ceil(minD*1.35/5)*5
+      });
+    });
+  }
+
+  _precAtual={geradoEm:hoje(),dataInicio,itens};
+
+  // Renderiza resultado
+  const dias=[...new Set(itens.map(i=>i.data))];
+  let html='';
+  dias.forEach(d=>{
+    const itensDia=itens.filter(i=>i.data===d);
+    const ds=itensDia[0].diaSem;
+    const idx=itensDia[0].indice;
+    const corIdx=idx>=1.1?'var(--green)':idx<=0.85?'var(--red)':'var(--amber)';
+    html+='<div style="margin-bottom:14px">'
+      +'<div style="font-size:12px;font-weight:600;color:var(--text2);padding:5px 0;border-bottom:1px solid var(--border);margin-bottom:6px">'
+      +d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4)+' — <b>'+ds+'</b>'
+      +' <span style="font-size:11px;color:'+corIdx+'">índice: '+idx+'</span></div>'
+      +'<div class="tbl-wrap"><table class="tbl"><thead><tr>'
+      +'<th>Carro</th>'
+      +'<th style="color:var(--text2)">Carona Mín.</th><th style="color:#0891b2">Carona Sug.</th><th style="color:var(--amber)">Carona Prem.</th>'
+      +'<th style="color:var(--text2)">Drive Mín.</th><th style="color:#0891b2">Drive Sug.</th><th style="color:var(--amber)">Drive Prem.</th>'
+      +'</tr></thead><tbody>';
+    itensDia.forEach(it=>{
+      html+='<tr>'
+        +'<td><strong>'+it.carro+'</strong></td>'
+        +'<td>'+fRF(it.minCarona)+'</td><td style="color:#0891b2;font-weight:500">'+fRF(it.sugCarona)+'</td><td style="color:var(--amber);font-weight:500">'+fRF(it.premCarona)+'</td>'
+        +'<td>'+fRF(it.minDrive)+'</td><td style="color:#0891b2;font-weight:500">'+fRF(it.sugDrive)+'</td><td style="color:var(--amber);font-weight:500">'+fRF(it.premDrive)+'</td>'
+        +'</tr>';
+    });
+    html+='</tbody></table></div></div>';
+  });
+
+  document.getElementById('precResultado').innerHTML=html;
+  document.getElementById('precResultCard').style.display='block';
+  document.getElementById('precResultCard').scrollIntoView({behavior:'smooth',block:'start'});
+  toast('Precificação gerada!');
+}
+
+function salvarPrecificacao(){
+  if(!_precAtual)return;
+  HIST_PREC.unshift(_precAtual); // mais recente primeiro
+  if(HIST_PREC.length>52)HIST_PREC=HIST_PREC.slice(0,52); // mantém 1 ano
+  _precAtual=null;
+  save();renderHistPrecos();toast('Precificação salva no histórico!');
+}
+
+function exportarPrecExcel(){
+  if(!_precAtual&&!HIST_PREC.length){toast('Gere ou carregue uma precificação primeiro','err');return;}
+  const fonte=_precAtual||HIST_PREC[0];
+  const rows=[['Data','Dia','Carro','Índice','Carona Mín.','Carona Sug.','Carona Prem.','Drive Mín.','Drive Sug.','Drive Prem.']];
+  fonte.itens.forEach(it=>{
+    rows.push([it.data,it.diaSem,it.carro,it.indice,
+      it.minCarona,it.sugCarona,it.premCarona,
+      it.minDrive,it.sugDrive,it.premDrive]);
+  });
+  exportarExcel(rows,'precificacao-'+fonte.dataInicio+'.xls');
+}
+
+function exportarHistPrecExcel(){
+  const rows=[['Gerado em','Data início','Data','Dia','Carro','Carona Mín.','Carona Sug.','Carona Prem.','Drive Mín.','Drive Sug.','Drive Prem.']];
+  HIST_PREC.forEach(h=>{
+    h.itens.forEach(it=>{
+      rows.push([h.geradoEm,h.dataInicio,it.data,it.diaSem,it.carro,
+        it.minCarona,it.sugCarona,it.premCarona,
+        it.minDrive,it.sugDrive,it.premDrive]);
+    });
+  });
+  exportarExcel(rows,'historico-precificacao-'+hoje()+'.xls');
+}
+
+function renderHistPrecos(){
+  const el=document.getElementById('histPrecWrap');
+  const btn=document.getElementById('btnExportHistPrec');
+  if(!HIST_PREC.length){
+    el.innerHTML='<div class="empty"><i class="ti ti-coin"></i><p>Nenhuma precificação gerada ainda.</p></div>';
+    if(btn)btn.style.display='none';return;
+  }
+  if(btn)btn.style.display='';
+  let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Gerado em</th><th>Semana</th><th>Carros</th><th>Dias</th></tr></thead><tbody>';
+  HIST_PREC.forEach((h,idx)=>{
+    const dias=[...new Set(h.itens.map(i=>i.data))];
+    const carros=[...new Set(h.itens.map(i=>i.carro))];
+    const fim=dias[dias.length-1];
+    html+='<tr><td><strong>'+h.geradoEm+'</strong></td>'
+      +'<td>'+h.dataInicio+' → '+fim+'</td>'
+      +'<td style="font-size:12px;color:var(--text2)">'+carros.join(', ')+'</td>'
+      +'<td>'+dias.length+'</td></tr>';
+  });
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
 // ── PARCEIROS ─────────────────────────────────────────────────────────
 // PARCEIROS: { "HOTEL MARINA": { nome: "HOTEL MARINA", label: "Hotel Marina" } }
 // COMANDAS: [ { id, nro, data, parceiro, itens, valorTotal } ]
@@ -2651,7 +2969,7 @@ function renderAll(){
   renderHistV();renderHistVI();
   renderMetas();renderAnterior();renderFuncs();
   renderHistPontos();renderHistSite();renderHistDiversos();
-  renderListaParceiros();renderHistComandas();
+  renderListaParceiros();renderHistComandas();renderFeriados();renderPrecos();renderHistPrecos();
   // Filtros: apenas o principal (mais leve)
   updFiltros();
   // Ext e Parc só se tiverem dados
