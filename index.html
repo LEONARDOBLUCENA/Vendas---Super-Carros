@@ -2503,41 +2503,72 @@ function calcEfeitoFeriado(dataStr){
 }
 
 function calcIndiceHistorico(dataStr){
-  // Calcula índice de demanda para uma data específica baseado no histórico
   const dow=new Date(dataStr+'T12:00:00').getDay();
   const mm=dataStr.slice(5,7);
+  const nomeMes=MNomes[parseInt(mm)-1];
+  const nomeDow=DIAS_SEM[dow];
 
-  // Coleta faturamentos históricos para mesmo dia da semana + mesmo mês
   const ticketsMesmoDia=[];
   const ticketsTodos=[];
 
   Object.keys(V).forEach(d=>{
-    const viDia=VI[d]?VI[d].valido:0;
-    if(!viDia)return;
+    const viDia=VI[d]?VI[d].valido:0;if(!viDia)return;
     const fat=V[d].filter(i=>{const s=setorAdj(i.setor);return!SETORES_EXCLUIR_DASH.includes(s);}).reduce((a,i)=>a+i.vLiq,0);
     if(!fat)return;
     const tk=fat/viDia;
     ticketsTodos.push(tk);
     const dDow=new Date(d+'T12:00:00').getDay();
-    const dMm=d.slice(5,7);
-    if(dDow===dow&&dMm===mm)ticketsMesmoDia.push(tk);
+    if(dDow===dow&&d.slice(5,7)===mm)ticketsMesmoDia.push(tk);
   });
 
-  if(!ticketsTodos.length)return 1.0;
+  if(!ticketsTodos.length)return{indice:1.0,racional:'Sem histórico suficiente. Usando índice neutro (1.0).'};
 
   const mediaTodos=ticketsTodos.reduce((a,v)=>a+v,0)/ticketsTodos.length;
-  const base=ticketsMesmoDia.length>=3
+  const usouMesmoDia=ticketsMesmoDia.length>=3;
+  const base=usouMesmoDia
     ?ticketsMesmoDia.reduce((a,v)=>a+v,0)/ticketsMesmoDia.length
     :mediaTodos;
 
   let indice=base/mediaTodos;
+  const indiceBase=+indice.toFixed(3);
 
-  // Aplica efeito de feriado (próprio dia + adjacentes)
+  // Efeito feriado
   const boost=calcEfeitoFeriado(dataStr);
-  if(boost>0)indice*=(1+boost);
+  let textoFeriado='';
+  if(boost>0){
+    indice*=(1+boost);
+    const amanha=addDias(dataStr,1);
+    const ontem=addDias(dataStr,-1);
+    const anteontem=addDias(dataStr,-2);
+    if(FERIADOS[dataStr])
+      textoFeriado='🎉 Feriado ('+FERIADOS[dataStr]+'): +'+Math.round(boost*100)+'%';
+    else if(FERIADOS[amanha])
+      textoFeriado='📅 Véspera de '+FERIADOS[amanha]+': +'+Math.round(boost*100)+'%';
+    else if(FERIADOS[ontem])
+      textoFeriado='📅 Emenda pós '+FERIADOS[ontem]+': +'+Math.round(boost*100)+'%';
+    else if(FERIADOS[anteontem])
+      textoFeriado='📅 Fim de semana longo ('+FERIADOS[anteontem]+'): +'+Math.round(boost*100)+'%';
+  }
 
-  // Limita entre 0.7 e 1.6
-  return Math.min(1.6,Math.max(0.7,indice));
+  indice=Math.min(1.6,Math.max(0.7,indice));
+
+  // Monta racional
+  const linhas=[];
+  if(usouMesmoDia){
+    linhas.push('📊 Base histórica: ticket médio de '+nomeDow+' em '+nomeMes+' = '+fRF(base)+
+      ' ('+ticketsMesmoDia.length+' '+nomeDow+'s registrados neste mês)');
+  } else {
+    linhas.push('📊 Base histórica: média geral = '+fRF(base)+
+      ' (poucos dados para '+nomeDow+' em '+nomeMes+', usando média global)');
+  }
+  linhas.push('📈 Média geral do parque: '+fRF(mediaTodos));
+  linhas.push('⚖️ Índice base (histórico/média): '+indiceBase+
+    (indiceBase>=1.05?' → dia acima da média':indiceBase<=0.95?' → dia abaixo da média':' → dia na média'));
+  if(textoFeriado)linhas.push(textoFeriado);
+  linhas.push('🎯 Índice final aplicado: <b>'+indice.toFixed(2)+'</b>'+
+    (indice>=1.1?' → precificação elevada':indice<=0.9?' → precificação reduzida (estimular demanda)':' → precificação padrão'));
+
+  return{indice:+indice.toFixed(2),racional:linhas.join('<br>')};
 }
 
 let _precAtual=null; // precificação gerada aguardando salvar
@@ -2557,24 +2588,15 @@ function gerarPrecificacao(){
     dt.setDate(dt.getDate()+i);
     const dataStr=dt.toISOString().slice(0,10);
     const diaSem=DIAS_SEM[dt.getDay()];
-    const indice=calcIndiceHistorico(dataStr);
-    const boost=calcEfeitoFeriado(dataStr);
-    let nomeFer='';
-    if(FERIADOS[dataStr])nomeFer=' 🎉 '+FERIADOS[dataStr];
-    else if(boost>0){
-      const amanha=addDias(dataStr,1);
-      const ontem=addDias(dataStr,-1);
-      const anteontem=addDias(dataStr,-2);
-      if(FERIADOS[amanha])nomeFer=' 📅 Véspera de '+FERIADOS[amanha];
-      else if(FERIADOS[ontem])nomeFer=' 📅 Emenda ('+FERIADOS[ontem]+')';
-      else if(FERIADOS[anteontem])nomeFer=' 📅 Emenda ('+FERIADOS[anteontem]+')';
-    }
+    const res=calcIndiceHistorico(dataStr);
+    const indice=res.indice;
+    const racional=res.racional;
 
     carros.forEach(car=>{
-      const minC=Math.ceil(car.carona*indice/5)*5;  // arredonda para múltiplo de 5
+      const minC=Math.ceil(car.carona*indice/5)*5;
       const minD=Math.ceil(car.drive*indice/5)*5;
       itens.push({
-        data:dataStr,diaSem:diaSem+nomeFer,carro:car.modelo,indice:+indice.toFixed(2),
+        data:dataStr,diaSem,carro:car.modelo,indice,racional,
         minCarona:minC,sugCarona:Math.ceil(minC*1.15/5)*5,premCarona:Math.ceil(minC*1.35/5)*5,
         minDrive:minD,sugDrive:Math.ceil(minD*1.15/5)*5,premDrive:Math.ceil(minD*1.35/5)*5
       });
@@ -2590,11 +2612,19 @@ function gerarPrecificacao(){
     const itensDia=itens.filter(i=>i.data===d);
     const ds=itensDia[0].diaSem;
     const idx=itensDia[0].indice;
+    const rac=itensDia[0].racional||'';
     const corIdx=idx>=1.1?'var(--green)':idx<=0.85?'var(--red)':'var(--amber)';
-    html+='<div style="margin-bottom:14px">'
-      +'<div style="font-size:12px;font-weight:600;color:var(--text2);padding:5px 0;border-bottom:1px solid var(--border);margin-bottom:6px">'
-      +d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4)+' — <b>'+ds+'</b>'
-      +' <span style="font-size:11px;color:'+corIdx+'">índice: '+idx+'</span></div>'
+    const bgIdx=idx>=1.1?'var(--green-bg)':idx<=0.85?'var(--red-bg)':'var(--amber-bg)';
+    const dtFmt=d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4);
+    html+='<div style="margin-bottom:20px;border:1px solid var(--border);border-radius:var(--rl);overflow:hidden">'
+      +'<div style="padding:10px 14px;background:var(--surface2);display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+      +'<span style="font-size:14px;font-weight:600">'+dtFmt+' — '+ds+'</span>'
+      +'<span style="font-size:12px;font-weight:600;padding:2px 10px;border-radius:20px;background:'+bgIdx+';color:'+corIdx+'">índice '+idx+'</span>'
+      +'</div>'
+      +'<div style="padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.9">'
+      +'<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Racional</div>'
+      +rac
+      +'</div>'
       +'<div class="tbl-wrap"><table class="tbl"><thead><tr>'
       +'<th>Carro</th>'
       +'<th style="color:var(--text2)">Carona Mín.</th><th style="color:#0891b2">Carona Sug.</th><th style="color:var(--amber)">Carona Prem.</th>'
@@ -2609,7 +2639,6 @@ function gerarPrecificacao(){
     });
     html+='</tbody></table></div></div>';
   });
-
   document.getElementById('precResultado').innerHTML=html;
   document.getElementById('precResultCard').style.display='block';
   document.getElementById('precResultCard').scrollIntoView({behavior:'smooth',block:'start'});
