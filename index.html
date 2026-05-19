@@ -2788,8 +2788,22 @@ function procComandas(){
     mapComandas[idCom].itens.push({produto,qtd,vlLiq,valTotal});
     mapComandas[idCom].valorTotal+=valTotal;
     // verifica se este produto é um parceiro
-    if(PARCEIROS[produto]&&!mapComandas[idCom].parceiro){
-      mapComandas[idCom].parceiro=produto;
+    if(!mapComandas[idCom].parceiro){
+      // 1. match exato
+      if(PARCEIROS[produto]){
+        mapComandas[idCom].parceiro=produto;
+      } else {
+        // 2. normaliza espaços extras e caracteres especiais
+        const prodNorm=produto.replace(/\s+/g,' ').trim();
+        const chaveExata=Object.keys(PARCEIROS).find(k=>k.replace(/\s+/g,' ').trim()===prodNorm);
+        if(chaveExata){
+          mapComandas[idCom].parceiro=chaveExata;
+        } else {
+          // 3. verifica se alguma chave de PARCEIROS está contida no produto (match parcial)
+          const chaveContida=Object.keys(PARCEIROS).find(k=>produto.includes(k)||k.includes(produto));
+          if(chaveContida)mapComandas[idCom].parceiro=chaveContida;
+        }
+      }
     }
   });
 
