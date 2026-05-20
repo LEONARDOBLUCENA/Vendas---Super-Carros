@@ -141,7 +141,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="nav-btn" onclick="goTab('comandas')"><i class="ti ti-file-invoice"></i>Relatório de Comandas</button>
     <div class="nav-sec">Precificação</div>
     <button class="nav-btn" onclick="goTab('feriados')"><i class="ti ti-calendar-event"></i>Feriados</button>
-    <button class="nav-btn" onclick="goTab('precos')"><i class="ti ti-coin"></i>Precificação</button>
+    <button class="nav-btn" onclick="goTab('precos')"><i class="ti ti-target-arrow"></i>Geração de Metas</button>
     <div class="nav-sec">Resultados</div>
     <button class="nav-btn" onclick="goTab('dash')"><i class="ti ti-chart-bar"></i>Dashboard</button>
     <button class="nav-btn" onclick="goTab('dashext')"><i class="ti ti-chart-dots"></i>Dashboard Externos</button>
@@ -572,6 +572,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="topbar">
     <div><div class="page-title">Dashboard Externos</div>
     <div class="page-sub" id="dashextSub">Pontos Externos e Site Oficial</div></div>
+    <button class="btn btn-p" id="btnPptExt" style="display:none" onclick="gerarApresExt()"><i class="ti ti-presentation"></i>Gerar apresentação</button>
   </div>
   <div class="fbar">
     <div class="fbar-item"><label>Ano</label><select id="fExtAno" onchange="onFExtAno()"></select></div>
@@ -613,8 +614,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <!-- PRECIFICAÇÃO -->
 <div id="sc-precos" class="screen">
   <div class="topbar">
-    <div><div class="page-title">Precificação</div>
-    <div class="page-sub">Cadastre os carros e gere preços dinâmicos semanais</div></div>
+    <div><div class="page-title">Geração de Metas</div>
+    <div class="page-sub">Gere metas mensais por setor com base no histórico de faturamento</div></div>
   </div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
@@ -633,28 +634,51 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
 
     <div class="card" style="margin:0">
-      <div class="card-title"><i class="ti ti-sparkles"></i>Gerar precificação dinâmica</div>
+      <div class="card-title"><i class="ti ti-sparkles"></i>Gerar metas mensais</div>
       <div class="alert alert-info"><i class="ti ti-info-circle"></i>
-        <span>Com base no histórico de faturamento por <strong>dia da semana</strong> e <strong>mês do ano</strong>, o sistema calcula 3 faixas de preço para cada carro nos próximos 7 dias.<br><br>
-        <strong>Mínimo</strong> = base ajustada pelo índice histórico<br>
-        <strong>Sugerido</strong> = mínimo +15%<br>
-        <strong>Premium</strong> = mínimo +35%</span>
+        <span>O sistema analisa o histórico dos anos base selecionados, calcula o <strong>potencial de cada mês</strong> com base na sazonalidade, feriados e dias úteis, e gera a meta mensal por setor para o ano alvo.<br><br>
+        A meta de cada mês = média histórica ajustada × peso sazonal do mês</span>
       </div>
-      <div class="field"><label>Data de início da semana</label><input type="date" id="precDataInicio"></div>
-      <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:4px" onclick="gerarPrecificacao()">
-        <i class="ti ti-sparkles"></i>Gerar precificação dinâmica
+      <div class="g2">
+        <div class="field"><label>Ano alvo (gerar metas para)</label>
+          <select id="metaAnoAlvo">
+            <option value="2025">2025</option>
+            <option value="2026" selected>2026</option>
+            <option value="2027">2027</option>
+            <option value="2028">2028</option>
+          </select>
+        </div>
+        <div class="field"><label>Anos base (histórico — múltipla seleção)</label>
+          <div class="mes-picker" id="anoBasePicker">
+            <div class="mes-picker-btn" onclick="toggleAnoBasePicker()" id="anoBasePickerBtn">
+              <span id="anoBasePickerLbl">Selecione os anos</span>
+              <i class="ti ti-chevron-down" style="font-size:12px"></i>
+            </div>
+            <div class="mes-picker-dropdown" id="anoBasePickerDrop">
+              <div class="mes-picker-actions">
+                <button onclick="selecionarTodosAnosBase()">Todos</button>
+                <button onclick="limparAnosBase()">Nenhum</button>
+                <button onclick="aplicarAnosBase()" style="background:var(--accent);color:#fff;border-color:var(--accent)">Aplicar</button>
+              </div>
+              <div id="anoBasePickerItems"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:8px" onclick="gerarMetas()">
+        <i class="ti ti-sparkles"></i>Gerar metas mensais
       </button>
     </div>
   </div>
 
-  <div class="card" id="precResultCard" style="display:none;margin-top:13px">
-    <div class="card-title"><i class="ti ti-table"></i>Precificação gerada
+  <div class="card" id="metasGeradasCard" style="display:none;margin-top:13px">
+    <div class="card-title"><i class="ti ti-table"></i>Metas geradas
       <div style="display:flex;gap:6px;margin-left:auto">
-        <button class="btn btn-sm" onclick="salvarPrecificacao()"><i class="ti ti-device-floppy"></i>Salvar histórico</button>
-        <button class="btn btn-sm" onclick="exportarPrecExcel()"><i class="ti ti-table-export"></i>Exportar Excel</button>
+        <button class="btn btn-sm" onclick="salvarMetasGeradas()"><i class="ti ti-device-floppy"></i>Salvar nas Metas</button>
+        <button class="btn btn-sm" onclick="exportarMetasGeradasExcel()"><i class="ti ti-table-export"></i>Exportar Excel</button>
       </div>
     </div>
-    <div id="precResultado"></div>
+    <div id="metasGeradasResultado"></div>
   </div>
 
   <div class="card">
@@ -768,6 +792,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="topbar">
     <div><div class="page-title">Dashboard Parceiros</div>
     <div class="page-sub" id="dashparcSub">Análise de rentabilidade por parceiro</div></div>
+    <button class="btn btn-p" id="btnPptParc" style="display:none" onclick="gerarApresParc()"><i class="ti ti-presentation"></i>Gerar apresentação</button>
   </div>
   <div class="fbar">
     <div class="fbar-item"><label>Ano</label><select id="fParcAno" onchange="onFParcAno()"></select></div>
@@ -946,7 +971,7 @@ function goTab(t){
   if(t==='dashext'){updFiltrosExt();renderDashExt();}
   if(t==='parceiros')renderListaParceiros();
   if(t==='feriados')renderFeriados();
-  if(t==='precos'){renderPrecos();renderHistPrecos();}
+  if(t==='precos'){renderPrecos();renderHistPrecos();populaAnoBasePicker();}
   if(t==='comandas')renderHistComandas();
   if(t==='dashparc'){updFiltrosParc();renderDashParc();}
   if(t==='metas')renderMetas();
@@ -1514,6 +1539,11 @@ document.addEventListener('click',function(e){
   if(picker&&!picker.contains(e.target)){
     document.getElementById('mesPickerDrop').classList.remove('open');
   }
+  const anoP=document.getElementById('anoBasePicker');
+  if(anoP&&!anoP.contains(e.target)){
+    const d=document.getElementById('anoBasePickerDrop');
+    if(d)d.classList.remove('open');
+  }
 });
 function updDia(){
   const ano=document.getElementById('fAno').value;
@@ -1691,25 +1721,44 @@ function renderDash(){
     return fat>0?fat:null;
   }
 
+  // Determina até qual dia comparar com o ano anterior
+  // Usa o último dia com dados no período filtrado do ano atual
+  const ultimoDiaAtual=diasKey.length>0?diasKey[diasKey.length-1]:null;
+  const ultimoDiaAnt=ultimoDiaAtual?anoAnt+ultimoDiaAtual.slice(4):null; // ex: 2025-05-17
+
   let antGeral=null;
   if(!dia){
     if(mesesSelecionados.length>0){
-      // meses específicos: soma os mesmos meses do ano anterior
+      // meses específicos: soma apenas até o mesmo dia do ano anterior
       let soma=0,found=false;
       mesesSelecionados.forEach(m=>{
-        const mf=`${anoAnt}-${m}`;
-        const v=getAntParaFiltro(setorF,mf);
-        if(v){soma+=v;found=true;}
+        // para o último mês selecionado: limita até o mesmo dia
+        const isUltimoMes=m===mesesSelecionados[mesesSelecionados.length-1];
+        const diasAnt=Object.keys(V).filter(d=>{
+          if(!d.startsWith(anoAnt+'-'+m))return false;
+          if(isUltimoMes&&ultimoDiaAnt)return d<=ultimoDiaAnt;
+          return true;
+        });
+        if(!diasAnt.length)return;
+        const fat=diasAnt.reduce((a,d)=>{
+          return a+V[d].filter(i=>!SETORES_EXCLUIR_DASH.includes(setorAdj(i.setor))&&(!setorF||setorF===S_TOTAL||setorAdj(i.setor)===setorF)).reduce((s,i)=>s+i.vLiq,0);
+        },0);
+        if(fat>0){soma+=fat;found=true;}
       });
       if(found)antGeral=soma;
     } else {
-      // ano inteiro
+      // ano inteiro: compara até o mesmo dia do ano (ex: até 17/05/2025 se hoje é 17/05/2026)
+      const limiteDiaAnt=ultimoDiaAnt; // ex: "2025-05-17"
       let soma=0,found=false;
-      for(let mi=1;mi<=12;mi++){
-        const mf=`${anoAnt}-${String(mi).padStart(2,'0')}`;
-        const v=getAntParaFiltro(setorF,mf);
-        if(v){soma+=v;found=true;}
-      }
+      const diasAnoAnt=Object.keys(V).filter(d=>{
+        if(!d.startsWith(anoAnt))return false;
+        if(limiteDiaAnt)return d<=limiteDiaAnt;
+        return true;
+      });
+      diasAnoAnt.forEach(d=>{
+        const fat=V[d].filter(i=>!SETORES_EXCLUIR_DASH.includes(setorAdj(i.setor))&&(!setorF||setorF===S_TOTAL||setorAdj(i.setor)===setorF)).reduce((s,i)=>s+i.vLiq,0);
+        if(fat>0){soma+=fat;found=true;}
+      });
       if(found)antGeral=soma;
     }
   }
@@ -1743,10 +1792,16 @@ function renderDash(){
     const vr=((tLiq-antGeral)/antGeral*100).toFixed(1);
     const sinal=parseFloat(vr)>=0?'+':'';
     const clsAnt=parseFloat(vr)>=0?'kpi-good':'kpi-bad';
+    // label indica até qual dia está comparando
+    let lblAnt='Vs. '+anoAnt;
+    if(ultimoDiaAnt){
+      const dtFmt=ultimoDiaAnt.slice(8)+'/'+ultimoDiaAnt.slice(5,7)+'/'+ultimoDiaAnt.slice(0,4);
+      lblAnt='Vs. '+anoAnt+' (até '+dtFmt+')';
+    }
     kpiAnt='<div class="kpi">'
-      +'<div class="kpi-lbl">Vs. ano anterior ('+anoAnt+')</div>'
+      +'<div class="kpi-lbl">'+lblAnt+'</div>'
       +'<div class="kpi-val '+clsAnt+'">'+sinal+vr+'%</div>'
-      +'<div class="kpi-sub">Anterior: '+fRF(antGeral)+' &middot; Atual: '+fRF(tLiq)+'</div>'
+      +'<div class="kpi-sub">'+anoAnt+': '+fRF(antGeral)+' &middot; '+ano+': '+fRF(tLiq)+'</div>'
       +'</div>';
   }
 
@@ -1958,6 +2013,37 @@ function gerarApres(){
   const tVisit=diasKey.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);
   const bySe=agruparSe(itens);const setores=Object.entries(bySe).sort((a,b)=>b[1].liq-a[1].liq);
   const txt=`Gere apresentação executiva em PowerPoint (.pptx) — Super Carros:\n\nPeríodo: ${diasKey[0]||'—'} a ${diasKey[diasKey.length-1]||'—'} (${diasKey.length} dia(s))\nFaturamento líquido: ${fRF(tLiq)}\nVisitantes: ${tVisit.toLocaleString()}\nTicket médio/visitante: ${tVisit?fRF(tLiq/tVisit):'—'}\n\nPor setor:\n${setores.map(([s,d])=>`- ${s}: ${fRF(d.liq)} (${tLiq?(d.liq/tLiq*100).toFixed(1):0}%) — ticket/visit: ${tVisit?fRF(d.liq/tVisit):'—'}`).join('\n')}\n\nSlides: capa, KPIs, faturamento mensal, por setor, ticket/visitante, conclusão. Design moderno e corporativo.`;
+  navigator.clipboard.writeText(txt).then(()=>toast('Texto copiado! Cole no Claude.ai')).catch(()=>alert('Copie e cole no Claude.ai:\n\n'+txt));
+}
+
+// ── APRESENTAÇÕES ────────────────────────────────────────────────────
+function gerarApresExt(){
+  const{diasP,diasS,diasD,ano,mes,dia,canal}=getExtFiltrados();
+  const fatP=canal===''||canal==='pontos'?diasP.reduce((a,d)=>a+(PONTOS[d]||0),0):0;
+  const fatS=canal===''||canal==='site'?diasS.reduce((a,d)=>a+(SITE[d]||0),0):0;
+  const fatD=canal===''||canal==='diversos'?diasD.reduce((a,d)=>a+Object.values(DIVERSOS[d]||{}).reduce((x,v)=>x+v,0),0):0;
+  const fatTotal=fatP+fatS+fatD;
+  const periLbl=document.getElementById('dashextSub').textContent;
+  const canais=[];
+  if(fatP>0)canais.push('- Pontos Externos: '+fRF(fatP)+' ('+( fatTotal?(fatP/fatTotal*100).toFixed(1):0)+'%)');
+  if(fatS>0)canais.push('- Site Oficial: '+fRF(fatS)+' ('+(fatTotal?(fatS/fatTotal*100).toFixed(1):0)+'%)');
+  if(fatD>0)canais.push('- Fat. Diversos: '+fRF(fatD)+' ('+(fatTotal?(fatD/fatTotal*100).toFixed(1):0)+'%)');
+  const txt='Gere apresentação executiva em PowerPoint (.pptx) — Super Carros / Outros Faturamentos:\n\nPeríodo: '+periLbl+'\nFaturamento total: '+fRF(fatTotal)+'\n\nPor canal:\n'+canais.join('\n')+'\n\nSlides: capa, KPIs por canal, evolução temporal, participação, conclusão. Design moderno e corporativo.';
+  navigator.clipboard.writeText(txt).then(()=>toast('Texto copiado! Cole no Claude.ai')).catch(()=>alert('Copie e cole no Claude.ai:\n\n'+txt));
+}
+function gerarApresParc(){
+  const coms=getComandasFiltradas();
+  const totalVal=coms.reduce((a,c)=>a+c.valorTotal,0);
+  const totalComs=coms.length;
+  const periLbl=document.getElementById('dashparcSub').textContent;
+  const byParc={};
+  coms.forEach(c=>{
+    const label=PARCEIROS[c.parceiro]?PARCEIROS[c.parceiro].label:(c.parceiro||'Sem parceiro');
+    if(!byParc[label])byParc[label]={qtd:0,val:0};
+    byParc[label].qtd++;byParc[label].val+=c.valorTotal;
+  });
+  const parcs=Object.entries(byParc).sort((a,b)=>b[1].val-a[1].val);
+  const txt='Gere apresentação executiva em PowerPoint (.pptx) — Super Carros / Parceiros:\n\nPeríodo: '+periLbl+'\nFaturamento total: '+fRF(totalVal)+'\nComandas: '+totalComs+'\nTicket médio/comanda: '+fRF(totalVal/totalComs)+'\n\nPor parceiro:\n'+parcs.map(([l,d])=>'- '+l+': '+fRF(d.val)+' ('+( totalVal?(d.val/totalVal*100).toFixed(1):0)+'%) — '+d.qtd+' comandas').join('\n')+'\n\nSlides: capa, KPIs, ranking de parceiros, participação (donut), evolução, conclusão. Design moderno e corporativo.';
   navigator.clipboard.writeText(txt).then(()=>toast('Texto copiado! Cole no Claude.ai')).catch(()=>alert('Copie e cole no Claude.ai:\n\n'+txt));
 }
 
@@ -2420,8 +2506,225 @@ function renderDashExt(){
     options:{...bO,plugins:{...bO.plugins,legend:{display:datasets.length>1,labels:{color:tc,font:{size:11,family:"'DM Sans'"}}}}}
   });
   chartsExt.push(cExt);
+  const bpe=document.getElementById('btnPptExt');if(bpe)bpe.style.display='flex';
 }
 
+
+// ── GERAÇÃO DE METAS ─────────────────────────────────────────────────
+function populaAnoBasePicker(){
+  const anosDisp=[...new Set(Object.keys(V).map(d=>d.slice(0,4)))].sort();
+  const container=document.getElementById('anoBasePickerItems');
+  if(!container)return;
+  container.innerHTML='';
+  anosDisp.forEach(a=>{
+    const item=document.createElement('label');
+    item.className='mes-picker-item';
+    const cb=document.createElement('input');
+    cb.type='checkbox';cb.value=a;
+    cb.checked=anosBaseSelecionados.includes(a);
+    item.appendChild(cb);
+    item.appendChild(document.createTextNode(a));
+    container.appendChild(item);
+  });
+  // se não há seleção ainda, pré-seleciona todos
+  if(!anosBaseSelecionados.length&&anosDisp.length){
+    anosBaseSelecionados=[...anosDisp];
+    container.querySelectorAll('input').forEach(cb=>cb.checked=true);
+    updAnoBasePickerLabel();
+  }
+}
+function toggleAnoBasePicker(){
+  const d=document.getElementById('anoBasePickerDrop');
+  if(d)d.classList.toggle('open');
+}
+function selecionarTodosAnosBase(){
+  document.querySelectorAll('#anoBasePickerItems input[type=checkbox]').forEach(cb=>{cb.checked=true;});
+}
+function limparAnosBase(){
+  document.querySelectorAll('#anoBasePickerItems input[type=checkbox]').forEach(cb=>{cb.checked=false;});
+}
+function aplicarAnosBase(){
+  anosBaseSelecionados=[...document.querySelectorAll('#anoBasePickerItems input[type=checkbox]:checked')].map(cb=>cb.value);
+  document.getElementById('anoBasePickerDrop').classList.remove('open');
+  updAnoBasePickerLabel();
+}
+function updAnoBasePickerLabel(){
+  const lbl=document.getElementById('anoBasePickerLbl');
+  if(!lbl)return;
+  if(!anosBaseSelecionados.length)lbl.textContent='Selecione os anos';
+  else lbl.textContent=anosBaseSelecionados.join(', ');
+}
+
+function gerarMetas(){
+  const anoAlvo=document.getElementById('metaAnoAlvo').value;
+  if(!anosBaseSelecionados.length){toast('Selecione ao menos um ano base','err');return;}
+  if(!Object.keys(V).length){toast('Importe dados de vendas primeiro','err');return;}
+
+  const setoresDash=[...new Set(
+    Object.values(V).flatMap(d=>d.map(i=>setorAdj(i.setor)))
+      .filter(s=>!SETORES_EXCLUIR_DASH.includes(s))
+  )].sort();
+
+  // ── Passo 1: calcula faturamento real por mês e setor para cada ano base ──
+  // estrutura: fatBase[mes][setor] = [valores dos anos base]
+  const fatBase={};
+  for(let mi=1;mi<=12;mi++){
+    const mm=String(mi).padStart(2,'0');
+    fatBase[mm]={total:[]};
+    setoresDash.forEach(s=>fatBase[mm][s]=[]);
+  }
+
+  anosBaseSelecionados.forEach(ano=>{
+    for(let mi=1;mi<=12;mi++){
+      const mm=String(mi).padStart(2,'0');
+      const pref=ano+'-'+mm;
+      const diasMes=Object.keys(V).filter(d=>d.startsWith(pref));
+      if(!diasMes.length)return;
+      // total do mês
+      const fatMes=diasMes.reduce((a,d)=>a+V[d].filter(i=>!SETORES_EXCLUIR_DASH.includes(setorAdj(i.setor))).reduce((s,i)=>s+i.vLiq,0),0);
+      fatBase[mm].total.push(fatMes);
+      // por setor
+      setoresDash.forEach(s=>{
+        const fatSe=diasMes.reduce((a,d)=>a+getItens([d],s).reduce((x,i)=>x+i.vLiq,0),0);
+        fatBase[mm][s].push(fatSe);
+      });
+    }
+  });
+
+  // ── Passo 2: calcula faturamento médio por mês (base histórica) ──
+  const mediaBase={};
+  let totalAnualBase=0;
+  for(let mi=1;mi<=12;mi++){
+    const mm=String(mi).padStart(2,'0');
+    const vals=fatBase[mm].total.filter(v=>v>0);
+    mediaBase[mm]={total:vals.length?vals.reduce((a,v)=>a+v,0)/vals.length:0};
+    totalAnualBase+=mediaBase[mm].total;
+    setoresDash.forEach(s=>{
+      const vSe=fatBase[mm][s].filter(v=>v>0);
+      mediaBase[mm][s]=vSe.length?vSe.reduce((a,v)=>a+v,0)/vSe.length:0;
+    });
+  }
+
+  // ── Passo 3: calcula peso sazonal de cada mês (% do total anual) ──
+  const pesoSazonal={};
+  for(let mi=1;mi<=12;mi++){
+    const mm=String(mi).padStart(2,'0');
+    pesoSazonal[mm]=totalAnualBase>0?mediaBase[mm].total/totalAnualBase:1/12;
+  }
+
+  // ── Passo 4: ajusta pelo número de feriados + fins de semana no mês do ano alvo ──
+  function diasUteisFeriadosDoMes(ano, mm){
+    const diasNoMes=new Date(parseInt(ano),parseInt(mm),0).getDate();
+    let fds=0,feriados=0;
+    for(let d=1;d<=diasNoMes;d++){
+      const ds=ano+'-'+mm+'-'+String(d).padStart(2,'0');
+      const dow=new Date(ds+'T12:00:00').getDay();
+      if(dow===0||dow===6)fds++;
+      if(FERIADOS[ds])feriados++;
+    }
+    return{diasNoMes,fds,feriados,diasUteis:diasNoMes-fds-feriados};
+  }
+
+  // ── Passo 5: calcula meta para cada mês do ano alvo ──
+  const metasGeradas=[];
+  for(let mi=1;mi<=12;mi++){
+    const mm=String(mi).padStart(2,'0');
+    const diasAlvo=diasUteisFeriadosDoMes(anoAlvo,mm);
+
+    // fator de ajuste: compara dias úteis do ano alvo vs média histórica
+    let somaDiasUteis=0, qtdAnos=0;
+    anosBaseSelecionados.forEach(ano=>{
+      const diasAno=diasUteisFeriadosDoMes(ano,mm);
+      somaDiasUteis+=diasAno.diasUteis+diasAno.feriados*0.7+diasAno.fds*0.9;
+      qtdAnos++;
+    });
+    const mediaDiasBase=qtdAnos?somaDiasUteis/qtdAnos:diasAlvo.diasUteis;
+    const diasAlvoAjust=diasAlvo.diasUteis+diasAlvo.feriados*0.7+diasAlvo.fds*0.9;
+    const fatorDias=mediaDiasBase>0?diasAlvoAjust/mediaDiasBase:1;
+
+    const metaTotal=Math.round(mediaBase[mm].total*fatorDias/100)*100;
+    const setoresMes={};
+    let somaSetores=0;
+    setoresDash.forEach(s=>{
+      const v=Math.round(mediaBase[mm][s]*fatorDias/100)*100;
+      setoresMes[s]=v;
+      somaSetores+=v;
+    });
+
+    // racional
+    const nFeriados=diasAlvo.feriados;
+    const nFds=diasAlvo.fds;
+    const racional=[]
+    racional.push('📊 Média histórica ('+anosBaseSelecionados.join('+')+') em '+MNomes[mi-1]+': '+fRF(mediaBase[mm].total));
+    racional.push('📅 '+anoAlvo+': '+diasAlvo.diasUteis+' dias úteis, '+nFds+' FDS, '+nFeriados+' feriado(s)');
+    if(Math.abs(fatorDias-1)>0.02)racional.push('⚖️ Ajuste calendário: '+(fatorDias>1?'+':'')+((fatorDias-1)*100).toFixed(1)+'% ('+( fatorDias>1?'mais':'menos')+' dias fortes vs histórico)');
+    racional.push('🎯 Meta sugerida: '+fRF(metaTotal));
+
+    metasGeradas.push({mes:anoAlvo+'-'+mm,mesNome:MNomes[mi-1]+' '+anoAlvo,metaTotal,setores:setoresMes,diasAlvo,fatorDias:+fatorDias.toFixed(3),racional:racional.join('<br>')});
+  }
+
+  _metasGeradas={anoAlvo,anosBase:anosBaseSelecionados,geradoEm:hoje(),meses:metasGeradas};
+
+  // ── Renderiza resultado ──
+  let html='<div style="overflow-x:auto"><table class="tbl" style="min-width:700px"><thead><tr>'
+    +'<th>Mês</th><th>Meta Total</th>';
+  setoresDash.forEach(s=>html+='<th>'+s+'</th>');
+  html+='<th>Racional</th></tr></thead><tbody>';
+
+  metasGeradas.forEach(m=>{
+    html+='<tr>'
+      +'<td><strong>'+m.mesNome+'</strong></td>'
+      +'<td style="font-weight:600;color:var(--accent)">'+fRF(m.metaTotal)+'</td>';
+    setoresDash.forEach(s=>html+='<td>'+fRF(m.setores[s]||0)+'</td>');
+    html+='<td><details><summary style="cursor:pointer;font-size:11px;color:var(--accent)">Ver racional</summary>'
+      +'<div style="font-size:11px;color:var(--text2);line-height:1.8;padding:6px 0">'+m.racional+'</div></details></td>'
+      +'</tr>';
+  });
+
+  // Linha de totais
+  const totalAnual=metasGeradas.reduce((a,m)=>a+m.metaTotal,0);
+  html+='<tr style="background:var(--surface2);font-weight:600"><td>TOTAL '+anoAlvo+'</td><td style="color:var(--accent)">'+fRF(totalAnual)+'</td>';
+  setoresDash.forEach(s=>{
+    const tot=metasGeradas.reduce((a,m)=>a+(m.setores[s]||0),0);
+    html+='<td>'+fRF(tot)+'</td>';
+  });
+  html+='<td></td></tr>';
+  html+='</tbody></table></div>';
+
+  document.getElementById('metasGeradasResultado').innerHTML=html;
+  document.getElementById('metasGeradasCard').style.display='block';
+  document.getElementById('metasGeradasCard').scrollIntoView({behavior:'smooth',block:'start'});
+  toast('Metas geradas para '+anoAlvo+'!');
+}
+
+function salvarMetasGeradas(){
+  if(!_metasGeradas){toast('Gere as metas primeiro','err');return;}
+  let salvos=0;
+  _metasGeradas.meses.forEach(m=>{
+    // salva meta total (Salão Total)
+    METAS[metaKey(S_TOTAL,m.mes)]={setor:S_TOTAL,mes:m.mes,val:m.metaTotal};
+    // salva por setor
+    Object.entries(m.setores).forEach(([s,v])=>{
+      if(v>0)METAS[metaKey(s,m.mes)]={setor:s,mes:m.mes,val:v};
+    });
+    salvos++;
+  });
+  save();renderMetas();
+  toast(salvos+' meses salvos na aba Metas!');
+}
+
+function exportarMetasGeradasExcel(){
+  if(!_metasGeradas){toast('Gere as metas primeiro','err');return;}
+  const setores=[...new Set(_metasGeradas.meses.flatMap(m=>Object.keys(m.setores)))].sort();
+  const rows=[['Mês','Meta Total',...setores,'Fator Calendário']];
+  _metasGeradas.meses.forEach(m=>{
+    rows.push([m.mesNome,m.metaTotal,...setores.map(s=>m.setores[s]||0),m.fatorDias]);
+  });
+  // Total
+  const totGeral=_metasGeradas.meses.reduce((a,m)=>a+m.metaTotal,0);
+  rows.push(['TOTAL',totGeral,...setores.map(s=>_metasGeradas.meses.reduce((a,m)=>a+(m.setores[s]||0),0)),'']);
+  exportarExcel(rows,'metas-'+_metasGeradas.anoAlvo+'-geradas-'+hoje()+'.xls');
+}
 
 // ── FERIADOS ──────────────────────────────────────────────────────────
 // FERIADOS: { "2025-12-25": "Natal", "2026-01-01": "Ano Novo" }
@@ -2595,7 +2898,9 @@ function calcIndiceHistorico(dataStr){
   return{indice:+indice.toFixed(2),racional:linhas.join('<br>')};
 }
 
-let _precAtual=null; // precificação gerada aguardando salvar
+let _precAtual=null;
+let _metasGeradas=null;
+let anosBaseSelecionados=[];
 
 function gerarPrecificacao(){
   const carros=Object.values(CARROS);
@@ -3081,6 +3386,7 @@ function renderDashParc(){
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{color:tc,font:{size:10,family:"'DM Sans'"},boxWidth:10}}}}
   });
   chartsParc.push(cParcDona);
+  const bpp=document.getElementById('btnPptParc');if(bpp)bpp.style.display='flex';
 }
 // ── INIT ─────────────────────────────────────────────────────────────
 function renderAll(){
