@@ -151,7 +151,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <input type="file" id="fileIn" accept=".json" style="display:none" onchange="importar(event)">
     <button class="btn btn-sm" onclick="rodarDiagnostico()" style="color:var(--text3)"><i class="ti ti-activity"></i>Diagnóstico</button>
     <button class="btn btn-sm" onclick="migrarComandas()" style="color:var(--text3)" id="btnMigrar"><i class="ti ti-database"></i>Compactar dados</button>
-    <button class="btn btn-sm" onclick="alert('COMANDAS:'+COMANDAS.length+'\nV dias:'+Object.keys(V).length+'\nbicomandas:'+Math.round((localStorage.getItem(\'bicomandas\')||\'\'  ).length/1024)+'KB')" style="color:var(--text3)"><i class="ti ti-info-circle"></i>Info</button>
+    <button class="btn btn-sm" onclick="infoStorage()" style="color:var(--text3)"><i class="ti ti-info-circle"></i>Info</button>
   </div>
 </aside>
 
@@ -3627,6 +3627,37 @@ function renderDashParc(){
   const bpp=document.getElementById('btnPptParc');if(bpp)bpp.style.display='flex';
 }
 // ── DIAGNÓSTICO DE PERFORMANCE ──────────────────────────────────────
+function infoStorage(){
+  const keys=['bip','biv','bivi','bimetas','biant','bipontos','bisite','bidiversos',
+               'bifuncs','biferiados','bicarros','bihistprec','bicomandas','biparceiros','bi_nid'];
+  let linhas=['=== TAMANHO localStorage ==='];
+  let total=0;
+  keys.forEach(k=>{
+    const v=localStorage.getItem(k)||'';
+    total+=v.length;
+    if(v.length>0)linhas.push(k+': '+Math.round(v.length/1024)+'KB');
+  });
+  linhas.push('TOTAL: '+Math.round(total/1024)+'KB / 5120KB');
+  linhas.push('');
+  linhas.push('=== DADOS EM MEMÓRIA ===');
+  linhas.push('V (vendas dias): '+Object.keys(V).length);
+  linhas.push('VI (visitantes): '+Object.keys(VI).length);
+  linhas.push('COMANDAS: '+COMANDAS.length);
+  linhas.push('PARCEIROS: '+Object.keys(PARCEIROS).length);
+  linhas.push('METAS: '+Object.keys(METAS).length);
+  linhas.push('PONTOS: '+Object.keys(PONTOS).length);
+  linhas.push('SITE: '+Object.keys(SITE).length);
+  linhas.push('DIVERSOS: '+Object.keys(DIVERSOS).length);
+  
+  // Testa tempo de save
+  const t0=performance.now();
+  try{save();}catch(e){}
+  const t1=performance.now();
+  linhas.push('');
+  linhas.push('save() tempo: '+(t1-t0).toFixed(1)+'ms');
+  
+  alert(linhas.join('\n'));
+}
 function migrarComandas(){
   // diagnóstico com alert para garantir visibilidade
   const info=[]
