@@ -891,6 +891,7 @@ function load(){
         };
       });
     }
+    rebuiltIdxComandas();
     if(nid)_nid=parseInt(nid)||1;
     let mig=false;
     Object.keys(P).forEach(k=>{if(!k.startsWith('p')){const nk=novaKey();P[nk]=P[k];delete P[k];mig=true;}});
@@ -2906,6 +2907,51 @@ let _precAtual=null;
 let _metasGeradas=null;
 let anosBaseSelecionados=[];
 
+// ── Índice de comandas para performance ──────────────────────────────
+// Reconstruído ao carregar/salvar — evita iterar 21k registros a cada render
+let _idxComandas={
+  porAno:{},       // { "2026": [cmd,...] }
+  porAnoMes:{},    // { "2026-01": [cmd,...] }
+  porAnoMesDia:{}, // { "2026-01-10": [cmd,...] }
+  porParceiro:{},  // { "HOTEL": [cmd,...] }
+  anos:[],
+  totalVal:0,
+  totalQtd:0
+};
+
+function rebuiltIdxComandas(){
+  _idxComandas={porAno:{},porAnoMes:{},porAnoMesDia:{},porParceiro:{},anos:[],totalVal:0,totalQtd:0};
+  COMANDAS.forEach(function(c){
+    const ano=c.data.slice(0,4);
+    const mes=c.data.slice(0,7);
+    const dia=c.data;
+    if(!_idxComandas.porAno[ano])_idxComandas.porAno[ano]=[];
+    _idxComandas.porAno[ano].push(c);
+    if(!_idxComandas.porAnoMes[mes])_idxComandas.porAnoMes[mes]=[];
+    _idxComandas.porAnoMes[mes].push(c);
+    if(!_idxComandas.porAnoMesDia[dia])_idxComandas.porAnoMesDia[dia]=[];
+    _idxComandas.porAnoMesDia[dia].push(c);
+    if(c.parceiro){
+      if(!_idxComandas.porParceiro[c.parceiro])_idxComandas.porParceiro[c.parceiro]=[];
+      _idxComandas.porParceiro[c.parceiro].push(c);
+    }
+    _idxComandas.totalVal+=c.valorTotal;
+    _idxComandas.totalQtd++;
+  });
+  _idxComandas.anos=[...new Set(COMANDAS.map(c=>c.data.slice(0,4)))].sort();
+}
+
+function getComandas(ano,mes,dia,parcF){
+  // Busca no índice — muito mais rápido que filter em 21k registros
+  let base;
+  if(dia) base=_idxComandas.porAnoMesDia[dia]||[];
+  else if(mes) base=_idxComandas.porAnoMes[ano+'-'+mes]||[];
+  else if(ano) base=_idxComandas.porAno[ano]||[];
+  else base=COMANDAS;
+  if(parcF) return base.filter(c=>c.parceiro===parcF);
+  return base;
+}
+
 function gerarPrecificacao(){
   const carros=Object.values(CARROS);
   if(!carros.length){toast('Cadastre ao menos um carro primeiro','err');return;}
@@ -3278,6 +3324,7 @@ function salvarComandas(){
     if(!idsExist.has(c.id)){COMANDAS.push(c);novos++;}
   });
   pendingCom=null;
+  rebuiltIdxComandas();
   document.getElementById('prevComandas').style.display='none';
   const fi=document.getElementById('comandasFile');if(fi)fi.value='';
   save();renderHistComandas();updFiltrosParc();
@@ -3286,7 +3333,7 @@ function salvarComandas(){
 
 function limparComandas(){
   if(!confirm('Apagar TODAS as comandas? Esta ação não pode ser desfeita.'))return;
-  COMANDAS=[];save();renderHistComandas();updFiltrosParc();renderDashParc();toast('Dados apagados');
+  COMANDAS=[];rebuiltIdxComandas();save();renderHistComandas();updFiltrosParc();renderDashParc();toast('Dados apagados');
 }
 
 function renderHistComandas(){
@@ -3297,7 +3344,7 @@ function renderHistComandas(){
     el.innerHTML='<div class="empty"><i class="ti ti-file-invoice"></i><p>Nenhuma comanda registrada ainda.</p></div>';
     if(res)res.textContent='';if(btn)btn.style.display='none';return;
   }
-  const totalVal=COMANDAS.reduce((a,c)=>a+c.valorTotal,0);
+  const totalVal=_idxComandas.totalVal;
   if(res)res.textContent=COMANDAS.length+' comandas · '+fRF(totalVal);
   if(btn)btn.style.display='';
   const btnExp=document.getElementById('btnExportFuncs');
@@ -3327,7 +3374,7 @@ function renderHistComandas(){
 function delComanda(id){
   if(!confirm('Remover a comanda '+id+'?'))return;
   COMANDAS=COMANDAS.filter(c=>c.id!==id);
-  save();renderHistComandas();updFiltrosParc();renderDashParc();toast('Comanda removida');
+  rebuiltIdxComandas();save();renderHistComandas();updFiltrosParc();renderDashParc();toast('Comanda removida');
 }
 
 function exportarComandasExcel(){
@@ -3342,14 +3389,15 @@ function exportarComandasExcel(){
 // ── DASHBOARD PARCEIROS ───────────────────────────────────────────────
 function updFiltrosParc(){
   if(!COMANDAS.length)return;
-  const anos=[...new Set(COMANDAS.map(c=>c.data.slice(0,4)))].sort();
+  const anos=_idxComandas.anos;
+  if(!anos.length)return;
   const sA=document.getElementById('fParcAno'),cur=sA?sA.value:'';
   if(!sA)return;
   sA.innerHTML=anos.map(a=>'<option value="'+a+'">'+a+'</option>').join('');
   if(anos.includes(cur))sA.value=cur;else sA.value=anos[anos.length-1];
   updFiltrosParcMesDia();
   // parceiros disponíveis
-  const parcSet=new Set(COMANDAS.map(c=>c.parceiro).filter(Boolean));
+  const parcSet=new Set(Object.keys(_idxComandas.porParceiro));
   const sel=document.getElementById('fParcNome'),curP=sel?sel.value:'';
   if(!sel)return;
   sel.innerHTML='<option value="">Todos</option>';
@@ -3361,7 +3409,7 @@ function updFiltrosParc(){
 }
 function updFiltrosParcMesDia(){
   const ano=document.getElementById('fParcAno').value;
-  const comsAno=COMANDAS.filter(c=>c.data.startsWith(ano));
+  const comsAno=_idxComandas.porAno[ano]||[];
   const meses=[...new Set(comsAno.map(c=>c.data.slice(5,7)))].sort();
   const sM=document.getElementById('fParcMes'),curM=sM.value;
   sM.innerHTML='<option value="">Todos</option>';
@@ -3372,8 +3420,8 @@ function updFiltrosParcMesDia(){
 function updFiltrosParcDia(){
   const ano=document.getElementById('fParcAno').value;
   const mes=document.getElementById('fParcMes').value;
-  const pref=mes?ano+'-'+mes:ano;
-  const dias=[...new Set(COMANDAS.filter(c=>c.data.startsWith(pref)).map(c=>c.data))].sort();
+  const baseDia=mes?(_idxComandas.porAnoMes[ano+'-'+mes]||[]):(_idxComandas.porAno[ano]||[]);
+  const dias=[...new Set(baseDia.map(c=>c.data))].sort();
   const sD=document.getElementById('fParcDia'),curD=sD.value;
   sD.innerHTML='<option value="">Todos</option>';
   dias.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4);sD.appendChild(o);});
@@ -3387,8 +3435,7 @@ function getComandasFiltradas(){
   const mes=document.getElementById('fParcMes').value;
   const dia=document.getElementById('fParcDia').value;
   const parcF=document.getElementById('fParcNome').value;
-  const pref=dia?dia:mes?ano+'-'+mes:ano;
-  return COMANDAS.filter(c=>c.data.startsWith(pref)&&(!parcF||c.parceiro===parcF));
+  return getComandas(ano,mes,dia,parcF);
 }
 
 function killChartsParc(){chartsParc.forEach(c=>{try{c.destroy();}catch(e){}});chartsParc=[];}
