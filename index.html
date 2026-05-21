@@ -751,9 +751,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <span>Selecione o arquivo do Excel (<strong>.xlsx</strong> ou <strong>.xls</strong>) ou CSV diretamente. Colunas esperadas:<br>
       <span style="font-family:'DM Mono',monospace;font-size:11px">ID Comanda · Nro.comanda · Dh.comanda · Dh.finalizado · Dh.cancelamento · Nro.item · ID · Produto · Und. · Qtd. · Vl.líquido</span></span>
     </div>
+    <div id="comandasStatus" style="margin-bottom:10px;display:none">
+      <div class="alert alert-info" style="margin:0"><i class="ti ti-info-circle"></i>
+        <span id="comandasStatusTxt"></span>
+      </div>
+    </div>
     <div class="field">
-      <label>Arquivo .CSV ou .TXT exportado do Excel</label>
+      <label>Arquivo Excel (.xlsx) ou CSV</label>
       <input type="file" id="comandasFile" accept=".xlsx,.xls,.csv,.txt,.tsv" style="padding:8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);width:100%">
+    </div>
+    <div class="field" style="margin:0">
+      <label>Modo de importação</label>
+      <select id="comandasModo" style="padding:8px 11px;font-size:13px;font-family:'DM Sans',sans-serif;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);width:100%">
+        <option value="incremental">Incremental — adiciona apenas comandas novas (recomendado)</option>
+        <option value="substituir">Substituir — apaga tudo e reimporta</option>
+      </select>
     </div>
     <div id="comandasProgresso" style="display:none;margin-top:8px">
       <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
@@ -844,11 +856,13 @@ function save(){
     localStorage.setItem('bisite',JSON.stringify(SITE));
     localStorage.setItem('bidiversos',JSON.stringify(DIVERSOS));
     localStorage.setItem('biparceiros',JSON.stringify(PARCEIROS));
-    // salva comandas de forma compacta para economizar espaço no localStorage
-    const _comsCompact=COMANDAS.map(function(c){
-      return{id:c.id,nro:c.nro,data:c.data,parceiro:c.parceiro,valorTotal:c.valorTotal,nItens:c.itens?c.itens.length:0};
-    });
-    localStorage.setItem('bicomandas',JSON.stringify(_comsCompact));
+    // salva APENAS campos essenciais — itens ficam só em memória
+    const _cc=new Array(COMANDAS.length);
+    for(let i=0;i<COMANDAS.length;i++){
+      const c=COMANDAS[i];
+      _cc[i]={i:c.id,n:c.nro,d:c.data,p:c.parceiro,v:Math.round(c.valorTotal*100)/100};
+    }
+    localStorage.setItem('bicomandas',JSON.stringify(_cc));
     localStorage.setItem('bi_nid',String(_nid));
   }catch(e){
     if(e.name==='QuotaExceededError'||e.code===22){
@@ -883,12 +897,15 @@ function load(){
     }
     if(com){
       const _coms=JSON.parse(com);
-      // compatibilidade: converte formato compacto (nItens) para formato completo
+      // suporta formato novo {i,n,d,p,v} e legado {id,nro,data,parceiro,valorTotal}
       COMANDAS=_coms.map(function(c){
         return{
-          id:c.id,nro:c.nro||'',data:c.data,parceiro:c.parceiro,
-          valorTotal:c.valorTotal,
-          itens:c.itens||Array(c.nItens||0).fill({produto:'',qtd:0,vlLiq:0,valTotal:0})
+          id:c.i||c.id||'',
+          nro:c.n||c.nro||'',
+          data:c.d||c.data||'',
+          parceiro:c.p||c.parceiro||null,
+          valorTotal:c.v||c.valorTotal||0,
+          itens:[] // itens não são persistidos
         };
       });
     }
@@ -978,7 +995,7 @@ function goTab(t){
   if(t==='parceiros')renderListaParceiros();
   if(t==='feriados')renderFeriados();
   if(t==='precos'){renderPrecos();renderHistPrecos();populaAnoBasePicker();}
-  if(t==='comandas')renderHistComandas();
+  if(t==='comandas'){renderHistComandas();atualizaStatusComandas();}
   if(t==='dashparc'){updFiltrosParc();renderDashParc();}
   if(t==='metas')renderMetas();
   if(t==='funcs')renderFuncs();
@@ -2921,25 +2938,28 @@ let _idxComandas={
 };
 
 function rebuiltIdxComandas(){
-  _idxComandas={porAno:{},porAnoMes:{},porAnoMesDia:{},porParceiro:{},anos:[],totalVal:0,totalQtd:0};
-  COMANDAS.forEach(function(c){
+  const idx={porAno:{},porAnoMes:{},porAnoMesDia:{},porParceiro:{},anos:[],totalVal:0,totalQtd:0};
+  const anosSet=new Set();
+  for(let i=0;i<COMANDAS.length;i++){
+    const c=COMANDAS[i];
+    if(!c.data)continue;
     const ano=c.data.slice(0,4);
     const mes=c.data.slice(0,7);
     const dia=c.data;
-    if(!_idxComandas.porAno[ano])_idxComandas.porAno[ano]=[];
-    _idxComandas.porAno[ano].push(c);
-    if(!_idxComandas.porAnoMes[mes])_idxComandas.porAnoMes[mes]=[];
-    _idxComandas.porAnoMes[mes].push(c);
-    if(!_idxComandas.porAnoMesDia[dia])_idxComandas.porAnoMesDia[dia]=[];
-    _idxComandas.porAnoMesDia[dia].push(c);
-    if(c.parceiro){
-      if(!_idxComandas.porParceiro[c.parceiro])_idxComandas.porParceiro[c.parceiro]=[];
-      _idxComandas.porParceiro[c.parceiro].push(c);
-    }
-    _idxComandas.totalVal+=c.valorTotal;
-    _idxComandas.totalQtd++;
-  });
-  _idxComandas.anos=[...new Set(COMANDAS.map(c=>c.data.slice(0,4)))].sort();
+    // porAno
+    if(idx.porAno[ano])idx.porAno[ano].push(c);else idx.porAno[ano]=[c];
+    // porAnoMes
+    if(idx.porAnoMes[mes])idx.porAnoMes[mes].push(c);else idx.porAnoMes[mes]=[c];
+    // porAnoMesDia
+    if(idx.porAnoMesDia[dia])idx.porAnoMesDia[dia].push(c);else idx.porAnoMesDia[dia]=[c];
+    // porParceiro
+    if(c.parceiro){if(idx.porParceiro[c.parceiro])idx.porParceiro[c.parceiro].push(c);else idx.porParceiro[c.parceiro]=[c];}
+    idx.totalVal+=c.valorTotal;
+    idx.totalQtd++;
+    anosSet.add(ano);
+  }
+  idx.anos=[...anosSet].sort();
+  _idxComandas=idx;
 }
 
 function getComandas(ano,mes,dia,parcF){
@@ -3135,6 +3155,20 @@ function renderListaParceiros(){
 }
 
 // ── RELATÓRIO DE COMANDAS ─────────────────────────────────────────────
+function atualizaStatusComandas(){
+  const st=document.getElementById('comandasStatus');
+  const stTxt=document.getElementById('comandasStatusTxt');
+  if(!st||!stTxt)return;
+  if(!COMANDAS.length){st.style.display='none';return;}
+  const anos=_idxComandas.anos;
+  const ultDia=COMANDAS.reduce((a,c)=>c.data>a?c.data:a,'');
+  const ultFmt=ultDia?ultDia.slice(8)+'/'+ultDia.slice(5,7)+'/'+ultDia.slice(0,4):'—';
+  st.style.display='block';
+  stTxt.innerHTML='<strong>'+COMANDAS.length.toLocaleString()+'</strong> comandas salvas'
+    +' · Anos: '+anos.join(', ')
+    +' · Última: <strong>'+ultFmt+'</strong>'
+    +' · Para atualizar, importe apenas o arquivo do novo período usando modo <b>Incremental</b>';
+}
 function procComandasFile(){
   const fileInput=document.getElementById('comandasFile');
   if(!fileInput.files.length){toast('Selecione um arquivo primeiro','err');return;}
@@ -3318,18 +3352,38 @@ function mostrarPreviewComandas(comParceiro,semParceiro,totalComandas){
 
 function salvarComandas(){
   if(!pendingCom)return;
-  // Adiciona as novas comandas evitando duplicatas por ID
-  const idsExist=new Set(COMANDAS.map(c=>c.id));
-  let novos=0;
-  pendingCom.forEach(c=>{
-    if(!idsExist.has(c.id)){COMANDAS.push(c);novos++;}
-  });
+  const modo=document.getElementById('comandasModo')?document.getElementById('comandasModo').value:'incremental';
+  let novos=0,duplic=0;
+
+  if(modo==='substituir'){
+    COMANDAS=pendingCom;
+    novos=pendingCom.length;
+  } else {
+    // Incremental: usa índice de IDs existentes para deduplicar rapidamente
+    const idsExist=new Set();
+    for(let i=0;i<COMANDAS.length;i++)idsExist.add(COMANDAS[i].id);
+    for(let i=0;i<pendingCom.length;i++){
+      if(!idsExist.has(pendingCom[i].id)){COMANDAS.push(pendingCom[i]);novos++;idsExist.add(pendingCom[i].id);}
+      else duplic++;
+    }
+  }
+
   pendingCom=null;
   rebuiltIdxComandas();
   document.getElementById('prevComandas').style.display='none';
   const fi=document.getElementById('comandasFile');if(fi)fi.value='';
   save();renderHistComandas();updFiltrosParc();
-  toast(novos+' comanda(s) salvas!');
+
+  // Atualiza status
+  const st=document.getElementById('comandasStatus');
+  const stTxt=document.getElementById('comandasStatusTxt');
+  if(st&&stTxt){
+    st.style.display='block';
+    stTxt.innerHTML='<strong>'+novos+'</strong> comanda(s) novas adicionadas'
+      +(duplic?' · <span style="color:var(--text2)">'+duplic+' já existiam (ignoradas)</span>':'')
+      +' · Total: <strong>'+COMANDAS.length+'</strong> comandas';
+  }
+  toast(novos+' novas · '+COMANDAS.length+' total');
 }
 
 function limparComandas(){
@@ -3646,4 +3700,11 @@ if(Object.keys(V).length)document.getElementById('btnPpt').style.display='flex';
 document.getElementById('brandSub').textContent=Object.keys(V).length?Object.keys(V).length+' dia(s) registrado(s)':'Sistema de gestão';
 </script>
 </body>
-</html>
+</html>  // usa índice pré-calculado — evita iterar 21k comandas
+  const byParc={};
+  Object.entries(_idxComandas.porParceiro).forEach(function(entry){
+    const key=entry[0],arr=entry[1];
+    const label=PARCEIROS[key]?PARCEIROS[key].label:key;
+    const val=arr.reduce((a,c)=>a+c.valorTotal,0);
+    byParc[label]={qtd:arr.length,val};
+  });
