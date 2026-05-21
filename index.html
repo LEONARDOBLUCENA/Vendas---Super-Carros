@@ -127,20 +127,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="nav-sec">Cadastro</div>
     <button class="nav-btn on" onclick="goTab('class')"><i class="ti ti-tag"></i>Classificação</button>
     <button class="nav-btn" onclick="goTab('ajustado')"><i class="ti ti-adjustments"></i>Cadastro ajustado</button>
+    <button class="nav-btn" onclick="goTab('parceiros')"><i class="ti ti-users-group"></i>Parceiros</button>
+    <button class="nav-btn" onclick="goTab('feriados')"><i class="ti ti-calendar-event"></i>Feriados</button>
+    <button class="nav-btn" onclick="goTab('metas')"><i class="ti ti-target"></i>Metas</button>
     <div class="nav-sec">Operação diária</div>
     <button class="nav-btn" onclick="goTab('vendas')"><i class="ti ti-clipboard-list"></i>Relatório de vendas</button>
     <button class="nav-btn" onclick="goTab('visit')"><i class="ti ti-users"></i>Visitantes</button>
-    <button class="nav-btn" onclick="goTab('metas')"><i class="ti ti-target"></i>Metas</button>
     <button class="nav-btn" onclick="goTab('funcs')"><i class="ti ti-id-badge"></i>Funcionários</button>
-    <div class="nav-sec">Outros Faturamentos</div>
     <button class="nav-btn" onclick="goTab('pontos')"><i class="ti ti-map-pin"></i>Pontos Externos</button>
     <button class="nav-btn" onclick="goTab('site')"><i class="ti ti-world"></i>Site Oficial</button>
     <button class="nav-btn" onclick="goTab('diversos')"><i class="ti ti-coins"></i>Faturamentos Diversos</button>
-    <div class="nav-sec">Parceiros</div>
-    <button class="nav-btn" onclick="goTab('parceiros')"><i class="ti ti-users-group"></i>Cadastro de Parceiros</button>
     <button class="nav-btn" onclick="goTab('comandas')"><i class="ti ti-file-invoice"></i>Relatório de Comandas</button>
-    <div class="nav-sec">Precificação</div>
-    <button class="nav-btn" onclick="goTab('feriados')"><i class="ti ti-calendar-event"></i>Feriados</button>
     <button class="nav-btn" onclick="goTab('precos')"><i class="ti ti-target-arrow"></i>Geração de Metas</button>
     <div class="nav-sec">Resultados</div>
     <button class="nav-btn" onclick="goTab('dash')"><i class="ti ti-chart-bar"></i>Dashboard</button>
@@ -749,15 +746,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="card">
     <div class="card-title"><i class="ti ti-table-import"></i>Importar relatório</div>
     <div class="alert alert-info"><i class="ti ti-info-circle"></i>
-      <span>Cole com cabeçalho na linha 1 (ignorado). Colunas esperadas:<br>
-      <span style="font-family:'DM Mono',monospace;font-size:11px">ID Comanda · Nro.comanda · Dh.comanda · Dh.finalizado · Dh.cancelamento · Nro.item · ID · Produto · Und. · Qtd. · Vl.líquido</span><br>
-      O sistema calcula <strong>Valor Total = Qtd × Vl.líquido</strong> e agrupa por comanda para identificar o parceiro.</span>
+      <span>Salve o relatório do Excel como <strong>.CSV</strong> (separado por vírgula ou tab) e selecione o arquivo abaixo. Colunas esperadas:<br>
+      <span style="font-family:'DM Mono',monospace;font-size:11px">ID Comanda · Nro.comanda · Dh.comanda · Dh.finalizado · Dh.cancelamento · Nro.item · ID · Produto · Und. · Qtd. · Vl.líquido</span></span>
     </div>
-    <div class="field"><label>Tabela copiada do Excel (com cabeçalho)</label>
-      <textarea id="comandasTxt" style="min-height:130px" placeholder="ID Comanda	Nro. comanda	Dh.comanda	Dh.finalizado	Dh.cancelamento	Nro.item	ID	Produto	Und.	Qtd.	Vl.líquido"></textarea>
+    <div class="field">
+      <label>Arquivo .CSV ou .TXT exportado do Excel</label>
+      <input type="file" id="comandasFile" accept=".csv,.txt,.tsv" style="padding:8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);width:100%">
     </div>
-    <div class="act">
-      <button class="btn btn-p" onclick="procComandas()"><i class="ti ti-cpu"></i>Processar</button>
+    <div id="comandasProgresso" style="display:none;margin-top:8px">
+      <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+        <div id="comandasProgressBar" style="height:100%;background:var(--accent);border-radius:3px;width:0%;transition:width .3s"></div>
+      </div>
+      <div id="comandasProgressTxt" style="font-size:12px;color:var(--text2);margin-top:5px">Processando...</div>
+    </div>
+    <div class="act" style="margin-top:8px">
+      <button class="btn btn-p" onclick="procComandasFile()"><i class="ti ti-cpu"></i>Processar arquivo</button>
       <button class="btn btn-sm" onclick="limparComandas()" style="color:var(--red)"><i class="ti ti-trash"></i>Limpar dados</button>
     </div>
   </div>
@@ -3084,57 +3087,100 @@ function renderListaParceiros(){
 }
 
 // ── RELATÓRIO DE COMANDAS ─────────────────────────────────────────────
+function procComandasFile(){
+  const fileInput=document.getElementById('comandasFile');
+  if(!fileInput.files.length){toast('Selecione um arquivo primeiro','err');return;}
+  const file=fileInput.files[0];
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const raw=e.target.result.trim();
+    procComandasRaw(raw);
+  };
+  reader.readAsText(file,'UTF-8');
+}
 function procComandas(){
-  const raw=document.getElementById('comandasTxt').value.trim();
-  if(!raw){toast('Cole o relatório primeiro','err');return;}
-  const lines=raw.split('\n').map(l=>l.split('\t'));
+  // mantido por compatibilidade — redireciona para file
+  procComandasFile();
+}
+function procComandasRaw(raw){
+  if(!raw){toast('Arquivo vazio','err');return;}
+
+  // Detecta separador (tab ou ponto-e-vírgula ou vírgula)
+  const primeiraLinha=raw.split('\n')[0];
+  const sep=primeiraLinha.includes('\t')?'\t':primeiraLinha.includes(';')?';':',';
+
+  const lines=raw.split('\n').map(l=>l.split(sep));
   const dados=lines.slice(1).filter(r=>r.length>=11&&(r[0]||'').trim());
-  if(!dados.length){toast('Nenhuma linha encontrada após o cabeçalho','err');return;}
+  if(!dados.length){toast('Nenhuma linha encontrada. Verifique o formato do arquivo.','err');return;}
 
-  // Colunas: 0=ID Comanda, 1=Nro.comanda, 2=Dh.comanda, 3=Dh.finalizado,
-  //          4=Dh.cancelamento, 5=Nro.item, 6=ID, 7=Produto, 8=Und., 9=Qtd., 10=Vl.líquido
+  // Mostra barra de progresso
+  const progDiv=document.getElementById('comandasProgresso');
+  const progBar=document.getElementById('comandasProgressBar');
+  const progTxt=document.getElementById('comandasProgressTxt');
+  if(progDiv)progDiv.style.display='block';
 
-  // Passo 1: monta mapa de comandas com todos os itens
+  // Processamento assíncrono em lotes para não travar a interface
   const mapComandas={};
-  dados.forEach(r=>{
-    const idCom=(r[0]||'').trim();
-    if(!idCom)return;
-    const dtRaw=(r[2]||r[3]||'').trim();
-    const data=parseData(dtRaw.slice(0,10))||dtRaw.slice(0,10);
-    const produto=(r[7]||'').trim().toUpperCase();
-    const qtd=parseN(r[9]);
-    const vlLiq=parseN(r[10]);
-    const valTotal=qtd*vlLiq;
-    if(!mapComandas[idCom])mapComandas[idCom]={id:idCom,nro:(r[1]||'').trim(),data,itens:[],parceiro:null,valorTotal:0};
-    mapComandas[idCom].itens.push({produto,qtd,vlLiq,valTotal});
-    mapComandas[idCom].valorTotal+=valTotal;
-    // verifica se este produto é um parceiro
-    if(!mapComandas[idCom].parceiro){
-      // 1. match exato
-      if(PARCEIROS[produto]){
-        mapComandas[idCom].parceiro=produto;
-      } else {
-        // 2. normaliza espaços extras e caracteres especiais
-        const prodNorm=produto.replace(/\s+/g,' ').trim();
-        const chaveExata=Object.keys(PARCEIROS).find(k=>k.replace(/\s+/g,' ').trim()===prodNorm);
-        if(chaveExata){
-          mapComandas[idCom].parceiro=chaveExata;
+  const LOTE=2000;
+  let idx=0;
+
+  function processarLote(){
+    const fim=Math.min(idx+LOTE,dados.length);
+    for(let i=idx;i<fim;i++){
+      const r=dados[i];
+      const idCom=(r[0]||'').trim();
+      if(!idCom)continue;
+      const dtRaw=(r[2]||r[3]||'').trim();
+      const data=parseData(dtRaw.slice(0,10))||dtRaw.slice(0,10);
+      const produto=(r[7]||'').trim().toUpperCase();
+      const qtd=parseN(r[9]);
+      const vlLiq=parseN(r[10]);
+      const valTotal=qtd*vlLiq;
+      if(!mapComandas[idCom])mapComandas[idCom]={id:idCom,nro:(r[1]||'').trim(),data,itens:[],parceiro:null,valorTotal:0};
+      mapComandas[idCom].itens.push({produto,qtd,vlLiq,valTotal});
+      mapComandas[idCom].valorTotal+=valTotal;
+      // verifica se este produto é um parceiro
+      if(!mapComandas[idCom].parceiro){
+        // 1. match exato
+        if(PARCEIROS[produto]){
+          mapComandas[idCom].parceiro=produto;
         } else {
-          // 3. verifica se alguma chave de PARCEIROS está contida no produto (match parcial)
-          const chaveContida=Object.keys(PARCEIROS).find(k=>produto.includes(k)||k.includes(produto));
-          if(chaveContida)mapComandas[idCom].parceiro=chaveContida;
+          // 2. normaliza espaços extras
+          const prodNorm=produto.replace(/\s+/g,' ').trim();
+          const chaveExata=Object.keys(PARCEIROS).find(k=>k.replace(/\s+/g,' ').trim()===prodNorm);
+          if(chaveExata){
+            mapComandas[idCom].parceiro=chaveExata;
+          } else {
+            // 3. match parcial
+            const chaveContida=Object.keys(PARCEIROS).find(k=>produto.includes(k)||k.includes(produto));
+            if(chaveContida)mapComandas[idCom].parceiro=chaveContida;
+          }
         }
       }
     }
-  });
+    idx=fim;
+    const pct=Math.round(idx/dados.length*100);
+    if(progBar)progBar.style.width=pct+'%';
+    if(progTxt)progTxt.textContent='Processando... '+pct+'% ('+idx.toLocaleString()+' de '+dados.length.toLocaleString()+' linhas)';
 
-  const todas=Object.values(mapComandas);
-  const comParceiro=todas.filter(c=>c.parceiro);
-  const semParceiro=todas.filter(c=>!c.parceiro);
+    if(idx<dados.length){
+      setTimeout(processarLote,0); // libera UI entre lotes
+      return;
+    }
 
-  pendingCom=comParceiro;
+    // Processamento concluído
+    if(progDiv)progDiv.style.display='none';
 
-  // Preview
+    const todas=Object.values(mapComandas);
+    const comParceiro=todas.filter(c=>c.parceiro);
+    const semParceiro=todas.filter(c=>!c.parceiro);
+    pendingCom=comParceiro;
+    mostrarPreviewComandas(comParceiro,semParceiro,todas.length);
+  }
+  setTimeout(processarLote,0); // inicia assíncrono
+}
+
+function mostrarPreviewComandas(comParceiro,semParceiro,totalComandas){
   const tb=document.getElementById('prevComandasBody');tb.innerHTML='';
   let totGeral=0;
   comParceiro.slice(0,50).forEach(com=>{
@@ -3178,7 +3224,7 @@ function salvarComandas(){
   });
   pendingCom=null;
   document.getElementById('prevComandas').style.display='none';
-  document.getElementById('comandasTxt').value='';
+  const fi=document.getElementById('comandasFile');if(fi)fi.value='';
   save();renderHistComandas();updFiltrosParc();
   toast(novos+' comanda(s) salvas!');
 }
