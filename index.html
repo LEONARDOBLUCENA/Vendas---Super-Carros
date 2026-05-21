@@ -149,6 +149,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="btn btn-sm" onclick="exportar()"><i class="ti ti-download"></i>Backup</button>
     <button class="btn btn-sm" onclick="document.getElementById('fileIn').click()"><i class="ti ti-upload"></i>Restaurar</button>
     <input type="file" id="fileIn" accept=".json" style="display:none" onchange="importar(event)">
+    <button class="btn btn-sm" onclick="rodarDiagnostico()" style="color:var(--text3)"><i class="ti ti-activity"></i>Diagnóstico</button>
   </div>
 </aside>
 
@@ -3536,6 +3537,91 @@ function renderDashParc(){
   chartsParc.push(cParcDona);
   const bpp=document.getElementById('btnPptParc');if(bpp)bpp.style.display='flex';
 }
+// ── DIAGNÓSTICO DE PERFORMANCE ──────────────────────────────────────
+function rodarDiagnostico(){
+  const fmt=ms=>ms<1?'<1ms':ms<1000?ms.toFixed(1)+'ms':(ms/1000).toFixed(2)+'s';
+  const lines=[];
+  const log=(msg,emoji='')=>lines.push((emoji?emoji+' ':'')+msg);
+
+  log('DIAGNÓSTICO DE PERFORMANCE','🔬');
+  log('─────────────────────────────');
+
+  // localStorage
+  const keys=['bip','biv','bivi','bimetas','biant','bipontos','bisite','bidiversos',
+               'bifuncs','biferiados','bicarros','bihistprec','bicomandas','biparceiros','bi_nid'];
+  let totalBytes=0;
+  let maxKey='',maxSize=0;
+  keys.forEach(k=>{
+    const v=localStorage.getItem(k);
+    if(v){
+      totalBytes+=v.length;
+      if(v.length>maxSize){maxSize=v.length;maxKey=k;}
+    }
+  });
+  log('localStorage total: '+(totalBytes/1024).toFixed(1)+' KB / ~5120 KB');
+  log('Maior chave: '+maxKey+' ('+(maxSize/1024).toFixed(1)+' KB)');
+
+  // Contagens
+  log('');
+  log('REGISTROS:','📊');
+  log('Comandas: '+COMANDAS.length);
+  log('Dias vendas: '+Object.keys(V).length);
+  log('Dias visitantes: '+Object.keys(VI).length);
+  log('Parceiros: '+Object.keys(PARCEIROS).length);
+
+  // Tempos
+  log('');
+  log('TEMPOS DE OPERAÇÃO:','⏱');
+
+  // JSON.stringify das comandas
+  let t0=performance.now();
+  const comsStr=JSON.stringify(COMANDAS);
+  let t1=performance.now();
+  log('JSON.stringify comandas: '+fmt(t1-t0)+' ('+( comsStr.length/1024).toFixed(0)+' KB)');
+
+  // filter comandas
+  t0=performance.now();
+  const ano=new Date().getFullYear().toString();
+  const c2026=COMANDAS.filter(c=>c.data&&c.data.startsWith(ano));
+  t1=performance.now();
+  log('filter comandas ano atual ('+c2026.length+'): '+fmt(t1-t0));
+
+  // índice
+  t0=performance.now();
+  rebuiltIdxComandas();
+  t1=performance.now();
+  log('rebuiltIdxComandas: '+fmt(t1-t0));
+
+  // getComandas via índice
+  t0=performance.now();
+  const ci=getComandas(ano,'','','');
+  t1=performance.now();
+  log('getComandas via índice ('+ci.length+'): '+fmt(t1-t0));
+
+  // loop vendas
+  t0=performance.now();
+  const dias=Object.keys(V).filter(d=>d.startsWith(ano));
+  let fat=0;
+  dias.forEach(d=>{if(V[d])V[d].forEach(i=>fat+=i.vLiq||0);});
+  t1=performance.now();
+  log('loop vendas '+ano+' ('+dias.length+' dias): '+fmt(t1-t0));
+
+  // save()
+  t0=performance.now();
+  try{save();}catch(e){}
+  t1=performance.now();
+  log('save() completo: '+fmt(t1-t0));
+
+  log('');
+  log('─────────────────────────────');
+  log('Cole este resultado no chat para análise.');
+
+  const txt=lines.join('\n');
+  navigator.clipboard.writeText(txt)
+    .then(()=>{ alert('Diagnóstico copiado!\n\n'+txt); })
+    .catch(()=>{ alert(txt); });
+}
+
 // ── INIT ─────────────────────────────────────────────────────────────
 function renderAll(){
   // Renderiza apenas listas e históricos — dashboards só quando a aba for aberta
