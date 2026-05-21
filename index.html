@@ -957,9 +957,25 @@ function importar(e){
     if(d.METAS)METAS=d.METAS;if(d.ANTERIOR)ANTERIOR=d.ANTERIOR;if(d.FUNCS)FUNCS=d.FUNCS;
     if(d.FERIADOS)FERIADOS=d.FERIADOS;if(d.CARROS)CARROS=d.CARROS;if(d.HIST_PREC)HIST_PREC=d.HIST_PREC;
     if(d.PONTOS)PONTOS=d.PONTOS;if(d.SITE)SITE=d.SITE;if(d.DIVERSOS)DIVERSOS=d.DIVERSOS;
-    if(d.PARCEIROS)PARCEIROS=d.PARCEIROS;if(d.COMANDAS)COMANDAS=d.COMANDAS;
+    if(d.PARCEIROS)PARCEIROS=d.PARCEIROS;
+    if(d.COMANDAS){
+      COMANDAS=d.COMANDAS.map(function(cx){
+        return{id:cx.i||cx.id||'',nro:cx.n||cx.nro||'',data:cx.d||cx.data||'',
+               parceiro:cx.p||cx.parceiro||null,valorTotal:cx.v||cx.valorTotal||0,itens:[]};
+      });
+    }
     if(d._nid)_nid=d._nid;
-    save();renderAll();toast('Backup restaurado!');
+    rebuiltIdxComandas();
+    // Força save compacto imediatamente após restaurar
+    if(COMANDAS.length){
+      const _cc=new Array(COMANDAS.length);
+      for(let i=0;i<COMANDAS.length;i++){
+        const cx=COMANDAS[i];
+        _cc[i]={i:cx.id,n:cx.nro,d:cx.data,p:cx.parceiro,v:Math.round(cx.valorTotal*100)/100};
+      }
+      try{localStorage.setItem('bicomandas',JSON.stringify(_cc));}catch(e){}
+    }
+    save();renderAll();toast('Backup restaurado! '+COMANDAS.length.toLocaleString()+' comandas compactadas.');
   }catch(_){toast('Arquivo inválido','err');}};
   r.readAsText(f);e.target.value='';
 }
