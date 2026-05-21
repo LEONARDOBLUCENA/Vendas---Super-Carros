@@ -151,6 +151,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <input type="file" id="fileIn" accept=".json" style="display:none" onchange="importar(event)">
     <button class="btn btn-sm" onclick="rodarDiagnostico()" style="color:var(--text3)"><i class="ti ti-activity"></i>Diagnóstico</button>
     <button class="btn btn-sm" onclick="migrarComandas()" style="color:var(--text3)" id="btnMigrar"><i class="ti ti-database"></i>Compactar dados</button>
+    <button class="btn btn-sm" onclick="alert('COMANDAS:'+COMANDAS.length+'\nV dias:'+Object.keys(V).length+'\nbicomandas:'+Math.round((localStorage.getItem(\'bicomandas\')||\'\'  ).length/1024)+'KB')" style="color:var(--text3)"><i class="ti ti-info-circle"></i>Info</button>
   </div>
 </aside>
 
@@ -3627,10 +3628,18 @@ function renderDashParc(){
 }
 // ── DIAGNÓSTICO DE PERFORMANCE ──────────────────────────────────────
 function migrarComandas(){
-  if(!COMANDAS.length){toast('Nenhuma comanda para compactar','err');return;}
+  // diagnóstico com alert para garantir visibilidade
+  const info=[]
+  info.push('COMANDAS em memória: '+COMANDAS.length);
+  info.push('localStorage bicomandas: '+(Math.round((localStorage.getItem('bicomandas')||'').length/1024))+'KB');
+  
+  if(!COMANDAS.length){
+    alert('COMANDAS vazio!\n\nCertifique-se que:\n1. Você restaurou o backup\n2. O backup contém comandas\n\n'+info.join('\n'));
+    return;
+  }
+  
   const antes=localStorage.getItem('bicomandas')||'';
   const antesKB=Math.round(antes.length/1024);
-  // Força save no formato compacto
   const _cc=new Array(COMANDAS.length);
   for(let i=0;i<COMANDAS.length;i++){
     const cx=COMANDAS[i];
@@ -3640,10 +3649,9 @@ function migrarComandas(){
   const depoisKB=Math.round(compacto.length/1024);
   try{
     localStorage.setItem('bicomandas',compacto);
-    toast('Compactado: '+antesKB+'KB → '+depoisKB+'KB (economia: '+Math.round((1-depoisKB/antesKB)*100)+'%)');
-    document.getElementById('btnMigrar').style.display='none';
+    alert('✅ Compactado com sucesso!\n\nAntes: '+antesKB+'KB\nDepois: '+depoisKB+'KB\nEconomia: '+Math.round((1-depoisKB/antesKB)*100)+'%\nComandas: '+COMANDAS.length);
   }catch(e){
-    toast('Erro ao compactar: '+e.message,'err');
+    alert('❌ Erro: '+e.message);
   }
 }
 function rodarDiagnostico(){
