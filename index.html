@@ -3256,9 +3256,9 @@ function mostrarPreviewComandas(comParceiro,semParceiro,totalComandas){
   }
 
   const al=document.getElementById('prevComandasAlerta');
-  const pcts=comParceiro.length>0?((comParceiro.length/todas.length)*100).toFixed(1):0;
+  const pcts=comParceiro.length>0?((comParceiro.length/totalComandas)*100).toFixed(1):0;
   let alertHtml='<div class="alert alert-ok"><i class="ti ti-circle-check"></i><span>'
-    +'<b>'+comParceiro.length+'</b> comanda(s) com parceiro identificado de '+todas.length+' total ('+pcts+'%)</span></div>';
+    +'<b>'+comParceiro.length+'</b> comanda(s) com parceiro identificado de '+totalComandas+' total ('+pcts+'%)</span></div>';
   if(semParceiro.length>0){
     alertHtml+='<div class="alert alert-warn"><i class="ti ti-info-circle"></i><span>'
       +'<b>'+semParceiro.length+'</b> comanda(s) sem parceiro (não serão importadas). '
