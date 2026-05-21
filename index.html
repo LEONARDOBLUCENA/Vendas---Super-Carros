@@ -3129,13 +3129,44 @@ function procComandas(){
 function procComandasRaw(raw){
   if(!raw){toast('Arquivo vazio','err');return;}
 
-  // Detecta separador (tab ou ponto-e-vírgula ou vírgula)
+  const TAB=String.fromCharCode(9);
   const primeiraLinha=raw.split('\n')[0];
-  const sep=primeiraLinha.includes('\t')?'\t':primeiraLinha.includes(';')?';':',';
+  const sep=primeiraLinha.includes(TAB)?TAB:primeiraLinha.includes(';')?';':',';
 
   const lines=raw.split('\n').map(l=>l.split(sep));
-  const dados=lines.slice(1).filter(r=>r.length>=11&&(r[0]||'').trim());
-  if(!dados.length){toast('Nenhuma linha encontrada. Verifique o formato do arquivo.','err');return;}
+  if(lines.length<2){toast('Arquivo sem dados.','err');return;}
+
+  // Mapeia colunas pelo cabeçalho (case-insensitive, ignora acentos)
+  function normCol(s){return(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');}
+  const header=lines[0].map(normCol);
+
+  function colIdx(candidatos){
+    for(const cand of candidatos){
+      const idx=header.findIndex(h=>h.includes(normCol(cand)));
+      if(idx>=0)return idx;
+    }
+    return -1;
+  }
+
+  const iIdCom  = colIdx(['id comanda','idcomanda','id_comanda','comanda']);
+  const iNro    = colIdx(['nro.comanda','nrocomanda','nro comanda','numero comanda']);
+  const iDt     = colIdx(['dh.comanda','dhcomanda','dh comanda','data comanda','dtcomanda']);
+  const iDtFin  = colIdx(['dh.finalizado','finalizado','dtfinalizado']);
+  const iProd   = colIdx(['produto','product']);
+  const iQtd    = colIdx(['qtd.','qtd','quantidade']);
+  const iVl     = colIdx(['vl.liquido','vlliquido','vlrliquido','valor liquido','vl liquido']);
+
+  // Log de diagnóstico no console
+  console.log('Colunas mapeadas:',{iIdCom,iNro,iDt,iDtFin,iProd,iQtd,iVl});
+
+  if(iIdCom<0||iProd<0||iQtd<0||iVl<0){
+    toast('Não foi possível identificar as colunas obrigatórias. Verifique o cabeçalho do arquivo.','err');
+    console.error('Cabeçalho encontrado:',lines[0]);
+    return;
+  }
+
+  const dados=lines.slice(1).filter(r=>r.length>Math.max(iIdCom,iProd,iQtd,iVl)&&(r[iIdCom]||'').trim());
+  if(!dados.length){toast('Nenhuma linha de dados encontrada.','err');return;}
 
   // Mostra barra de progresso
   const progDiv=document.getElementById('comandasProgresso');
@@ -3152,15 +3183,15 @@ function procComandasRaw(raw){
     const fim=Math.min(idx+LOTE,dados.length);
     for(let i=idx;i<fim;i++){
       const r=dados[i];
-      const idCom=(r[0]||'').trim();
+      const idCom=(r[iIdCom]||'').trim();
       if(!idCom)continue;
-      const dtRaw=(r[2]||r[3]||'').trim();
+      const dtRaw=(iDt>=0?(r[iDt]||''):(iDtFin>=0?(r[iDtFin]||''):'')).trim();
       const data=parseData(dtRaw.slice(0,10))||dtRaw.slice(0,10);
-      const produto=(r[7]||'').trim().toUpperCase();
-      const qtd=parseN(r[9]);
-      const vlLiq=parseN(r[10]);
+      const produto=(r[iProd]||'').trim().toUpperCase();
+      const qtd=parseN(r[iQtd]);
+      const vlLiq=parseN(r[iVl]);
       const valTotal=qtd*vlLiq;
-      if(!mapComandas[idCom])mapComandas[idCom]={id:idCom,nro:(r[1]||'').trim(),data,itens:[],parceiro:null,valorTotal:0};
+      if(!mapComandas[idCom])mapComandas[idCom]={id:idCom,nro:(iNro>=0?(r[iNro]||''):'').trim(),data,itens:[],parceiro:null,valorTotal:0};
       mapComandas[idCom].itens.push({produto,qtd,vlLiq,valTotal});
       mapComandas[idCom].valorTotal+=valTotal;
       // verifica se este produto é um parceiro
