@@ -843,39 +843,44 @@ function normStr(s){return(s||'').trim().normalize('NFD').replace(/[\u0300-\u036
 function setorAdj(s){return PASSEIOS_NORM_LIST.includes(normStr(s))?S_PASSEIOS:s;}
 
 // ── PERSIST ───────────────────────────────────────────────────────────
-function save(){
+// Controle de quais módulos foram modificados desde o último save
+const _dirty={p:false,v:false,vi:false,metas:false,ant:false,pontos:false,
+               site:false,diversos:false,funcs:false,feriados:false,carros:false,
+               histprec:false,parceiros:false,comandas:false,nid:false};
+function markDirty(){for(const k in _dirty)_dirty[k]=true;}
+function saveKey(key,data){
+  try{localStorage.setItem(key,typeof data==='string'?data:JSON.stringify(data));}
+  catch(e){console.warn('save error',key,e);}
+}
+function save(modulo){
+  // Se passado módulo específico, só salva ele
+  // Se não passado, salva tudo que está dirty
+  const salvarTudo=!modulo;
   try{
-    localStorage.setItem('bip',JSON.stringify(P));
-    localStorage.setItem('biv',JSON.stringify(V));
-    localStorage.setItem('bivi',JSON.stringify(VI));
-    localStorage.setItem('bimetas',JSON.stringify(METAS));
-    localStorage.setItem('bifuncs',JSON.stringify(FUNCS));
-    localStorage.setItem('biferiados',JSON.stringify(FERIADOS));
-    localStorage.setItem('bicarros',JSON.stringify(CARROS));
-    localStorage.setItem('bihistprec',JSON.stringify(HIST_PREC));
-    localStorage.setItem('biant',JSON.stringify(ANTERIOR));
-    localStorage.setItem('bipontos',JSON.stringify(PONTOS));
-    localStorage.setItem('bisite',JSON.stringify(SITE));
-    localStorage.setItem('bidiversos',JSON.stringify(DIVERSOS));
-    localStorage.setItem('biparceiros',JSON.stringify(PARCEIROS));
-    // salva APENAS campos essenciais — itens ficam só em memória
-    const _cc=new Array(COMANDAS.length);
-    for(let i=0;i<COMANDAS.length;i++){
-      const c=COMANDAS[i];
-      _cc[i]={i:c.id,n:c.nro,d:c.data,p:c.parceiro,v:Math.round(c.valorTotal*100)/100};
+    if(salvarTudo||modulo==='p'){saveKey('bip',P);_dirty.p=false;}
+    if(salvarTudo||modulo==='v'){saveKey('biv',V);_dirty.v=false;}
+    if(salvarTudo||modulo==='vi'){saveKey('bivi',VI);_dirty.vi=false;}
+    if(salvarTudo||modulo==='metas'){saveKey('bimetas',METAS);_dirty.metas=false;}
+    if(salvarTudo||modulo==='ant'){saveKey('biant',ANTERIOR);_dirty.ant=false;}
+    if(salvarTudo||modulo==='pontos'){saveKey('bipontos',PONTOS);_dirty.pontos=false;}
+    if(salvarTudo||modulo==='site'){saveKey('bisite',SITE);_dirty.site=false;}
+    if(salvarTudo||modulo==='diversos'){saveKey('bidiversos',DIVERSOS);_dirty.diversos=false;}
+    if(salvarTudo||modulo==='funcs'){saveKey('bifuncs',FUNCS);_dirty.funcs=false;}
+    if(salvarTudo||modulo==='feriados'){saveKey('biferiados',FERIADOS);_dirty.feriados=false;}
+    if(salvarTudo||modulo==='carros'){saveKey('bicarros',CARROS);_dirty.carros=false;}
+    if(salvarTudo||modulo==='histprec'){saveKey('bihistprec',HIST_PREC);_dirty.histprec=false;}
+    if(salvarTudo||modulo==='parceiros'){saveKey('biparceiros',PARCEIROS);_dirty.parceiros=false;}
+    if(salvarTudo||modulo==='comandas'){
+      const _cc=new Array(COMANDAS.length);
+      for(let i=0;i<COMANDAS.length;i++){
+        const cx=COMANDAS[i];
+        _cc[i]={i:cx.id,n:cx.nro,d:cx.data,p:cx.parceiro,v:Math.round(cx.valorTotal*100)/100};
+      }
+      saveKey('bicomandas',_cc);
+      _dirty.comandas=false;
     }
-    localStorage.setItem('bicomandas',JSON.stringify(_cc));
-    localStorage.setItem('bi_nid',String(_nid));
-  }catch(e){
-    if(e.name==='QuotaExceededError'||e.code===22){
-      // localStorage cheio — tenta salvar sem os itens detalhados das comandas
-      try{
-        const comsCompact=COMANDAS.map(function(c){return{id:c.id,nro:c.nro,data:c.data,parceiro:c.parceiro,valorTotal:c.valorTotal,itens:c.itens.length};});
-        localStorage.setItem('bicomandas',JSON.stringify(comsCompact));
-        console.warn('BI: comandas salvas em modo compacto por limite de storage');
-      }catch(e2){console.error('BI: erro ao salvar comandas',e2);}
-    }
-  }
+    if(salvarTudo||modulo==='nid'){saveKey('bi_nid',String(_nid));_dirty.nid=false;}
+  }catch(e){console.error('save error:',e);}
 }
 function load(){
   try{
@@ -1047,7 +1052,7 @@ function addProd(){
   const chave=findKey(nome)||novaKey();
   P[chave]={nome,setor};
   document.getElementById('inNome').value='';document.getElementById('inNome').focus();
-  save();renderProds();renderAjustado();toast('"'+nome+'" adicionado!');
+  save('p');renderProds();renderAjustado();toast('"'+nome+'" adicionado!');
 }
 function renderProds(){
   const arr=Object.entries(P).map(([k,v])=>({k,...v})).sort((a,b)=>a.setor.localeCompare(b.setor)||a.nome.localeCompare(b.nome));
@@ -1070,7 +1075,7 @@ function renderProds(){
     btn.addEventListener('click',function(){
       const prod=P[this.dataset.key];if(!prod)return;
       if(!confirm('Remover "'+prod.nome+'"?'))return;
-      delete P[this.dataset.key];save();renderProds();renderAjustado();toast('Produto removido');
+      delete P[this.dataset.key];save('p');renderProds();renderAjustado();toast('Produto removido');
     });
     tdA.appendChild(btn);
     tr.appendChild(tdN);tr.appendChild(tdS);tr.appendChild(tdA);tb.appendChild(tr);
@@ -1086,7 +1091,7 @@ function procImpClass(){
     const chave=findKey(nome)||novaKey();
     P[chave]={nome,setor};ok++;
   });
-  save();renderProds();renderAjustado();tog('classImp');document.getElementById('classImpTxt').value='';
+  save('p');renderProds();renderAjustado();tog('classImp');document.getElementById('classImpTxt').value='';
   toast(ok+' produto(s) importado(s)!');
 }
 
@@ -1179,11 +1184,11 @@ function confirmarVendas(){
   Object.assign(V,pending.porData);pending=null;
   document.getElementById('prevCard').style.display='none';
   document.getElementById('vendaTxt').value='';
-  save();renderHistV();updFiltros();
+  save('v');renderHistV();updFiltros();
   document.getElementById('btnPpt').style.display='flex';
   toast('Salvo com sucesso!');
 }
-function delDia(d){if(!confirm('Remover o dia '+d+'?'))return;delete V[d];save();renderHistV();updFiltros();renderDash();toast('Removido');}
+function delDia(d){if(!confirm('Remover o dia '+d+'?'))return;delete V[d];save('v');renderHistV();updFiltros();renderDash();toast('Removido');}
 function renderHistV(){
   const dias=Object.keys(V).sort().reverse();const el=document.getElementById('histVendas');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum dia registrado ainda.</p></div>';return;}
@@ -1251,7 +1256,7 @@ function addVisit(){
   if(!d||!ent){toast('Preencha data e entradas','err');return;}
   VI[d]={entradas:ent,retorno:ret,valido:Math.max(0,ent-ret)};
   document.getElementById('vEnt').value='';document.getElementById('vRet').value='';
-  save();renderHistVI();toast('Registrado!');
+  save('vi');renderHistVI();toast('Registrado!');
 }
 function impVisit(){
   const raw=document.getElementById('visitTxt').value.trim();if(!raw){toast('Cole a tabela primeiro','err');return;}
@@ -1262,9 +1267,9 @@ function impVisit(){
     const ret=parseInt((c[3]||'0').replace(/\D/g,''))||0;
     if(d&&ent){VI[d]={entradas:ent,retorno:ret,valido:Math.max(0,ent-ret)};ok++;}
   });
-  save();renderHistVI();document.getElementById('visitTxt').value='';toast(ok+' dia(s) importado(s)!');
+  save('vi');renderHistVI();document.getElementById('visitTxt').value='';toast(ok+' dia(s) importado(s)!');
 }
-function delVI(d){if(!confirm('Remover visitantes do dia '+d+'?'))return;delete VI[d];save();renderHistVI();renderDash();toast('Removido');}
+function delVI(d){if(!confirm('Remover visitantes do dia '+d+'?'))return;delete VI[d];save('vi');renderHistVI();renderDash();toast('Removido');}
 function renderHistVI(){
   const dias=Object.keys(VI).sort().reverse();const el=document.getElementById('histVisit');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-users"></i><p>Nenhum registro ainda.</p></div>';return;}
@@ -1288,15 +1293,15 @@ function addFunc(){
   if(!mes||!qtd){toast('Preencha mês e número de funcionários','err');return;}
   FUNCS[mes]=qtd;
   document.getElementById('funcsQtd').value='';
-  save();renderFuncs();toast('Registrado!');
+  save('funcs');renderFuncs();toast('Registrado!');
 }
 function delFunc(mes){
   if(!confirm('Remover registro de '+MNomes[parseInt(mes.slice(5))-1]+' '+mes.slice(0,4)+'?'))return;
-  delete FUNCS[mes];save();renderFuncs();toast('Removido');
+  delete FUNCS[mes];save('funcs');renderFuncs();toast('Removido');
 }
 function limparFuncs(){
   if(!confirm('Apagar todos os registros de funcionários?'))return;
-  FUNCS={};save();renderFuncs();
+  FUNCS={};save('funcs');renderFuncs();
   document.getElementById('btnLimparFuncs').style.display='none';
   const bef=document.getElementById('btnExportFuncs');if(bef)bef.style.display='none';
   toast('Dados apagados');
@@ -1356,9 +1361,9 @@ function addMeta(){
   if(!setor||!mes||!val){toast('Preencha setor, mês e valor','err');return;}
   METAS[metaKey(setor,mes)]={setor,mes,val};
   document.getElementById('metaVal').value='';
-  save();renderMetas();toast('Meta adicionada!');
+  save('metas');renderMetas();toast('Meta adicionada!');
 }
-function delMeta(k){if(!confirm('Remover esta meta?'))return;delete METAS[k];save();renderMetas();toast('Removida');}
+function delMeta(k){if(!confirm('Remover esta meta?'))return;delete METAS[k];save('metas');renderMetas();toast('Removida');}
 function impMetas(){
   const raw=document.getElementById('metaImpTxt').value.trim();
   if(!raw){toast('Cole a tabela primeiro','err');return;}
@@ -1382,7 +1387,7 @@ function impMetas(){
     if(!mes)return;
     METAS[metaKey(setor,mes)]={setor,mes,val};ok++;
   });
-  save();renderMetas();document.getElementById('metaImpTxt').value='';
+  save('metas');renderMetas();document.getElementById('metaImpTxt').value='';
   toast(ok+' meta(s) importada(s)!');
 }
 function renderMetas(){
@@ -1420,9 +1425,9 @@ function addAnterior(){
   if(!mes||!setor||!val){toast('Preencha mês/ano, setor e valor','err');return;}
   ANTERIOR[antKey(mes,setor)]={mes,setor,val};
   document.getElementById('antVal').value='';
-  save();renderAnterior();toast('Faturamento anterior adicionado!');
+  save('ant');renderAnterior();toast('Faturamento anterior adicionado!');
 }
-function delAnt(k){if(!confirm('Remover este registro?'))return;delete ANTERIOR[k];save();renderAnterior();toast('Removido');}
+function delAnt(k){if(!confirm('Remover este registro?'))return;delete ANTERIOR[k];save('ant');renderAnterior();toast('Removido');}
 function impAnterior(){
   const raw=document.getElementById('antImpTxt').value.trim();
   if(!raw){toast('Cole a tabela primeiro','err');return;}
@@ -1439,7 +1444,7 @@ function impAnterior(){
     if(!mes||!setor||!val)return;
     ANTERIOR[antKey(mes,setor)]={mes,setor,val};ok++;
   });
-  save();renderAnterior();document.getElementById('antImpTxt').value='';
+  save('ant');renderAnterior();document.getElementById('antImpTxt').value='';
   if(ok>0)toast(ok+' registro(s) importado(s)!');
   else toast('Nenhum registro importado. Verifique o formato: Mês/Ano, Setor, Valor','err');
 }
@@ -1501,7 +1506,7 @@ function exportarAntExcel(){
 
 function limparVendas(){
   if(!confirm('Apagar TODOS os dias de vendas registrados? Esta ação não pode ser desfeita.'))return;
-  V={};save();renderHistV();updFiltros();renderDash();
+  V={};save('v');renderHistV();updFiltros();renderDash();
   document.getElementById('btnExportVendas').style.display='none';
   document.getElementById('btnLimparVendas').style.display='none';
   toast('Dados de vendas apagados');
@@ -1509,7 +1514,7 @@ function limparVendas(){
 
 function limparVisit(){
   if(!confirm('Apagar TODOS os registros de visitantes? Esta ação não pode ser desfeita.'))return;
-  VI={};save();renderHistVI();renderDash();
+  VI={};save('vi');renderHistVI();renderDash();
   document.getElementById('btnExportVisit').style.display='none';
   document.getElementById('btnLimparVisit').style.display='none';
   toast('Dados de visitantes apagados');
@@ -1517,7 +1522,7 @@ function limparVisit(){
 
 function limparMetas(){
   if(!confirm('Apagar TODAS as metas cadastradas? Esta ação não pode ser desfeita.'))return;
-  METAS={};save();renderMetas();
+  METAS={};save('metas');renderMetas();
   document.getElementById('btnExportMetas').style.display='none';
   document.getElementById('btnLimparMetas').style.display='none';
   toast('Metas apagadas');
@@ -1525,7 +1530,7 @@ function limparMetas(){
 
 function limparAnt(){
   if(!confirm('Apagar TODOS os faturamentos do ano anterior? Esta ação não pode ser desfeita.'))return;
-  ANTERIOR={};save();renderAnterior();
+  ANTERIOR={};save('ant');renderAnterior();
   document.getElementById('btnExportAnt').style.display='none';
   document.getElementById('btnLimparAnt').style.display='none';
   toast('Faturamentos anteriores apagados');
@@ -2113,7 +2118,7 @@ function addPontoManual(){
   if(!PONTOS[d])PONTOS[d]=0;
   PONTOS[d]+=v;
   document.getElementById('pontosVal').value='';
-  save();renderHistPontos();if(document.getElementById('sc-dashext').classList.contains('on')){updFiltrosExt();renderDashExt();}toast('Registro adicionado!');
+  save('pontos');renderHistPontos();if(document.getElementById('sc-dashext').classList.contains('on')){updFiltrosExt();renderDashExt();}toast('Registro adicionado!');
 }
 function addSiteManual(){
   const d=document.getElementById('siteData').value;
@@ -2122,7 +2127,7 @@ function addSiteManual(){
   if(!SITE[d])SITE[d]=0;
   SITE[d]+=v;
   document.getElementById('siteVal').value='';
-  save();renderHistSite();if(document.getElementById('sc-dashext').classList.contains('on')){updFiltrosExt();renderDashExt();}toast('Registro adicionado!');
+  save('site');renderHistSite();if(document.getElementById('sc-dashext').classList.contains('on')){updFiltrosExt();renderDashExt();}toast('Registro adicionado!');
 }
 function impPontos(){
   const raw=document.getElementById('pontosTxt').value.trim();
@@ -2139,7 +2144,7 @@ function impPontos(){
     if(!PONTOS[d])PONTOS[d]=0;
     PONTOS[d]+=v;ok++;
   });
-  save();renderHistPontos();document.getElementById('pontosTxt').value='';
+  save('pontos');renderHistPontos();document.getElementById('pontosTxt').value='';
   if(ok>0){toast(ok+' registro(s) importado(s)!');updFiltrosExt();}
   else toast('Nenhum registro importado. Verifique o formato.','err');
 }
@@ -2157,7 +2162,7 @@ function renderHistPontos(){
   document.getElementById('btnExportPontos').style.display='';
   document.getElementById('btnLimparPontos').style.display='';
 }
-function delPonto(d){if(!confirm('Remover o dia '+d+'?'))return;delete PONTOS[d];save();renderHistPontos();updFiltrosExt();renderDashExt();toast('Removido');}
+function delPonto(d){if(!confirm('Remover o dia '+d+'?'))return;delete PONTOS[d];save('pontos');renderHistPontos();updFiltrosExt();renderDashExt();toast('Removido');}
 function exportarPontosExcel(){
   const rows=[['Data','Valor Líquido']];
   Object.keys(PONTOS).sort().forEach(d=>rows.push([d,PONTOS[d].toFixed(2).replace('.',',')]));
@@ -2165,7 +2170,7 @@ function exportarPontosExcel(){
 }
 function limparPontos(){
   if(!confirm('Apagar TODOS os registros de Pontos Externos?'))return;
-  PONTOS={};save();renderHistPontos();updFiltrosExt();renderDashExt();
+  PONTOS={};save('pontos');renderHistPontos();updFiltrosExt();renderDashExt();
   document.getElementById('btnExportPontos').style.display='none';
   document.getElementById('btnLimparPontos').style.display='none';
   toast('Dados apagados');
@@ -2187,7 +2192,7 @@ function impSite(){
     if(!SITE[d])SITE[d]=0;
     SITE[d]+=v;ok++;
   });
-  save();renderHistSite();document.getElementById('siteTxt').value='';
+  save('site');renderHistSite();document.getElementById('siteTxt').value='';
   if(ok>0){toast(ok+' registro(s) importado(s)!');updFiltrosExt();}
   else toast('Nenhum registro importado. Verifique o formato.','err');
 }
@@ -2205,7 +2210,7 @@ function renderHistSite(){
   document.getElementById('btnExportSite').style.display='';
   document.getElementById('btnLimparSite').style.display='';
 }
-function delSite(d){if(!confirm('Remover o dia '+d+'?'))return;delete SITE[d];save();renderHistSite();updFiltrosExt();renderDashExt();toast('Removido');}
+function delSite(d){if(!confirm('Remover o dia '+d+'?'))return;delete SITE[d];save('site');renderHistSite();updFiltrosExt();renderDashExt();toast('Removido');}
 function exportarSiteExcel(){
   const rows=[['Data','Valor Líquido']];
   Object.keys(SITE).sort().forEach(d=>rows.push([d,SITE[d].toFixed(2).replace('.',',')]));
@@ -2213,7 +2218,7 @@ function exportarSiteExcel(){
 }
 function limparSite(){
   if(!confirm('Apagar TODOS os registros do Site Oficial?'))return;
-  SITE={};save();renderHistSite();updFiltrosExt();renderDashExt();
+  SITE={};save('site');renderHistSite();updFiltrosExt();renderDashExt();
   document.getElementById('btnExportSite').style.display='none';
   document.getElementById('btnLimparSite').style.display='none';
   toast('Dados apagados');
@@ -2232,7 +2237,7 @@ function addDiversoManual(){
   if(!DIVERSOS[d][setor])DIVERSOS[d][setor]=0;
   DIVERSOS[d][setor]+=v;
   document.getElementById('diversosVal').value='';
-  save();renderHistDiversos();if(document.getElementById('sc-dashext').classList.contains('on')){updFiltrosExt();renderDashExt();}toast('Registro adicionado!');
+  save('diversos');renderHistDiversos();if(document.getElementById('sc-dashext').classList.contains('on')){updFiltrosExt();renderDashExt();}toast('Registro adicionado!');
 }
 
 function impDiversos(){
@@ -2253,7 +2258,7 @@ function impDiversos(){
     if(!DIVERSOS[d][setor])DIVERSOS[d][setor]=0;
     DIVERSOS[d][setor]+=v;ok++;
   });
-  save();renderHistDiversos();document.getElementById('diversosTxt').value='';
+  save('diversos');renderHistDiversos();document.getElementById('diversosTxt').value='';
   updFiltrosExt();
   if(ok>0)toast(ok+' registro(s) importado(s)!');
   else toast('Nenhum registro importado. Verifique o formato.','err');
@@ -2289,13 +2294,13 @@ function renderHistDiversos(){
 
 function delDiversoDia(d){
   if(!confirm('Remover todos os registros do dia '+d+'?'))return;
-  delete DIVERSOS[d];save();renderHistDiversos();updFiltrosExt();renderDashExt();toast('Removido');
+  delete DIVERSOS[d];save('diversos');renderHistDiversos();updFiltrosExt();renderDashExt();toast('Removido');
 }
 function delDiversoItem(d,setor){
   if(!confirm('Remover "'+setor+'" do dia '+d+'?'))return;
   delete DIVERSOS[d][setor];
   if(Object.keys(DIVERSOS[d]).length===0)delete DIVERSOS[d];
-  save();renderHistDiversos();updFiltrosExt();renderDashExt();toast('Removido');
+  save('diversos');renderHistDiversos();updFiltrosExt();renderDashExt();toast('Removido');
 }
 function exportarDiversosExcel(){
   const rows=[['Data','Setor','Valor Líquido']];
@@ -2308,7 +2313,7 @@ function exportarDiversosExcel(){
 }
 function limparDiversos(){
   if(!confirm('Apagar TODOS os registros de Faturamentos Diversos?'))return;
-  DIVERSOS={};save();renderHistDiversos();updFiltrosExt();renderDashExt();
+  DIVERSOS={};save('diversos');renderHistDiversos();updFiltrosExt();renderDashExt();
   document.getElementById('btnExportDiversos').style.display='none';
   document.getElementById('btnLimparDiversos').style.display='none';
   toast('Dados apagados');
@@ -2767,7 +2772,7 @@ function salvarMetasGeradas(){
     });
     salvos++;
   });
-  save();renderMetas();
+  save('metas');
   toast(salvos+' meses salvos na aba Metas!');
 }
 
@@ -2792,11 +2797,11 @@ function addFeriado(){
   if(!d||!nome){toast('Preencha data e nome','err');return;}
   FERIADOS[d]=nome;
   document.getElementById('feriadoNome').value='';
-  save();renderFeriados();toast('Feriado adicionado!');
+  save('feriados');renderFeriados();toast('Feriado adicionado!');
 }
 function delFeriado(d){
   if(!confirm('Remover feriado "'+FERIADOS[d]+'"?'))return;
-  delete FERIADOS[d];save();renderFeriados();toast('Removido');
+  delete FERIADOS[d];save('feriados');renderFeriados();toast('Removido');
 }
 function renderFeriados(){
   const arr=Object.entries(FERIADOS).sort((a,b)=>a[0].localeCompare(b[0]));
@@ -2828,11 +2833,11 @@ function addCarro(){
   document.getElementById('carroModelo').value='';
   document.getElementById('carroCarona').value='';
   document.getElementById('carroDrive').value='';
-  save();renderPrecos();toast('"'+modelo+'" adicionado!');
+  save('carros');renderPrecos();toast('"'+modelo+'" adicionado!');
 }
 function delCarro(modelo){
   if(!confirm('Remover "'+modelo+'"?'))return;
-  delete CARROS[modelo];save();renderPrecos();toast('Removido');
+  delete CARROS[modelo];save('carros');renderPrecos();toast('Removido');
 }
 function renderPrecos(){
   const arr=Object.values(CARROS).sort((a,b)=>a.modelo.localeCompare(b.modelo));
@@ -3085,7 +3090,7 @@ function salvarPrecificacao(){
   HIST_PREC.unshift(_precAtual); // mais recente primeiro
   if(HIST_PREC.length>52)HIST_PREC=HIST_PREC.slice(0,52); // mantém 1 ano
   _precAtual=null;
-  save();renderHistPrecos();toast('Precificação salva no histórico!');
+  save('histprec');renderHistPrecos();toast('Precificação salva no histórico!');
 }
 
 function exportarPrecExcel(){
@@ -3145,11 +3150,11 @@ function addParceiro(){
   if(!nome){toast('Preencha o nome do parceiro','err');return;}
   PARCEIROS[nome]={nome,label};
   document.getElementById('inParcNome').value='';document.getElementById('inParcLabel').value='';
-  save();renderListaParceiros();toast('"'+label+'" adicionado!');
+  save('parceiros');renderListaParceiros();toast('"'+label+'" adicionado!');
 }
 function delParceiro(nome){
   if(!confirm('Remover parceiro "'+PARCEIROS[nome].label+'"?'))return;
-  delete PARCEIROS[nome];save();renderListaParceiros();toast('Removido');
+  delete PARCEIROS[nome];save('parceiros');renderListaParceiros();toast('Removido');
 }
 function impParceiros(){
   const raw=document.getElementById('parcImpTxt').value.trim();
@@ -3166,7 +3171,7 @@ function impParceiros(){
     const label=(p[1]||'').trim()||nomeRaw;
     if(nome){PARCEIROS[nome]={nome,label};ok++;}
   });
-  save();renderListaParceiros();tog('parcImp');document.getElementById('parcImpTxt').value='';
+  save('parceiros');renderListaParceiros();tog('parcImp');document.getElementById('parcImpTxt').value='';
   toast(ok+' parceiro(s) importado(s)!');
 }
 function renderListaParceiros(){
@@ -3407,7 +3412,7 @@ function salvarComandas(){
   rebuiltIdxComandas();
   document.getElementById('prevComandas').style.display='none';
   const fi=document.getElementById('comandasFile');if(fi)fi.value='';
-  save();renderHistComandas();updFiltrosParc();
+  save('comandas');renderHistComandas();updFiltrosParc();
 
   // Atualiza status
   const st=document.getElementById('comandasStatus');
@@ -3423,7 +3428,7 @@ function salvarComandas(){
 
 function limparComandas(){
   if(!confirm('Apagar TODAS as comandas? Esta ação não pode ser desfeita.'))return;
-  COMANDAS=[];rebuiltIdxComandas();save();renderHistComandas();updFiltrosParc();renderDashParc();toast('Dados apagados');
+  COMANDAS=[];rebuiltIdxComandas();save('comandas');renderHistComandas();updFiltrosParc();renderDashParc();toast('Dados apagados');
 }
 
 function renderHistComandas(){
@@ -3464,7 +3469,7 @@ function renderHistComandas(){
 function delComanda(id){
   if(!confirm('Remover a comanda '+id+'?'))return;
   COMANDAS=COMANDAS.filter(c=>c.id!==id);
-  rebuiltIdxComandas();save();renderHistComandas();updFiltrosParc();renderDashParc();toast('Comanda removida');
+  rebuiltIdxComandas();save('comandas');renderHistComandas();updFiltrosParc();renderDashParc();toast('Comanda removida');
 }
 
 function exportarComandasExcel(){
