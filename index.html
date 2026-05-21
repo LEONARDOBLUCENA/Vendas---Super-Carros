@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   --bg:#f5f5f2;--surface:#fff;--surface2:#f0efec;--surface3:#e8e7e3;
@@ -746,12 +747,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="card">
     <div class="card-title"><i class="ti ti-table-import"></i>Importar relatório</div>
     <div class="alert alert-info"><i class="ti ti-info-circle"></i>
-      <span>Salve o relatório do Excel como <strong>.CSV</strong> (separado por vírgula ou tab) e selecione o arquivo abaixo. Colunas esperadas:<br>
+      <span>Selecione o arquivo do Excel (<strong>.xlsx</strong> ou <strong>.xls</strong>) ou CSV diretamente. Colunas esperadas:<br>
       <span style="font-family:'DM Mono',monospace;font-size:11px">ID Comanda · Nro.comanda · Dh.comanda · Dh.finalizado · Dh.cancelamento · Nro.item · ID · Produto · Und. · Qtd. · Vl.líquido</span></span>
     </div>
     <div class="field">
       <label>Arquivo .CSV ou .TXT exportado do Excel</label>
-      <input type="file" id="comandasFile" accept=".csv,.txt,.tsv" style="padding:8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);width:100%">
+      <input type="file" id="comandasFile" accept=".xlsx,.xls,.csv,.txt,.tsv" style="padding:8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);width:100%">
     </div>
     <div id="comandasProgresso" style="display:none;margin-top:8px">
       <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
@@ -3091,12 +3092,31 @@ function procComandasFile(){
   const fileInput=document.getElementById('comandasFile');
   if(!fileInput.files.length){toast('Selecione um arquivo primeiro','err');return;}
   const file=fileInput.files[0];
-  const reader=new FileReader();
-  reader.onload=function(e){
-    const raw=e.target.result.trim();
-    procComandasRaw(raw);
-  };
-  reader.readAsText(file,'UTF-8');
+  const nome=file.name.toLowerCase();
+
+  if(nome.endsWith('.xlsx')||nome.endsWith('.xls')){
+    // Lê Excel com SheetJS
+    const reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        const wb=XLSX.read(e.target.result,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        // Converte para TSV (tab-separated) para manter compatibilidade
+        const tsv=XLSX.utils.sheet_to_csv(ws,{FS:'\t',RS:'\n',skipHidden:true});
+        procComandasRaw(tsv);
+      }catch(err){
+        toast('Erro ao ler o arquivo Excel: '+err.message,'err');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    // CSV/TXT — lê como texto
+    const reader=new FileReader();
+    reader.onload=function(e){
+      procComandasRaw(e.target.result.trim());
+    };
+    reader.readAsText(file,'UTF-8');
+  }
 }
 function procComandas(){
   // mantido por compatibilidade — redireciona para file
