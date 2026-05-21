@@ -910,6 +910,23 @@ function load(){
       });
     }
     rebuiltIdxComandas();
+    // Migração automática: re-salva comandas no formato compacto se ainda estiverem no formato antigo
+    if(com&&COMANDAS.length>0){
+      const rawSize=com.length;
+      const expectedCompact=COMANDAS.length*40; // ~40 bytes por comanda no formato compacto
+      if(rawSize>expectedCompact*3){
+        // ainda está no formato antigo — força save compacto imediatamente
+        try{
+          const _cc=new Array(COMANDAS.length);
+          for(let i=0;i<COMANDAS.length;i++){
+            const cx=COMANDAS[i];
+            _cc[i]={i:cx.id,n:cx.nro,d:cx.data,p:cx.parceiro,v:Math.round(cx.valorTotal*100)/100};
+          }
+          localStorage.setItem('bicomandas',JSON.stringify(_cc));
+          console.log('BI: migração comandas concluída — '+Math.round(rawSize/1024)+'KB → '+Math.round(JSON.stringify(_cc).length/1024)+'KB');
+        }catch(e){console.warn('Migração comandas falhou:',e);}
+      }
+    }
     if(nid)_nid=parseInt(nid)||1;
     let mig=false;
     Object.keys(P).forEach(k=>{if(!k.startsWith('p')){const nk=novaKey();P[nk]=P[k];delete P[k];mig=true;}});
