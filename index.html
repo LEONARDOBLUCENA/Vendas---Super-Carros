@@ -2362,6 +2362,22 @@ function renderDashExt(){
   const antP=canal!=='site'?somaAntExt('Pontos Externos'):null;
   const antS=canal!=='pontos'?somaAntExt('Site Oficial'):null;
 
+  // Ano anterior — busca direto nos dados reais de PONTOS, SITE e DIVERSOS
+  function somaRealAnt(obj, prefAnt){
+    // obj = PONTOS, SITE ou DIVERSOS; prefAnt = "2025-05" ou "2025"
+    return Object.keys(obj).filter(d=>d.startsWith(prefAnt)).reduce((a,d)=>{
+      const v=obj[d];
+      if(typeof v==='number')return a+v;
+      if(typeof v==='object')return a+Object.values(v).reduce((x,vv)=>x+vv,0);
+      return a;
+    },0)||null;
+  }
+  const prefAnt=dia?anoAnt+dia.slice(4):mes?anoAnt+'-'+mes:anoAnt;
+  const antPReal=canal!=='site'?somaRealAnt(PONTOS,prefAnt):null;
+  const antSReal=canal!=='pontos'?somaRealAnt(SITE,prefAnt):null;
+  const antDReal=canal!=='pontos'&&canal!=='site'?somaRealAnt(DIVERSOS,prefAnt):null;
+  const antTotalReal=(antPReal||0)+(antSReal||0)+(antDReal||0)||null;
+
   function kpiCanal(label, fat, meta, ant, cor){
     let html='<div class="kpi" style="border-top:3px solid #'+cor+'">'
       +'<div class="kpi-lbl">'+label+'</div>'
@@ -2398,9 +2414,19 @@ function renderDashExt(){
   // KPIs
   let kpisHtml='<div class="kpi-grid">';
   if(fatTotal>0){
-    kpisHtml+='<div class="kpi"><div class="kpi-lbl">Total Externos</div>'
-      +'<div class="kpi-val">'+fR(fatTotal)+'</div>'
-      +'<div class="kpi-sub">'+periLbl+'</div></div>';
+    let kpiTot='<div class="kpi"><div class="kpi-lbl">Total Externos</div>'
+      +'<div class="kpi-val">'+fR(fatTotal)+'</div>';
+    if(antTotalReal){
+      const vr=((fatTotal-antTotalReal)/antTotalReal*100).toFixed(1);
+      const sinal=parseFloat(vr)>=0?'+':'';
+      const cor=parseFloat(vr)>=0?'var(--green)':'var(--red)';
+      kpiTot+='<div class="kpi-sub"><span style="color:'+cor+';font-weight:600">'+sinal+vr+'%</span>'
+        +' vs '+anoAnt+' ('+fRF(antTotalReal)+')</div>';
+    } else {
+      kpiTot+='<div class="kpi-sub">'+periLbl+'</div>';
+    }
+    kpiTot+='</div>';
+    kpisHtml+=kpiTot;
   }
   if(canal===''||canal==='pontos'){
     // Calcula por razão social para a subdivisão
@@ -2426,10 +2452,33 @@ function renderDashExt(){
         +'<div style="height:100%;width:'+barW+'%;background:'+corMeta+';border-radius:3px"></div></div>'
         +'<div style="font-size:11px;color:var(--text2);margin-top:3px">Meta: '+fRF(metaP)+' · '+pct+'%</div></div>';
     }
+    if(antPReal){
+      const vr=((fatP-antPReal)/antPReal*100).toFixed(1);
+      const sinal=parseFloat(vr)>=0?'+':'';
+      const cor=parseFloat(vr)>=0?'var(--green)':'var(--red)';
+      kpiP+='<div class="kpi-sub" style="margin-top:3px"><span style="color:'+cor+';font-weight:600">'+sinal+vr+'%</span>'
+        +' vs '+anoAnt+' ('+fRF(antPReal)+')</div>';
+    }
     kpiP+='</div>';
     kpisHtml+=kpiP;
   }
-  if(canal===''||canal==='site')   kpisHtml+=kpiCanal('Site Oficial',fatS,metaS,antS,'0891B2');
+  if(canal===''||canal==='site'){
+    let kpiS='<div class="kpi" style="border-top:3px solid #0891B2">'
+      +'<div class="kpi-lbl">Site Oficial</div>'
+      +'<div class="kpi-val" style="color:#0891B2">'+fR(fatS)+'</div>';
+    if(antSReal){
+      const vr=((fatS-antSReal)/antSReal*100).toFixed(1);
+      const sinal=parseFloat(vr)>=0?'+':'';
+      const cor=parseFloat(vr)>=0?'var(--green)':'var(--red)';
+      kpiS+='<div class="kpi-sub"><span style="color:'+cor+';font-weight:600">'+sinal+vr+'%</span>'
+        +' vs '+anoAnt+' ('+fRF(antSReal)+')</div>';
+    } else if(metaS){
+      const pct=Math.min((fatS/metaS*100),999).toFixed(1);
+      kpiS+='<div class="kpi-sub">Meta: '+fRF(metaS)+' · '+pct+'%</div>';
+    }
+    kpiS+='</div>';
+    kpisHtml+=kpiS;
+  }
   if(canal===''||canal==='diversos'){
     // Calcula por setor para subdivisão
     const fatDivPorSetor={};
@@ -2445,6 +2494,7 @@ function renderDashExt(){
       +'<div class="kpi-lbl">Fat. Diversos</div>'
       +'<div class="kpi-val" style="color:#7F4FC0">'+fR(fatD)+'</div>'
       +(subLblDiv?'<div class="kpi-sub">'+subLblDiv+'</div>':'')
+      +(antDReal?'<div class="kpi-sub" style="margin-top:3px">'+(()=>{const vr=((fatD-antDReal)/antDReal*100).toFixed(1);const s=parseFloat(vr)>=0?'+':'';const cor=parseFloat(vr)>=0?'var(--green)':'var(--red)';return'<span style="color:'+cor+';font-weight:600">'+s+vr+'%</span> vs '+anoAnt+' ('+fRF(antDReal)+')';})()+'</div>':'')
       +'</div>';
     kpisHtml+=kpiDiv;
   }
