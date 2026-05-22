@@ -2466,15 +2466,21 @@ function renderDashExt(){
     let kpiS='<div class="kpi" style="border-top:3px solid #0891B2">'
       +'<div class="kpi-lbl">Site Oficial</div>'
       +'<div class="kpi-val" style="color:#0891B2">'+fR(fatS)+'</div>';
+    if(metaS){
+      const pct=Math.min((fatS/metaS*100),999).toFixed(1);
+      const barW=Math.min(100,(fatS/metaS*100)).toFixed(1);
+      const corMeta=fatS>=metaS?'var(--green)':'var(--red)';
+      kpiS+='<div style="margin-top:8px">'
+        +'<div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">'
+        +'<div style="height:100%;width:'+barW+'%;background:'+corMeta+';border-radius:3px"></div></div>'
+        +'<div style="font-size:11px;color:var(--text2);margin-top:3px">Meta: '+fRF(metaS)+' · '+pct+'%</div></div>';
+    }
     if(antSReal){
       const vr=((fatS-antSReal)/antSReal*100).toFixed(1);
       const sinal=parseFloat(vr)>=0?'+':'';
       const cor=parseFloat(vr)>=0?'var(--green)':'var(--red)';
       kpiS+='<div class="kpi-sub"><span style="color:'+cor+';font-weight:600">'+sinal+vr+'%</span>'
         +' vs '+anoAnt+' ('+fRF(antSReal)+')</div>';
-    } else if(metaS){
-      const pct=Math.min((fatS/metaS*100),999).toFixed(1);
-      kpiS+='<div class="kpi-sub">Meta: '+fRF(metaS)+' · '+pct+'%</div>';
     }
     kpiS+='</div>';
     kpisHtml+=kpiS;
@@ -2494,7 +2500,6 @@ function renderDashExt(){
       +'<div class="kpi-lbl">Fat. Diversos</div>'
       +'<div class="kpi-val" style="color:#7F4FC0">'+fR(fatD)+'</div>'
       +(subLblDiv?'<div class="kpi-sub">'+subLblDiv+'</div>':'')
-      +(antDReal?'<div class="kpi-sub" style="margin-top:3px">'+(()=>{const vr=((fatD-antDReal)/antDReal*100).toFixed(1);const s=parseFloat(vr)>=0?'+':'';const cor=parseFloat(vr)>=0?'var(--green)':'var(--red)';return'<span style="color:'+cor+';font-weight:600">'+s+vr+'%</span> vs '+anoAnt+' ('+fRF(antDReal)+')';})()+'</div>':'')
       +'</div>';
     kpisHtml+=kpiDiv;
   }
