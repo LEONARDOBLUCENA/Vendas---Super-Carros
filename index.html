@@ -143,12 +143,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="nav-btn" onclick="goTab('dashext')"><i class="ti ti-chart-dots"></i>Dashboard Externos</button>
   </nav>
   <div class="sidebar-foot">
-    <button class="btn btn-sm" onclick="exportar()"><i class="ti ti-download"></i>Backup</button>
+    <button class="btn btn-p btn-sm" onclick="syncSubir()" id="btnSyncUp"><i class="ti ti-cloud-upload"></i>Salvar na nuvem</button>
+    <button class="btn btn-sm" onclick="syncBaixar()" id="btnSyncDown"><i class="ti ti-cloud-download"></i>Carregar da nuvem</button>
+    <button class="btn btn-sm" onclick="exportar()"><i class="ti ti-download"></i>Backup local</button>
     <button class="btn btn-sm" onclick="document.getElementById('fileIn').click()"><i class="ti ti-upload"></i>Restaurar</button>
     <input type="file" id="fileIn" accept=".json" style="display:none" onchange="importar(event)">
-    <button class="btn btn-sm" onclick="rodarDiagnostico()" style="color:var(--text3)"><i class="ti ti-activity"></i>Diagnóstico</button>
-    <button class="btn btn-sm" onclick="migrarComandas()" style="color:var(--text3)" id="btnMigrar"><i class="ti ti-database"></i>Compactar dados</button>
-    <button class="btn btn-sm" onclick="infoStorage()" style="color:var(--text3)"><i class="ti ti-info-circle"></i>Info</button>
+    <div id="syncStatus" style="font-size:11px;color:var(--text3);text-align:center;padding:4px 0;display:none"></div>
   </div>
 </aside>
 
@@ -702,6 +702,57 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </main>
 
 <script>
+
+// ── SUPABASE ──────────────────────────────────────────────────────────
+const SB_URL='https://kbirsoinehvachyjyoin.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiaXJzb2luZWh2YWNoeWp5b2luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MzE0NjAsImV4cCI6MjA5NTAwNzQ2MH0.UO5H-a-EXUmrrd5JFdVekZqoFnqJYbzJwDlVwYPtBmQ';
+const SB_TABLE='bi_data';
+
+async function sbGet(id){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/'+SB_TABLE+'?id=eq.'+id+'&select=payload',{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+    const d=await r.json();
+    return d&&d[0]?d[0].payload:null;
+  }catch(e){console.warn('sbGet error:',e);return null;}
+}
+
+async function sbSet(id,payload){
+  try{
+    await fetch(SB_URL+'/rest/v1/'+SB_TABLE,{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,
+        'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({id,payload,updated_at:new Date().toISOString()})
+    });
+  }catch(e){console.warn('sbSet error:',e);}
+}
+
+async function sbSaveAll(){
+  // Salva cada módulo separadamente para não exceder limites
+  const modulos={
+    p:P, v:V, vi:VI, metas:METAS, ant:ANTERIOR,
+    pontos:PONTOS, site:SITE, diversos:DIVERSOS,
+    funcs:FUNCS, feriados:FERIADOS, carros:CARROS, histprec:HIST_PREC
+  };
+  for(const[key,val]of Object.entries(modulos)){
+    await sbSet('bi_'+key, val);
+  }
+}
+
+async function sbLoadAll(){
+  const modulos=['p','v','vi','metas','ant','pontos','site','diversos','funcs','feriados','carros','histprec'];
+  const results=await Promise.all(modulos.map(k=>sbGet('bi_'+k)));
+  const[p,v,vi,metas,ant,pontos,site,diversos,funcs,feriados,carros,histprec]=results;
+  if(p)P=p; if(v)V=v; if(vi)VI=vi;
+  if(metas)METAS=metas; if(ant)ANTERIOR=ant;
+  if(pontos)PONTOS=pontos; if(site)SITE=site; if(diversos)DIVERSOS=diversos;
+  if(funcs)FUNCS=funcs; if(feriados)FERIADOS=feriados;
+  if(carros)CARROS=carros; if(histprec)HIST_PREC=histprec;
+  return results.some(r=>r!==null);
+}
+
 // ── ESTADO ────────────────────────────────────────────────────────────
 let P={}, V={}, VI={}, METAS={}, ANTERIOR={}, PONTOS={}, SITE={}, DIVERSOS={}, FUNCS={}, FERIADOS={}, CARROS={}, HIST_PREC=[], pending=null, charts=[], chartsExt=[];
 let _nid=1;
@@ -3068,6 +3119,53 @@ function renderHistPrecos(){
   el.innerHTML=html;
 }
 
+// ── SYNC SUPABASE ────────────────────────────────────────────────────
+function setSyncStatus(msg, cor='var(--text3)'){
+  const el=document.getElementById('syncStatus');
+  if(!el)return;
+  el.style.display='block';
+  el.style.color=cor;
+  el.textContent=msg;
+}
+
+async function syncSubir(){
+  const btn=document.getElementById('btnSyncUp');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i>Salvando...';}
+  setSyncStatus('Salvando na nuvem...','var(--accent)');
+  try{
+    await sbSaveAll();
+    setSyncStatus('✓ Salvo em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');
+    toast('Dados salvos na nuvem!');
+  }catch(e){
+    setSyncStatus('Erro ao salvar','var(--red)');
+    toast('Erro ao salvar na nuvem','err');
+  }finally{
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-cloud-upload"></i>Salvar na nuvem';}
+  }
+}
+
+async function syncBaixar(){
+  const btn=document.getElementById('btnSyncDown');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i>Carregando...';}
+  setSyncStatus('Carregando da nuvem...','var(--accent)');
+  try{
+    const temDados=await sbLoadAll();
+    if(temDados){
+      save();renderAll();
+      setSyncStatus('✓ Atualizado em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');
+      toast('Dados carregados da nuvem!');
+    } else {
+      setSyncStatus('Nuvem vazia','var(--text3)');
+      toast('Nenhum dado encontrado na nuvem','err');
+    }
+  }catch(e){
+    setSyncStatus('Erro ao carregar','var(--red)');
+    toast('Erro ao carregar da nuvem','err');
+  }finally{
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-cloud-download"></i>Carregar da nuvem';}
+  }
+}
+
 // ── INIT ─────────────────────────────────────────────────────────────
 function renderAll(){
   renderProds();renderAjustado();
@@ -3078,14 +3176,45 @@ function renderAll(){
   updFiltros();
   if(Object.keys(PONTOS).length||Object.keys(SITE).length||Object.keys(DIVERSOS).length)updFiltrosExt();
 }
-load();
-document.getElementById('dataVisit').value=hoje();
-document.getElementById('pontosData').value=hoje();
-document.getElementById('siteData').value=hoje();
-  document.getElementById('diversosData').value=hoje();
+load(); // carrega localStorage como fallback inicial
+
+// inicializa datas
+['dataVisit','pontosData','siteData','diversosData','feriadoData','precDataInicio'].forEach(id=>{
+  const el=document.getElementById(id);if(el)el.value=hoje();
+});
+
+// renderiza com dados locais imediatamente
 renderAll();
-if(Object.keys(V).length)document.getElementById('btnPpt').style.display='flex';
-document.getElementById('brandSub').textContent=Object.keys(V).length?Object.keys(V).length+' dia(s) registrado(s)':'Sistema de gestão';
+if(Object.keys(V).length){
+  document.getElementById('btnPpt').style.display='flex';
+  document.getElementById('brandSub').textContent=Object.keys(V).length+' dia(s) registrado(s)';
+} else {
+  document.getElementById('brandSub').textContent='Sistema de gestão';
+}
+
+// Carrega da nuvem automaticamente ao abrir
+setSyncStatus('Sincronizando...','var(--accent)');
+sbLoadAll().then(temDados=>{
+  if(temDados){
+    save();renderAll();
+    if(Object.keys(V).length){
+      document.getElementById('btnPpt').style.display='flex';
+      document.getElementById('brandSub').textContent=Object.keys(V).length+' dia(s) registrado(s)';
+    }
+    setSyncStatus('✓ Sincronizado em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');
+  } else {
+    setSyncStatus('Nuvem vazia — usando dados locais','var(--text3)');
+  }
+}).catch(()=>setSyncStatus('Offline — dados locais','var(--text3)'));
+
+// Auto-refresh a cada 3 minutos
+setInterval(async()=>{
+  try{
+    const temDados=await sbLoadAll();
+    if(temDados){save();renderAll();setSyncStatus('✓ Atualizado em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');}
+  }catch(e){}
+},3*60*1000);
+
 </script>
 </body>
 </html>  // usa índice pré-calculado — evita iterar 21k comandas
