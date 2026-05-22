@@ -2021,8 +2021,10 @@ function atualizaPontosDatalist(){
   RAZOES_PONTOS_VALIDAS.forEach(r=>{const o=document.createElement('option');o.value=r;dl.appendChild(o);});
 }
 function getPontoTotal(diaObj){
+  if(!diaObj)return 0;
   if(typeof diaObj==='number')return diaObj;
-  return Object.values(diaObj).reduce((a,v)=>a+v,0);
+  if(typeof diaObj==='object')return Object.values(diaObj).reduce((a,v)=>a+(v||0),0);
+  return 0;
 }
 function impPontos(){
   const raw=document.getElementById('pontosTxt').value.trim();
@@ -2255,7 +2257,7 @@ function getDiversosFat(pref, setorFiltro){
 }
 
 function getExtDias(canal){
-  const diasP=canal===''||canal==='pontos'?Object.keys(PONTOS):[];
+  const diasP=canal===''||canal==='pontos'?Object.keys(PONTOS).filter(d=>getPontoTotal(PONTOS[d])>0):[];
   const diasS=canal===''||canal==='site'?Object.keys(SITE):[];
   const diasD=canal===''||canal==='diversos'?Object.keys(DIVERSOS):[];
   return [...new Set([...diasP,...diasS,...diasD])].sort();
@@ -2428,16 +2430,17 @@ function renderDashExt(){
       +'<div class="kpi-sub">'+periLbl+'</div></div>';
   }
   if(canal===''||canal==='pontos'){
-    kpisHtml+=kpiCanal('Pontos Externos (Total)',fatP,metaP,antP,'C0392B');
-    // KPIs por razão social
-    const razoesPontos=RAZOES_PONTOS_VALIDAS;
-    razoesPontos.forEach(r=>{
+    // KPI por razão social (Largo e Loja)
+    RAZOES_PONTOS_VALIDAS.forEach(r=>{
       const fatR=diasP.reduce((a,d)=>{
         const dadoDia=typeof PONTOS[d]==='object'?PONTOS[d]:{};
         return a+(dadoDia[r]||0);
       },0);
-      if(fatR>0)kpisHtml+=kpiCanal(r,fatR,null,null,'C0392B');
+      kpisHtml+=kpiCanal('Pontos Externos — '+r,fatR,null,null,'C0392B');
     });
+    // KPI Total Pontos
+    if(RAZOES_PONTOS_VALIDAS.length>1)
+      kpisHtml+=kpiCanal('Pontos Externos (Total)',fatP,metaP,antP,'C0392B');
   }
   if(canal===''||canal==='site')   kpisHtml+=kpiCanal('Site Oficial',fatS,metaS,antS,'0891B2');
   if(canal===''||canal==='diversos') kpisHtml+=kpiCanal('Fat. Diversos',fatD,null,null,'7F4FC0');
@@ -2455,7 +2458,7 @@ function renderDashExt(){
     sLabels=MNomes;
     sDataP=MNomes.map((_,mi)=>{
       const pf=ano+'-'+String(mi+1).padStart(2,'0');
-      return +Object.keys(PONTOS).filter(d=>d.startsWith(pf)).reduce((a,d)=>a+(PONTOS[d]||0),0).toFixed(2);
+      return +Object.keys(PONTOS).filter(d=>d.startsWith(pf)).reduce((a,d)=>a+getPontoTotal(PONTOS[d]),0).toFixed(2);
     });
     sDataS=MNomes.map((_,mi)=>{
       const pf=ano+'-'+String(mi+1).padStart(2,'0');
@@ -2464,7 +2467,7 @@ function renderDashExt(){
   } else if(mes&&!dia){
     const todosDias=[...new Set([...diasP,...diasS])].sort();
     sLabels=todosDias.map(d=>d.slice(8));
-    sDataP=todosDias.map(d=>+(PONTOS[d]||0).toFixed(2));
+    sDataP=todosDias.map(d=>+getPontoTotal(PONTOS[d]||0).toFixed(2));
     sDataS=todosDias.map(d=>+(SITE[d]||0).toFixed(2));
   } else {
     sLabels=['Pontos Externos','Site Oficial'];
