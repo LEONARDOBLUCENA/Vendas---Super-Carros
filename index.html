@@ -1989,6 +1989,7 @@ function addPontoManual(){
   const razao=document.getElementById('pontosRazao').value.trim();
   const v=parseFloat(document.getElementById('pontosVal').value)||0;
   if(!d||!razao||!v){toast('Preencha data, razão social e valor','err');return;}
+  if(!RAZOES_PONTOS_VALIDAS.includes(razao)){toast('Razão Social deve ser Largo ou Loja','err');return;}
   if(!PONTOS[d])PONTOS[d]={};
   if(!PONTOS[d][razao])PONTOS[d][razao]=0;
   PONTOS[d][razao]+=v;
@@ -1997,10 +1998,11 @@ function addPontoManual(){
   atualizaPontosDatalist();
   save('pontos');renderHistPontos();if(document.getElementById('sc-dashext').classList.contains('on')){updFiltrosExt();renderDashExt();}toast('Registro adicionado!');
 }
+const RAZOES_PONTOS_VALIDAS=['Largo','Loja'];
 function atualizaPontosDatalist(){
   const dl=document.getElementById('pontosRazaoDL');
   if(!dl)return;
-  const razoes=[...new Set(Object.values(PONTOS).flatMap(d=>typeof d==='object'?Object.keys(d):[]))].sort();
+  const razoes=RAZOES_PONTOS_VALIDAS;
   dl.innerHTML='';
   razoes.forEach(r=>{const o=document.createElement('option');o.value=r;dl.appendChild(o);});
 }
@@ -2015,8 +2017,8 @@ function addSiteManual(){
 }
 function atualizaPontosDatalist(){
   const dl=document.getElementById('pontosRazaoDL');if(!dl)return;
-  const razoes=[...new Set(Object.values(PONTOS).flatMap(d=>typeof d==='object'?Object.keys(d):[]))].sort();
-  dl.innerHTML='';razoes.forEach(r=>{const o=document.createElement('option');o.value=r;dl.appendChild(o);});
+  dl.innerHTML='';
+  RAZOES_PONTOS_VALIDAS.forEach(r=>{const o=document.createElement('option');o.value=r;dl.appendChild(o);});
 }
 function getPontoTotal(diaObj){
   if(typeof diaObj==='number')return diaObj;
@@ -2044,8 +2046,9 @@ function impPontos(){
     const razao=(p[cRazao]||'').trim();
     const v=parseN(p[cValor]);
     if(!d||!razao||!v)return;
+    if(!RAZOES_PONTOS_VALIDAS.includes(razao))return; // ignora outras razões
     if(!PONTOS[d])PONTOS[d]={};
-    if(typeof PONTOS[d]==='number')PONTOS[d]={legado:PONTOS[d]}; // migra formato antigo
+    if(typeof PONTOS[d]==='number')PONTOS[d]={legado:PONTOS[d]};
     if(!PONTOS[d][razao])PONTOS[d][razao]=0;
     PONTOS[d][razao]+=v;ok++;
   });
@@ -2059,7 +2062,7 @@ function renderHistPontos(){
   const el=document.getElementById('histPontos');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-map-pin"></i><p>Nenhum registro ainda.</p></div>';return;}
   atualizaPontosDatalist();
-  const razoes=[...new Set(dias.flatMap(d=>typeof PONTOS[d]==='object'?Object.keys(PONTOS[d]):[]))].sort();
+  const razoes=RAZOES_PONTOS_VALIDAS;
   let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th>';
   razoes.forEach(r=>html+='<th>'+r+'</th>');
   html+='<th>Total</th><th style="width:40px"></th></tr></thead><tbody>';
@@ -2078,7 +2081,7 @@ function renderHistPontos(){
 }
 function delPonto(d){if(!confirm('Remover o dia '+d+'?'))return;delete PONTOS[d];save('pontos');renderHistPontos();updFiltrosExt();renderDashExt();toast('Removido');}
 function exportarPontosExcel(){
-  const razoes=[...new Set(Object.values(PONTOS).flatMap(d=>typeof d==='object'?Object.keys(d):[]))].sort();
+  const razoes=RAZOES_PONTOS_VALIDAS;
   const rows=[['Data',...razoes,'Total']];
   Object.keys(PONTOS).sort().forEach(d=>{
     const dadoDia=typeof PONTOS[d]==='object'?PONTOS[d]:{legado:PONTOS[d]};
@@ -2427,7 +2430,7 @@ function renderDashExt(){
   if(canal===''||canal==='pontos'){
     kpisHtml+=kpiCanal('Pontos Externos (Total)',fatP,metaP,antP,'C0392B');
     // KPIs por razão social
-    const razoesPontos=[...new Set(diasP.flatMap(d=>typeof PONTOS[d]==='object'?Object.keys(PONTOS[d]):[]))].sort();
+    const razoesPontos=RAZOES_PONTOS_VALIDAS;
     razoesPontos.forEach(r=>{
       const fatR=diasP.reduce((a,d)=>{
         const dadoDia=typeof PONTOS[d]==='object'?PONTOS[d]:{};
