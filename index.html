@@ -481,7 +481,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="field"><label>Tabela copiada do Excel</label>
       <textarea id="pontosTxt" placeholder="Data	Valor Líquido&#10;01/05/2025	1250.00&#10;02/05/2025	980.50"></textarea>
     </div>
-    <div class="act"><button class="btn btn-p btn-sm" onclick="impPontos()"><i class="ti ti-check"></i>Importar</button></div>
+    <div class="g2" style="align-items:flex-end;margin-top:8px">
+      <div class="field" style="margin:0"><label>Modo</label>
+        <select id="pontosModo" style="padding:8px 11px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);width:100%">
+          <option value="somar">Somar aos existentes</option>
+          <option value="substituir">Substituir tudo</option>
+        </select>
+      </div>
+      <div><button class="btn btn-p btn-sm" onclick="impPontos()" style="width:100%"><i class="ti ti-check"></i>Importar</button></div>
+    </div>
   </div>
   <div class="card">
     <div class="card-title"><i class="ti ti-history"></i>Registros importados
@@ -2040,15 +2048,18 @@ function impPontos(){
   const cData=iData>=0?iData:0;
   const cRazao=iRazao>=0?iRazao:1;
   const cValor=iValor>=0?iValor:header.length-1;
+  const modo=document.getElementById('pontosModo')?document.getElementById('pontosModo').value:'somar';
+  if(modo==='substituir')PONTOS={};
+
   let ok=0;
   linhas.slice(1).forEach(l=>{
     const p=l.split('\t');if(p.length<2)return;
-    const dtRaw=(p[cData]||'').trim().split(' ')[0]; // só a data, ignora hora
+    const dtRaw=(p[cData]||'').trim().split(' ')[0];
     const d=parseData(dtRaw);
     const razao=(p[cRazao]||'').trim();
     const v=parseN(p[cValor]);
     if(!d||!razao||!v)return;
-    if(!RAZOES_PONTOS_VALIDAS.includes(razao))return; // ignora outras razões
+    if(!RAZOES_PONTOS_VALIDAS.includes(razao))return;
     if(!PONTOS[d])PONTOS[d]={};
     if(typeof PONTOS[d]==='number')PONTOS[d]={legado:PONTOS[d]};
     if(!PONTOS[d][razao])PONTOS[d][razao]=0;
@@ -2430,17 +2441,31 @@ function renderDashExt(){
       +'<div class="kpi-sub">'+periLbl+'</div></div>';
   }
   if(canal===''||canal==='pontos'){
-    // KPI por razão social (Largo e Loja)
+    // Calcula por razão social para a subdivisão
+    const fatPorRazao={};
     RAZOES_PONTOS_VALIDAS.forEach(r=>{
-      const fatR=diasP.reduce((a,d)=>{
+      fatPorRazao[r]=diasP.reduce((a,d)=>{
         const dadoDia=typeof PONTOS[d]==='object'?PONTOS[d]:{};
         return a+(dadoDia[r]||0);
       },0);
-      kpisHtml+=kpiCanal('Pontos Externos — '+r,fatR,null,null,'C0392B');
     });
-    // KPI Total Pontos
-    if(RAZOES_PONTOS_VALIDAS.length>1)
-      kpisHtml+=kpiCanal('Pontos Externos (Total)',fatP,metaP,antP,'C0392B');
+    const subLbl=RAZOES_PONTOS_VALIDAS.map(r=>r+': '+fRF(fatPorRazao[r])).join(' · ');
+    // Um único KPI com subdivisão no subtítulo
+    let kpiP='<div class="kpi" style="border-top:3px solid #C0392B">'
+      +'<div class="kpi-lbl">Pontos Externos</div>'
+      +'<div class="kpi-val" style="color:#C0392B">'+fR(fatP)+'</div>'
+      +'<div class="kpi-sub">'+subLbl+'</div>';
+    if(metaP){
+      const pct=Math.min((fatP/metaP*100),999).toFixed(1);
+      const barW=Math.min(100,(fatP/metaP*100)).toFixed(1);
+      const corMeta=fatP>=metaP?'var(--green)':'var(--red)';
+      kpiP+='<div style="margin-top:8px">'
+        +'<div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">'
+        +'<div style="height:100%;width:'+barW+'%;background:'+corMeta+';border-radius:3px"></div></div>'
+        +'<div style="font-size:11px;color:var(--text2);margin-top:3px">Meta: '+fRF(metaP)+' · '+pct+'%</div></div>';
+    }
+    kpiP+='</div>';
+    kpisHtml+=kpiP;
   }
   if(canal===''||canal==='site')   kpisHtml+=kpiCanal('Site Oficial',fatS,metaS,antS,'0891B2');
   if(canal===''||canal==='diversos') kpisHtml+=kpiCanal('Fat. Diversos',fatD,null,null,'7F4FC0');
