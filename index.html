@@ -115,6 +115,34 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .mes-picker-item:hover{background:var(--surface2)}
 .mes-picker-item input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--accent)}
 #toast{position:fixed;bottom:22px;right:22px;padding:10px 16px;border-radius:var(--r);font-size:13px;font-weight:500;color:#fff;opacity:0;transition:opacity .28s;pointer-events:none;z-index:9999;box-shadow:var(--sh)}
+
+/* ── MOBILE ─────────────────────────────────── */
+@media(max-width:768px){
+  .layout{flex-direction:column}
+  .sidebar{
+    width:100%;height:auto;position:relative;
+    border-right:none;border-bottom:1px solid var(--border);
+    overflow:visible;
+  }
+  .sidebar-foot{display:none} /* esconde no mobile */
+  .nav{display:flex;flex-wrap:wrap;gap:4px;padding:8px;flex-direction:row}
+  .nav-sec{display:none} /* esconde seções no mobile */
+  .nav-btn{
+    flex:0 0 auto;font-size:11px;padding:6px 10px;
+    border-radius:20px;white-space:nowrap;
+  }
+  .nav-btn i{display:none} /* esconde ícones no mobile */
+  /* Esconde abas de cadastro/operação no mobile — só dashboards */
+  .nav-btn[data-grupo="cadastro"],
+  .nav-btn[data-grupo="operacao"]{display:none}
+  .main{padding:10px}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .g3,.g4{grid-template-columns:1fr}
+  .fbar{flex-wrap:wrap;gap:6px}
+  .fbar-item{min-width:120px;flex:1}
+  .card{padding:12px}
+  .topbar{flex-direction:column;align-items:flex-start;gap:8px}
+}
 </style>
 </head>
 <body>
@@ -126,18 +154,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
   <nav class="nav">
     <div class="nav-sec">Cadastro</div>
-    <button class="nav-btn on" onclick="goTab('class')"><i class="ti ti-tag"></i>Classificação</button>
-    <button class="nav-btn" onclick="goTab('ajustado')"><i class="ti ti-adjustments"></i>Cadastro ajustado</button>
-    <button class="nav-btn" onclick="goTab('feriados')"><i class="ti ti-calendar-event"></i>Feriados</button>
-    <button class="nav-btn" onclick="goTab('metas')"><i class="ti ti-target"></i>Metas</button>
+    <button class="nav-btn on" onclick="goTab('class')" data-grupo="cadastro"><i class="ti ti-tag"></i>Classificação</button>
+    <button class="nav-btn" onclick="goTab('ajustado')" data-grupo="cadastro"><i class="ti ti-adjustments"></i>Cadastro ajustado</button>
+    <button class="nav-btn" onclick="goTab('feriados')" data-grupo="cadastro"><i class="ti ti-calendar-event"></i>Feriados</button>
+    <button class="nav-btn" onclick="goTab('metas')" data-grupo="cadastro"><i class="ti ti-target"></i>Metas</button>
     <div class="nav-sec">Operação diária</div>
-    <button class="nav-btn" onclick="goTab('vendas')"><i class="ti ti-clipboard-list"></i>Relatório de vendas</button>
-    <button class="nav-btn" onclick="goTab('visit')"><i class="ti ti-users"></i>Visitantes</button>
-    <button class="nav-btn" onclick="goTab('funcs')"><i class="ti ti-id-badge"></i>Funcionários</button>
-    <button class="nav-btn" onclick="goTab('pontos')"><i class="ti ti-map-pin"></i>Pontos Externos</button>
-    <button class="nav-btn" onclick="goTab('site')"><i class="ti ti-world"></i>Site Oficial</button>
-    <button class="nav-btn" onclick="goTab('diversos')"><i class="ti ti-coins"></i>Faturamentos Diversos</button>
-    <button class="nav-btn" onclick="goTab('precos')"><i class="ti ti-target-arrow"></i>Geração de Metas</button>
+    <button class="nav-btn" onclick="goTab('vendas')" data-grupo="operacao"><i class="ti ti-clipboard-list"></i>Relatório de vendas</button>
+    <button class="nav-btn" onclick="goTab('visit')" data-grupo="operacao"><i class="ti ti-users"></i>Visitantes</button>
+    <button class="nav-btn" onclick="goTab('funcs')" data-grupo="operacao"><i class="ti ti-id-badge"></i>Funcionários</button>
+    <button class="nav-btn" onclick="goTab('pontos')" data-grupo="operacao"><i class="ti ti-map-pin"></i>Pontos Externos</button>
+    <button class="nav-btn" onclick="goTab('site')" data-grupo="operacao"><i class="ti ti-world"></i>Site Oficial</button>
+    <button class="nav-btn" onclick="goTab('diversos')" data-grupo="operacao"><i class="ti ti-coins"></i>Faturamentos Diversos</button>
+    <button class="nav-btn" onclick="goTab('precos')" data-grupo="operacao"><i class="ti ti-target-arrow"></i>Geração de Metas</button>
     <div class="nav-sec">Resultados</div>
     <button class="nav-btn" onclick="goTab('dash')"><i class="ti ti-chart-bar"></i>Dashboard</button>
     <button class="nav-btn" onclick="goTab('dashext')"><i class="ti ti-chart-dots"></i>Dashboard Externos</button>
@@ -729,6 +757,20 @@ async function sbSet(id,payload){
   }catch(e){console.warn('sbSet error:',e);}
 }
 
+// Auto-save: debounce de 5s após qualquer save()
+let _autoSaveTimer=null;
+function triggerAutoSave(){
+  if(_autoSaveTimer)clearTimeout(_autoSaveTimer);
+  setSyncStatus('Alterações pendentes...','var(--amber)');
+  _autoSaveTimer=setTimeout(async()=>{
+    setSyncStatus('Salvando...','var(--accent)');
+    try{
+      await sbSaveAll();
+      setSyncStatus('✓ Salvo em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');
+    }catch(e){setSyncStatus('Erro ao salvar','var(--red)');}
+  },5000);
+}
+
 async function sbSaveAll(){
   // Salva cada módulo separadamente para não exceder limites
   const modulos={
@@ -808,6 +850,8 @@ function save(modulo){
     }
     if(salvarTudo||modulo==='nid'){saveKey('bi_nid',String(_nid));_dirty.nid=false;}
   }catch(e){console.error('save error:',e);}
+  // dispara auto-save na nuvem após salvar localmente
+  if(typeof triggerAutoSave!=='undefined')triggerAutoSave();
 }
 function load(){
   try{
@@ -2405,10 +2449,23 @@ function renderDashExt(){
       return a;
     },0)||null;
   }
+  // Limita comparativo ao mesmo dia do ano anterior (até hoje)
+  const hojeStr=hoje();
+  const mesmoDiaAnoAnt=anoAnt+hojeStr.slice(4); // ex: "2025-05-22"
+  function somaRealAntAteHoje(obj, prefAntH){
+    return Object.keys(obj)
+      .filter(d=>d.startsWith(prefAntH)&&d<=mesmoDiaAnoAnt)
+      .reduce((a,d)=>{
+        const v=obj[d];
+        if(typeof v==='number')return a+v;
+        if(typeof v==='object')return a+Object.values(v).reduce((x,vv)=>x+vv,0);
+        return a;
+      },0)||null;
+  }
   const prefAnt=dia?anoAnt+dia.slice(4):mes?anoAnt+'-'+mes:anoAnt;
-  const antPReal=canal!=='site'?somaRealAnt(PONTOS,prefAnt):null;
-  const antSReal=canal!=='pontos'?somaRealAnt(SITE,prefAnt):null;
-  const antDReal=canal!=='pontos'&&canal!=='site'?somaRealAnt(DIVERSOS,prefAnt):null;
+  const antPReal=canal!=='site'?somaRealAntAteHoje(PONTOS,prefAnt):null;
+  const antSReal=canal!=='pontos'?somaRealAntAteHoje(SITE,prefAnt):null;
+  const antDReal=canal!=='pontos'&&canal!=='site'?somaRealAntAteHoje(DIVERSOS,prefAnt):null;
   const antTotalReal=(antPReal||0)+(antSReal||0)+(antDReal||0)||null;
 
   function kpiCanal(label, fat, meta, ant, cor){
@@ -3191,6 +3248,8 @@ if(Object.keys(V).length){
 } else {
   document.getElementById('brandSub').textContent='Sistema de gestão';
 }
+// No mobile, abre dashboard diretamente
+if(window.innerWidth<=768&&Object.keys(V).length){goTab('dash');}
 
 // Carrega da nuvem automaticamente ao abrir
 setSyncStatus('Sincronizando...','var(--accent)');
