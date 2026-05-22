@@ -125,6 +125,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     overflow:visible;
   }
   .sidebar-foot{display:none} /* esconde no mobile */
+  #btnPpt,#btnPptExt{display:none!important} /* esconde gerar apresentação no mobile */
   .nav{display:flex;flex-wrap:wrap;gap:4px;padding:8px;flex-direction:row}
   .nav-sec{display:none} /* esconde seções no mobile */
   .nav-btn{
@@ -2449,10 +2450,12 @@ function renderDashExt(){
       return a;
     },0)||null;
   }
-  // Limita comparativo ao mesmo dia do ano anterior (até hoje)
-  const hojeStr=hoje();
-  const mesmoDiaAnoAnt=anoAnt+hojeStr.slice(4); // ex: "2025-05-22"
-  function somaRealAntAteHoje(obj, prefAntH){
+  // Último dia com dados nos canais filtrados
+  const todasDatasExt=[...Object.keys(PONTOS),...Object.keys(SITE),...Object.keys(DIVERSOS)].sort();
+  const ultimoDiaExt=todasDatasExt.length?todasDatasExt[todasDatasExt.length-1]:hoje();
+  const mesmoDiaAnoAnt=anoAnt+ultimoDiaExt.slice(4); // ex: "2025-05-21"
+
+  function somaRealAntAteUltimo(obj, prefAntH){
     return Object.keys(obj)
       .filter(d=>d.startsWith(prefAntH)&&d<=mesmoDiaAnoAnt)
       .reduce((a,d)=>{
@@ -2463,9 +2466,9 @@ function renderDashExt(){
       },0)||null;
   }
   const prefAnt=dia?anoAnt+dia.slice(4):mes?anoAnt+'-'+mes:anoAnt;
-  const antPReal=canal!=='site'?somaRealAntAteHoje(PONTOS,prefAnt):null;
-  const antSReal=canal!=='pontos'?somaRealAntAteHoje(SITE,prefAnt):null;
-  const antDReal=canal!=='pontos'&&canal!=='site'?somaRealAntAteHoje(DIVERSOS,prefAnt):null;
+  const antPReal=canal!=='site'?somaRealAntAteUltimo(PONTOS,prefAnt):null;
+  const antSReal=canal!=='pontos'?somaRealAntAteUltimo(SITE,prefAnt):null;
+  const antDReal=canal!=='pontos'&&canal!=='site'?somaRealAntAteUltimo(DIVERSOS,prefAnt):null;
   const antTotalReal=(antPReal||0)+(antSReal||0)+(antDReal||0)||null;
 
   function kpiCanal(label, fat, meta, ant, cor){
