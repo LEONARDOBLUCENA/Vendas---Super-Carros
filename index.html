@@ -2430,7 +2430,24 @@ function renderDashExt(){
     kpisHtml+=kpiP;
   }
   if(canal===''||canal==='site')   kpisHtml+=kpiCanal('Site Oficial',fatS,metaS,antS,'0891B2');
-  if(canal===''||canal==='diversos') kpisHtml+=kpiCanal('Fat. Diversos',fatD,null,null,'7F4FC0');
+  if(canal===''||canal==='diversos'){
+    // Calcula por setor para subdivisão
+    const fatDivPorSetor={};
+    diasD.forEach(d=>{
+      Object.entries(DIVERSOS[d]||{}).forEach(([setor,v])=>{
+        if(!fatDivPorSetor[setor])fatDivPorSetor[setor]=0;
+        fatDivPorSetor[setor]+=v;
+      });
+    });
+    const setoresDiv=Object.entries(fatDivPorSetor).sort((a,b)=>b[1]-a[1]);
+    const subLblDiv=setoresDiv.map(([s,v])=>s+': '+fRF(v)).join(' · ');
+    let kpiDiv='<div class="kpi" style="border-top:3px solid #7F4FC0">'
+      +'<div class="kpi-lbl">Fat. Diversos</div>'
+      +'<div class="kpi-val" style="color:#7F4FC0">'+fR(fatD)+'</div>'
+      +(subLblDiv?'<div class="kpi-sub">'+subLblDiv+'</div>':'')
+      +'</div>';
+    kpisHtml+=kpiDiv;
+  }
   kpisHtml+='</div>';
 
   // Série temporal
