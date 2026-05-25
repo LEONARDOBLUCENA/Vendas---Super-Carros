@@ -115,6 +115,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .mes-picker-item:hover{background:var(--surface2)}
 .mes-picker-item input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--accent)}
 #toast{position:fixed;bottom:22px;right:22px;padding:10px 16px;border-radius:var(--r);font-size:13px;font-weight:500;color:#fff;opacity:0;transition:opacity .28s;pointer-events:none;z-index:9999;box-shadow:var(--sh)}
+
+/* ── MOBILE ─────────────────────────────────── */
+@media(max-width:768px){
+  .layout{flex-direction:column}
+  .sidebar{width:100%;height:auto;position:relative;border-right:none;border-bottom:1px solid var(--border);overflow:visible}
+  .sidebar-foot{display:none}
+  #btnPpt,#btnPptExt{display:none!important}
+  .nav{display:flex;flex-wrap:wrap;gap:4px;padding:8px;flex-direction:row}
+  .nav-sec{display:none}
+  .nav-btn{flex:0 0 auto;font-size:11px;padding:6px 10px;border-radius:20px;white-space:nowrap}
+  .nav-btn i{display:none}
+  .nav-btn[data-grupo="cadastro"],.nav-btn[data-grupo="operacao"]{display:none}
+  .main{padding:10px}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .g3,.g4{grid-template-columns:1fr}
+  .fbar{flex-wrap:wrap;gap:6px}
+  .fbar-item{min-width:120px;flex:1}
+  .card{padding:12px}
+  .topbar{flex-direction:column;align-items:flex-start;gap:8px}
+}
 </style>
 </head>
 <body>
@@ -126,18 +146,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
   <nav class="nav">
     <div class="nav-sec">Cadastro</div>
-    <button class="nav-btn on" onclick="goTab('class')"><i class="ti ti-tag"></i>Classificação</button>
-    <button class="nav-btn" onclick="goTab('ajustado')"><i class="ti ti-adjustments"></i>Cadastro ajustado</button>
-    <button class="nav-btn" onclick="goTab('feriados')"><i class="ti ti-calendar-event"></i>Feriados</button>
-    <button class="nav-btn" onclick="goTab('metas')"><i class="ti ti-target"></i>Metas</button>
+    <button class="nav-btn on" onclick="goTab('class')" data-grupo="cadastro"><i class="ti ti-tag"></i>Classificação</button>
+    <button class="nav-btn" onclick="goTab('ajustado')" data-grupo="cadastro"><i class="ti ti-adjustments"></i>Cadastro ajustado</button>
+    <button class="nav-btn" onclick="goTab('feriados')" data-grupo="cadastro"><i class="ti ti-calendar-event"></i>Feriados</button>
+    <button class="nav-btn" onclick="goTab('metas')" data-grupo="cadastro"><i class="ti ti-target"></i>Metas</button>
     <div class="nav-sec">Operação diária</div>
-    <button class="nav-btn" onclick="goTab('vendas')"><i class="ti ti-clipboard-list"></i>Relatório de vendas</button>
-    <button class="nav-btn" onclick="goTab('visit')"><i class="ti ti-users"></i>Visitantes</button>
-    <button class="nav-btn" onclick="goTab('funcs')"><i class="ti ti-id-badge"></i>Funcionários</button>
-    <button class="nav-btn" onclick="goTab('pontos')"><i class="ti ti-map-pin"></i>Pontos Externos</button>
-    <button class="nav-btn" onclick="goTab('site')"><i class="ti ti-world"></i>Site Oficial</button>
-    <button class="nav-btn" onclick="goTab('diversos')"><i class="ti ti-coins"></i>Faturamentos Diversos</button>
-    <button class="nav-btn" onclick="goTab('precos')"><i class="ti ti-target-arrow"></i>Geração de Metas</button>
+    <button class="nav-btn" onclick="goTab('vendas')" data-grupo="operacao"><i class="ti ti-clipboard-list"></i>Relatório de vendas</button>
+    <button class="nav-btn" onclick="goTab('visit')" data-grupo="operacao"><i class="ti ti-users"></i>Visitantes</button>
+    <button class="nav-btn" onclick="goTab('funcs')" data-grupo="operacao"><i class="ti ti-id-badge"></i>Funcionários</button>
+    <button class="nav-btn" onclick="goTab('pontos')" data-grupo="operacao"><i class="ti ti-map-pin"></i>Pontos Externos</button>
+    <button class="nav-btn" onclick="goTab('site')" data-grupo="operacao"><i class="ti ti-world"></i>Site Oficial</button>
+    <button class="nav-btn" onclick="goTab('diversos')" data-grupo="operacao"><i class="ti ti-coins"></i>Faturamentos Diversos</button>
+    <button class="nav-btn" onclick="goTab('precos')" data-grupo="operacao"><i class="ti ti-target-arrow"></i>Geração de Metas</button>
     <div class="nav-sec">Resultados</div>
     <button class="nav-btn" onclick="goTab('dash')"><i class="ti ti-chart-bar"></i>Dashboard</button>
     <button class="nav-btn" onclick="goTab('dashext')"><i class="ti ti-chart-dots"></i>Dashboard Externos</button>
@@ -464,18 +484,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
   <div class="card">
     <div class="card-title"><i class="ti ti-circle-plus"></i>Adicionar manualmente</div>
-    <div class="g3" style="align-items:flex-end">
+    <div class="g4" style="align-items:flex-end">
       <div class="field" style="margin:0"><label>Data</label><input type="date" id="pontosData"></div>
-      <div class="field" style="margin:0"><label>Valor líquido (R$)</label><input type="number" id="pontosVal" placeholder="0,00" min="0" step="0.01"></div>
+      <div class="field" style="margin:0"><label>Razão Social</label>
+        <input type="text" id="pontosRazao" placeholder="Largo ou Loja" list="pontosRazaoDL">
+        <datalist id="pontosRazaoDL"><option value="Largo"><option value="Loja"></datalist>
+      </div>
+      <div class="field" style="margin:0"><label>Valor (R$)</label><input type="number" id="pontosVal" placeholder="0,00" min="0" step="0.01"></div>
       <div><button class="btn btn-p" style="width:100%" onclick="addPontoManual()"><i class="ti ti-plus"></i>Adicionar</button></div>
     </div>
   </div>
   <div class="card">
     <div class="card-title"><i class="ti ti-table-import"></i>Importar do Excel</div>
     <div class="alert alert-info"><i class="ti ti-info-circle"></i>
-      <span>Cole com cabeçalho na linha 1 (ignorado). Formato:<br>
-      <span style="font-family:'DM Mono',monospace;font-size:11px">Data [tab] Valor Líquido</span><br>
-      Formato da data: <strong>dd/mm/aaaa</strong> — Ex: 01/05/2025</span>
+      <span>Cole com cabeçalho. Colunas esperadas:<br>
+      <span style="font-family:'DM Mono',monospace;font-size:11px">Data e Hora do Pedido [tab] Razão Social [tab] ... [tab] Valor</span><br>
+      Apenas registros com Razão Social contendo <strong>Largo</strong> ou <strong>Loja</strong> são importados.</span>
     </div>
     <div class="field"><label>Tabela copiada do Excel</label>
       <textarea id="pontosTxt" placeholder="Data	Valor Líquido&#10;01/05/2025	1250.00&#10;02/05/2025	980.50"></textarea>
@@ -510,9 +534,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="card">
     <div class="card-title"><i class="ti ti-table-import"></i>Importar do Excel</div>
     <div class="alert alert-info"><i class="ti ti-info-circle"></i>
-      <span>Cole com cabeçalho na linha 1 (ignorado). Formato:<br>
-      <span style="font-family:'DM Mono',monospace;font-size:11px">Data [tab] Valor Líquido</span><br>
-      Formato da data: <strong>dd/mm/aaaa</strong> — Ex: 01/05/2025</span>
+      <span>Cole com cabeçalho. Colunas esperadas:<br>
+      <span style="font-family:'DM Mono',monospace;font-size:11px">Data e Hora do Pedido [tab] Razão Social [tab] ... [tab] Valor</span><br>
+      Apenas registros com Razão Social contendo <strong>Largo</strong> ou <strong>Loja</strong> são importados.</span>
     </div>
     <div class="field"><label>Tabela copiada do Excel</label>
       <textarea id="siteTxt" placeholder="Data	Valor Líquido&#10;01/05/2025	3200.00&#10;02/05/2025	2750.00"></textarea>
@@ -2042,7 +2066,7 @@ function gerarApres(){
 // ── APRESENTAÇÕES ────────────────────────────────────────────────────
 function gerarApresExt(){
   const{diasP,diasS,diasD,ano,mes,dia,canal}=getExtFiltrados();
-  const fatP=canal===''||canal==='pontos'?diasP.reduce((a,d)=>a+(PONTOS[d]||0),0):0;
+  const fatP=canal===''||canal==='pontos'?diasP.reduce((a,d)=>a+getPontoTotal(PONTOS[d]),0):0;
   const fatS=canal===''||canal==='site'?diasS.reduce((a,d)=>a+(SITE[d]||0),0):0;
   const fatD=canal===''||canal==='diversos'?diasD.reduce((a,d)=>a+Object.values(DIVERSOS[d]||{}).reduce((x,v)=>x+v,0),0):0;
   const fatTotal=fatP+fatS+fatD;
@@ -2071,12 +2095,19 @@ function gerarApresParc(){
 }
 
 // ── PONTOS EXTERNOS ──────────────────────────────────────────────────
+const RAZOES_PONTOS_VALIDAS=['Largo','Loja'];
+
 function addPontoManual(){
   const d=document.getElementById('pontosData').value;
+  const razao=document.getElementById('pontosRazao')?document.getElementById('pontosRazao').value.trim():'';
   const v=parseFloat(document.getElementById('pontosVal').value)||0;
-  if(!d||!v){toast('Preencha data e valor','err');return;}
-  if(!PONTOS[d])PONTOS[d]=0;
-  PONTOS[d]+=v;
+  if(!d||!razao||!v){toast('Preencha data, razão social e valor','err');return;}
+  const razaoNorm=RAZOES_PONTOS_VALIDAS.find(r=>razao.toUpperCase().includes(r.toUpperCase()));
+  if(!razaoNorm){toast('Razão Social deve ser Largo ou Loja','err');return;}
+  if(!PONTOS[d])PONTOS[d]={};
+  if(typeof PONTOS[d]==='number')PONTOS[d]={legado:PONTOS[d]};
+  if(!PONTOS[d][razaoNorm])PONTOS[d][razaoNorm]=0;
+  PONTOS[d][razaoNorm]+=v;
   document.getElementById('pontosVal').value='';
   save('pontos');renderHistPontos();if(document.getElementById('sc-dashext').classList.contains('on')){updFiltrosExt();renderDashExt();}toast('Registro adicionado!');
 }
@@ -2092,29 +2123,54 @@ function addSiteManual(){
 function impPontos(){
   const raw=document.getElementById('pontosTxt').value.trim();
   if(!raw){toast('Cole a tabela primeiro','err');return;}
-  const todasLinhas=raw.split('\n').filter(l=>l.trim());
-  const primeiraData=parseData((todasLinhas[0]||'').split('\t')[0]);
-  const lines=primeiraData?todasLinhas:todasLinhas.slice(1);
+  const linhas=raw.split('\n').filter(l=>l.trim());
+  if(!linhas.length){toast('Tabela vazia','err');return;}
+  function normH(s){return(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');}
+  const header=linhas[0].split('\t').map(normH);
+  const iData=header.findIndex(h=>h.includes('datahora')||h.includes('dataehora')||h.includes('datapedido'));
+  const iRazao=header.findIndex(h=>h.includes('razao'));
+  const iValor=header.findIndex(h=>h==='valor'||h.includes('vlrtotal')||h.includes('valortotal'));
+  const cData=iData>=0?iData:0;
+  const cRazao=iRazao>=0?iRazao:1;
+  const cValor=iValor>=0?iValor:header.length-1;
   let ok=0;
-  lines.forEach(l=>{
+  linhas.slice(1).forEach(l=>{
     const p=l.split('\t');if(p.length<2)return;
-    const d=parseData((p[0]||'').trim());
-    const v=parseN(p[1]);
-    if(!d||!v)return;
-    if(!PONTOS[d])PONTOS[d]=0;
-    PONTOS[d]+=v;ok++;
+    const dtRaw=(p[cData]||'').trim().split(' ')[0];
+    const d=parseData(dtRaw);
+    const razao=(p[cRazao]||'').trim();
+    const v=parseN(p[cValor]);
+    if(!d||!razao||!v)return;
+    const razaoNorm=RAZOES_PONTOS_VALIDAS.find(r=>razao.toUpperCase().includes(r.toUpperCase()));
+    if(!razaoNorm)return;
+    if(!PONTOS[d])PONTOS[d]={};
+    if(typeof PONTOS[d]==='number')PONTOS[d]={legado:PONTOS[d]};
+    if(!PONTOS[d][razaoNorm])PONTOS[d][razaoNorm]=0;
+    PONTOS[d][razaoNorm]+=v;ok++;
   });
   save('pontos');renderHistPontos();document.getElementById('pontosTxt').value='';
   if(ok>0){toast(ok+' registro(s) importado(s)!');updFiltrosExt();}
-  else toast('Nenhum registro importado. Verifique o formato.','err');
+  else toast('Nenhum registro importado — verifique o formato.','err');
+}
+function getPontoTotal(diaObj){
+  if(!diaObj)return 0;
+  if(typeof diaObj==='number')return diaObj;
+  if(typeof diaObj==='object')return Object.values(diaObj).reduce((a,v)=>a+(v||0),0);
+  return 0;
 }
 function renderHistPontos(){
   const dias=Object.keys(PONTOS).sort().reverse();
   const el=document.getElementById('histPontos');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-map-pin"></i><p>Nenhum registro ainda.</p></div>';return;}
-  let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Valor líquido</th><th style="width:40px"></th></tr></thead><tbody>';
+  let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th>';
+  RAZOES_PONTOS_VALIDAS.forEach(r=>html+='<th>'+r+'</th>');
+  html+='<th>Total</th><th style="width:40px"></th></tr></thead><tbody>';
   dias.forEach(d=>{
-    html+='<tr><td><strong>'+d+'</strong></td><td style="font-weight:500">'+fRF(PONTOS[d])+'</td>'
+    const dadoDia=typeof PONTOS[d]==='object'?PONTOS[d]:{legado:PONTOS[d]};
+    const total=getPontoTotal(PONTOS[d]);
+    html+='<tr><td><strong>'+d+'</strong></td>';
+    RAZOES_PONTOS_VALIDAS.forEach(r=>html+='<td>'+(dadoDia[r]?fRF(dadoDia[r]):'—')+'</td>');
+    html+='<td style="font-weight:600">'+fRF(total)+'</td>'
       +'<td><button class="del-btn" data-dia="'+d+'" onclick="delPonto(this.dataset.dia)">×</button></td></tr>';
   });
   html+='</tbody></table></div>';
@@ -2124,8 +2180,12 @@ function renderHistPontos(){
 }
 function delPonto(d){if(!confirm('Remover o dia '+d+'?'))return;delete PONTOS[d];save('pontos');renderHistPontos();updFiltrosExt();renderDashExt();toast('Removido');}
 function exportarPontosExcel(){
-  const rows=[['Data','Valor Líquido']];
-  Object.keys(PONTOS).sort().forEach(d=>rows.push([d,PONTOS[d].toFixed(2).replace('.',',')]));
+  const rows=[['Data',...RAZOES_PONTOS_VALIDAS,'Total']];
+  Object.keys(PONTOS).sort().forEach(d=>{
+    const dadoDia=typeof PONTOS[d]==='object'?PONTOS[d]:{legado:PONTOS[d]};
+    const total=getPontoTotal(PONTOS[d]);
+    rows.push([d,...RAZOES_PONTOS_VALIDAS.map(r=>dadoDia[r]||0),total]);
+  });
   exportarExcel(rows,'pontos-externos-'+hoje()+'.xls');
 }
 function limparPontos(){
@@ -2293,7 +2353,7 @@ function getDiversosFat(pref, setorFiltro){
 }
 
 function getExtDias(canal){
-  const diasP=canal===''||canal==='pontos'?Object.keys(PONTOS):[];
+  const diasP=canal===''||canal==='pontos'?Object.keys(PONTOS).filter(d=>getPontoTotal(PONTOS[d])>0):[];
   const diasS=canal===''||canal==='site'?Object.keys(SITE):[];
   const diasD=canal===''||canal==='diversos'?Object.keys(DIVERSOS):[];
   return [...new Set([...diasP,...diasS,...diasD])].sort();
@@ -2371,8 +2431,26 @@ function renderDashExt(){
   const anoAnt=String(parseInt(ano)-1);
   const mesFmt=mes?ano+'-'+mes:null;
 
+  // Último dia com dados — para comparativo justo
+  const todasDatasExt=[...Object.keys(PONTOS),...Object.keys(SITE),...Object.keys(DIVERSOS)].sort();
+  const ultimoDiaExt=todasDatasExt.length?todasDatasExt[todasDatasExt.length-1]:hoje();
+  const mesmoDiaAnoAnt=anoAnt+ultimoDiaExt.slice(4);
+
+  function somaRealAnt(obj,prefAntH){
+    return Object.keys(obj).filter(d=>d.startsWith(prefAntH)&&d<=mesmoDiaAnoAnt).reduce((a,d)=>{
+      const v=obj[d];
+      if(typeof v==='number')return a+v;
+      if(typeof v==='object')return a+Object.values(v).reduce((x,vv)=>x+vv,0);
+      return a;
+    },0)||null;
+  }
+  const prefAntExt=dia?anoAnt+dia.slice(4):mes?anoAnt+'-'+mes:anoAnt;
+  const antPReal=canal!=='site'?somaRealAnt(PONTOS,prefAntExt):null;
+  const antSReal=canal!=='pontos'?somaRealAnt(SITE,prefAntExt):null;
+  const antTotalReal=(antPReal||0)+(antSReal||0)||null;
+
   // Faturamento por canal
-  const fatP=canal===''||canal==='pontos'?diasP.reduce((a,d)=>a+(PONTOS[d]||0),0):0;
+  const fatP=canal===''||canal==='pontos'?diasP.reduce((a,d)=>a+getPontoTotal(PONTOS[d]),0):0;
   const fatS=canal===''||canal==='site'?diasS.reduce((a,d)=>a+(SITE[d]||0),0):0;
   const fatD=canal===''||canal==='diversos'?diasD.reduce((a,d)=>a+Object.values(DIVERSOS[d]||{}).reduce((x,v)=>x+v,0),0):0;
   const fatTotal=fatP+fatS+fatD;
@@ -2461,13 +2539,87 @@ function renderDashExt(){
   // KPIs
   let kpisHtml='<div class="kpi-grid">';
   if(fatTotal>0){
-    kpisHtml+='<div class="kpi"><div class="kpi-lbl">Total Externos</div>'
-      +'<div class="kpi-val">'+fR(fatTotal)+'</div>'
-      +'<div class="kpi-sub">'+periLbl+'</div></div>';
+    let kpiTot='<div class="kpi"><div class="kpi-lbl">Total Externos</div>'
+      +'<div class="kpi-val">'+fR(fatTotal)+'</div>';
+    if(antTotalReal){
+      const vr=((fatTotal-antTotalReal)/antTotalReal*100).toFixed(1);
+      const sinal=parseFloat(vr)>=0?'+':'';
+      const cor=parseFloat(vr)>=0?'var(--green)':'var(--red)';
+      kpiTot+='<div class="kpi-sub"><span style="color:'+cor+';font-weight:600">'+sinal+vr+'%</span> vs '+anoAnt+' ('+fRF(antTotalReal)+')</div>';
+    } else {
+      kpiTot+='<div class="kpi-sub">'+periLbl+'</div>';
+    }
+    kpiTot+='</div>';
+    kpisHtml+=kpiTot;
   }
-  if(canal===''||canal==='pontos') kpisHtml+=kpiCanal('Pontos Externos',fatP,metaP,antP,'C0392B');
-  if(canal===''||canal==='site')   kpisHtml+=kpiCanal('Site Oficial',fatS,metaS,antS,'0891B2');
-  if(canal===''||canal==='diversos') kpisHtml+=kpiCanal('Fat. Diversos',fatD,null,null,'7F4FC0');
+  if(canal===''||canal==='pontos'){
+    const fatPorRazao={};
+    RAZOES_PONTOS_VALIDAS.forEach(r=>{
+      fatPorRazao[r]=diasP.reduce((a,d)=>{
+        const dadoDia=typeof PONTOS[d]==='object'?PONTOS[d]:{};
+        return a+(dadoDia[r]||0);
+      },0);
+    });
+    const subLblP=RAZOES_PONTOS_VALIDAS.map(r=>r+': '+fRF(fatPorRazao[r])).join(' · ');
+    let kpiP='<div class="kpi" style="border-top:3px solid #C0392B">'
+      +'<div class="kpi-lbl">Pontos Externos</div>'
+      +'<div class="kpi-val" style="color:#C0392B">'+fR(fatP)+'</div>'
+      +'<div class="kpi-sub">'+subLblP+'</div>';
+    if(metaP){
+      const pct=Math.min((fatP/metaP*100),999).toFixed(1);
+      const barW=Math.min(100,(fatP/metaP*100)).toFixed(1);
+      const corMeta=fatP>=metaP?'var(--green)':'var(--red)';
+      kpiP+='<div style="margin-top:6px"><div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">'
+        +'<div style="height:100%;width:'+barW+'%;background:'+corMeta+';border-radius:3px"></div></div>'
+        +'<div style="font-size:11px;color:var(--text2);margin-top:3px">Meta: '+fRF(metaP)+' · '+pct+'%</div></div>';
+    }
+    if(antPReal){
+      const vr=((fatP-antPReal)/antPReal*100).toFixed(1);
+      const sinal=parseFloat(vr)>=0?'+':'';
+      const cor=parseFloat(vr)>=0?'var(--green)':'var(--red)';
+      kpiP+='<div class="kpi-sub" style="margin-top:3px"><span style="color:'+cor+';font-weight:600">'+sinal+vr+'%</span> vs '+anoAnt+' ('+fRF(antPReal)+')</div>';
+    }
+    kpiP+='</div>';
+    kpisHtml+=kpiP;
+  }
+  if(canal===''||canal==='site'){
+    let kpiS='<div class="kpi" style="border-top:3px solid #0891B2">'
+      +'<div class="kpi-lbl">Site Oficial</div>'
+      +'<div class="kpi-val" style="color:#0891B2">'+fR(fatS)+'</div>';
+    if(metaS){
+      const pct=Math.min((fatS/metaS*100),999).toFixed(1);
+      const barW=Math.min(100,(fatS/metaS*100)).toFixed(1);
+      const corMeta=fatS>=metaS?'var(--green)':'var(--red)';
+      kpiS+='<div style="margin-top:6px"><div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">'
+        +'<div style="height:100%;width:'+barW+'%;background:'+corMeta+';border-radius:3px"></div></div>'
+        +'<div style="font-size:11px;color:var(--text2);margin-top:3px">Meta: '+fRF(metaS)+' · '+pct+'%</div></div>';
+    }
+    if(antSReal){
+      const vr=((fatS-antSReal)/antSReal*100).toFixed(1);
+      const sinal=parseFloat(vr)>=0?'+':'';
+      const cor=parseFloat(vr)>=0?'var(--green)':'var(--red)';
+      kpiS+='<div class="kpi-sub"><span style="color:'+cor+';font-weight:600">'+sinal+vr+'%</span> vs '+anoAnt+' ('+fRF(antSReal)+')</div>';
+    }
+    kpiS+='</div>';
+    kpisHtml+=kpiS;
+  }
+  if(canal===''||canal==='diversos'){
+    const fatDivPorSetor={};
+    diasD.forEach(d=>{
+      Object.entries(DIVERSOS[d]||{}).forEach(([setor,v])=>{
+        if(!fatDivPorSetor[setor])fatDivPorSetor[setor]=0;
+        fatDivPorSetor[setor]+=v;
+      });
+    });
+    const setoresDiv=Object.entries(fatDivPorSetor).sort((a,b)=>b[1]-a[1]);
+    const subLblDiv=setoresDiv.map(([s,v])=>s+': '+fRF(v)).join(' · ');
+    let kpiDiv='<div class="kpi" style="border-top:3px solid #7F4FC0">'
+      +'<div class="kpi-lbl">Fat. Diversos</div>'
+      +'<div class="kpi-val" style="color:#7F4FC0">'+fR(fatD)+'</div>'
+      +(subLblDiv?'<div class="kpi-sub">'+subLblDiv+'</div>':'')
+      +'</div>';
+    kpisHtml+=kpiDiv;
+  }
   kpisHtml+='</div>';
 
   // Série temporal
