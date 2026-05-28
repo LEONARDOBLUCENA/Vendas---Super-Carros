@@ -768,53 +768,28 @@ async function carregarDoPWI(){
       });
     }
 
-    // ── 2. Carrega vendas mês a mês (evita timeout) ──
-    V={};
-    const meses=[];
-    for(let ano=anoInicio;ano<=anoAtual;ano++){
-      const mesMax=ano===anoAtual?mesAtual:12;
-      for(let mes=1;mes<=mesMax;mes++)meses.push({ano,mes:String(mes).padStart(2,'0')});
-    }
+    // ── 2+3. Carrega tudo em uma única chamada ──
+    setSyncStatus('Carregando dados do sistema...','var(--accent)');
+    V={};VI={};
+    const dados=await apiGet('/tudo?inicio='+anoInicio+'-01-01&fim='+hoje);
 
-    let mesesCarregados=0;
-    for(const{ano,mes} of meses){
-      setSyncStatus('Carregando '+meses.indexOf({ano,mes}+1)+'/'+meses.length+' — '+mes+'/'+ano+'...','var(--accent)');
-      try{
-        const vendas=await apiGet('/vendas?ano='+ano+'&mes='+mes);
-        vendas.forEach(item=>{
-          const d=formatarDataBI(item.data);
-          if(!d)return;
-          if(!V[d])V[d]=[];
-          const qtdItem=parseFloat(item.qtd)||1;
-          // servidor retorna vlTot (VL_PRETOT) como valor correto
-          const vlItem=parseFloat(item.vlTot)||parseFloat(item.vLiq)||0;
-          // setor: usa classificação manual (P) se existir, senão banco
-          const setorProd=setorDoP(item.idProduto,item.nome)||mapProdSetor[item.idProduto]||'(não classificado)';
-          V[d].push({
-            nome:item.nome||'',
-            setor:setorProd,
-            qtd:qtdItem,
-            vLiq:vlItem
-          });
-        });
-        mesesCarregados++;
-        setSyncStatus('Vendas: '+mesesCarregados+'/'+meses.length+' meses...','var(--accent)');
-      }catch(e){console.warn('Erro mês '+mes+'/'+ano+':',e.message);}
-    }
+    dados.vendas.forEach(item=>{
+      const d=formatarDataBI(item.data);
+      if(!d)return;
+      if(!V[d])V[d]=[];
+      const qtdItem=parseFloat(item.qtd)||1;
+      const vlItem=parseFloat(item.vlTot)||0;
+      const setorProd=setorDoP(item.idProduto,item.nome)||mapProdSetor[item.idProduto]||'(não classificado)';
+      V[d].push({nome:item.nome||'',setor:setorProd,qtd:qtdItem,vLiq:vlItem});
+    });
 
-    // ── 3. Carrega visitantes de uma vez (menor volume) ──
-    setSyncStatus('Carregando visitantes...','var(--accent)');
-    VI={};
-    try{
-      const visitantes=await apiGet('/visitantes?inicio='+anoInicio+'-01-01&fim='+hoje);
-      visitantes.forEach(v=>{
-        const d=formatarDataBI(v.data);
-        if(!d)return;
-        VI[d]={entradas:parseInt(v.entradas)||0,retorno:0,valido:parseInt(v.entradas)||0};
-      });
-    }catch(e){console.warn('Erro visitantes:',e.message);}
+    dados.visitantes.forEach(v=>{
+      const d=formatarDataBI(v.data);
+      if(!d)return;
+      VI[d]={entradas:parseInt(v.entradas)||0,retorno:0,valido:parseInt(v.entradas)||0};
+    });
 
-    // ── 4. Salva e renderiza ──
+        // ── 4. Salva e renderiza ──
     save();renderAll();updFiltros();
     const nDias=Object.keys(V).length;
     const nItens=Object.values(V).reduce((a,d)=>a+d.length,0);
