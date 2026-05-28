@@ -824,11 +824,21 @@ async function carregarDoPWI(){
     }
 
         // ── 4. Salva localmente e renderiza ──
-    // Salva V e VI no localStorage para reload rápido
+    // Salva cache compacto (só totais por dia por setor)
     try{
-      localStorage.setItem('bi_v_cache',JSON.stringify(V));
+      const vComp={};
+      Object.keys(V).forEach(d=>{
+        const bySe={};
+        V[d].forEach(i=>{
+          if(!bySe[i.setor])bySe[i.setor]={qtd:0,vLiq:0};
+          bySe[i.setor].qtd+=i.qtd;bySe[i.setor].vLiq+=i.vLiq;
+        });
+        vComp[d]=bySe;
+      });
+      localStorage.setItem('bi_v_cache',JSON.stringify(vComp));
       localStorage.setItem('bi_vi_cache',JSON.stringify(VI));
       localStorage.setItem('bi_cache_at',new Date().toISOString());
+      console.log('Cache salvo: '+Object.keys(vComp).length+' dias');
     }catch(e){console.warn('Cache local cheio:',e.message);}
     save();renderAll();updFiltros();
     const nDias=Object.keys(V).length;
@@ -980,7 +990,6 @@ function save(modulo){
     if(salvarTudo||modulo==='feriados'){saveKey('biferiados',FERIADOS);_dirty.feriados=false;}
     if(salvarTudo||modulo==='carros'){saveKey('bicarros',CARROS);_dirty.carros=false;}
     if(salvarTudo||modulo==='histprec'){saveKey('bihistprec',HIST_PREC);_dirty.histprec=false;}
-    if(salvarTudo||modulo==='parceiros'){saveKey('biparceiros',PARCEIROS);_dirty.parceiros=false;}
     if(salvarTudo||modulo==='comandas'){
       const _cc=new Array(COMANDAS.length);
       for(let i=0;i<COMANDAS.length;i++){
@@ -3382,7 +3391,23 @@ const _cacheVI=localStorage.getItem('bi_vi_cache');
 const _cacheAt=localStorage.getItem('bi_cache_at');
 if(_cacheV&&_cacheVI){
   try{
-    V=JSON.parse(_cacheV);VI=JSON.parse(_cacheVI);
+    // Cache pode ser compacto (bySe) ou completo
+    const _vParsed=JSON.parse(_cacheV);
+    // Verifica se é formato compacto (valores são objetos com qtd/vLiq por setor)
+    const _primeiraChave=Object.keys(_vParsed)[0];
+    if(_primeiraChave&&!Array.isArray(_vParsed[_primeiraChave])){
+      // Formato compacto — expande para formato completo
+      V={};
+      Object.keys(_vParsed).forEach(d=>{
+        V[d]=[];
+        Object.keys(_vParsed[d]).forEach(setor=>{
+          V[d].push({nome:setor,setor,qtd:_vParsed[d][setor].qtd,vLiq:_vParsed[d][setor].vLiq});
+        });
+      });
+    } else {
+      V=_vParsed;
+    }
+    VI=JSON.parse(_cacheVI);
     renderAll();updFiltros();
     if(Object.keys(V).length){
       document.getElementById('btnPpt').style.display='flex';
