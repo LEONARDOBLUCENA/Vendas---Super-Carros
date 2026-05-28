@@ -163,7 +163,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="nav-btn" onclick="goTab('dashext')"><i class="ti ti-chart-dots"></i>Dashboard Externos</button>
   </nav>
   <div class="sidebar-foot">
-    <button class="btn btn-p btn-sm" onclick="syncSubir()" id="btnSyncUp"><i class="ti ti-cloud-upload"></i>Salvar na nuvem</button>
+    <button class="btn btn-p btn-sm" onclick="carregarDoPWI()" id="btnPWI"><i class="ti ti-database-import"></i>Buscar do sistema</button>
+    <button class="btn btn-sm" onclick="syncSubir()" id="btnSyncUp"><i class="ti ti-cloud-upload"></i>Salvar na nuvem</button>
     <button class="btn btn-sm" onclick="syncBaixar()" id="btnSyncDown"><i class="ti ti-cloud-download"></i>Carregar da nuvem</button>
     <div id="syncStatus" style="font-size:11px;color:var(--text3);text-align:center;padding:2px 0;display:none"></div>
     <button class="btn btn-sm" onclick="exportar()"><i class="ti ti-download"></i>Backup local</button>
@@ -718,6 +719,82 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <script>
 
+
+// ── API PWI ───────────────────────────────────────────────────────────
+const API_URL='https://bi-server-production.up.railway.app';
+
+async function apiGet(endpoint){
+  const r=await fetch(API_URL+endpoint);
+  if(!r.ok)throw new Error('API '+endpoint+' retornou '+r.status);
+  return r.json();
+}
+
+function formatarDataBI(dataStr){
+  // Converte "2025-01-10" para chave de V
+  return dataStr?dataStr.slice(0,10):null;
+}
+
+async function carregarDoPWI(){
+  setSyncStatus('Buscando dados do sistema...','var(--accent)');
+  try{
+    const inicio='2025-01-01';
+    const hoje=new Date().toISOString().slice(0,10);
+
+    // Carrega produtos, vendas e visitantes em paralelo
+    setSyncStatus('Carregando produtos...','var(--accent)');
+    const [produtos, vendas, visitantes] = await Promise.all([
+      apiGet('/produtos'),
+      apiGet('/vendas?inicio='+inicio+'&fim='+hoje),
+      apiGet('/visitantes?inicio='+inicio+'&fim='+hoje)
+    ]);
+
+    // ── Processa Produtos → P ──
+    P={};
+    produtos.forEach(p=>{
+      const chave='p'+Object.keys(P).length;
+      P[chave]={nome:p.nome, setor:p.setor||'(não classificado)'};
+    });
+
+    // ── Processa Vendas → V ──
+    V={};
+    vendas.forEach(item=>{
+      const d=formatarDataBI(item.data);
+      if(!d)return;
+      if(!V[d])V[d]=[];
+      V[d].push({
+        nome:item.nome||'',
+        setor:item.setor||'(não classificado)',
+        qtd:parseFloat(item.qtd)||0,
+        vLiq:parseFloat(item.vLiq)||0
+      });
+    });
+
+    // ── Processa Visitantes → VI ──
+    VI={};
+    visitantes.forEach(v=>{
+      const d=formatarDataBI(v.data);
+      if(!d)return;
+      VI[d]={entradas:parseInt(v.entradas)||0, retorno:0, valido:parseInt(v.entradas)||0};
+    });
+
+    // Salva localmente e renderiza
+    save();
+    renderAll();
+    updFiltros();
+
+    const nDias=Object.keys(V).length;
+    const nItens=Object.values(V).reduce((a,d)=>a+d.length,0);
+    document.getElementById('btnPpt').style.display='flex';
+    document.getElementById('brandSub').textContent=nDias+' dias · '+nItens.toLocaleString()+' itens';
+    setSyncStatus('✓ '+nDias+' dias carregados do sistema em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');
+    toast('Dados carregados: '+nDias+' dias de vendas!');
+
+  }catch(e){
+    console.error('Erro ao carregar da PWI:',e);
+    setSyncStatus('Erro ao buscar dados: '+e.message,'var(--red)');
+    toast('Erro ao buscar dados do sistema','err');
+  }
+}
 // ── SUPABASE ──────────────────────────────────────────────────────────
 const SB_URL='https://kbirsoinehvachyjyoin.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiaXJzb2luZWh2YWNoeWp5b2luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MzE0NjAsImV4cCI6MjA5NTAwNzQ2MH0.UO5H-a-EXUmrrd5JFdVekZqoFnqJYbzJwDlVwYPtBmQ';
@@ -3238,6 +3315,29 @@ document.getElementById('siteData').value=hoje();
 renderAll();
 if(Object.keys(V).length)document.getElementById('btnPpt').style.display='flex';
 document.getElementById('brandSub').textContent=Object.keys(V).length?Object.keys(V).length+' dia(s) registrado(s)':'Sistema de gestão';
+</script>
+</body>
+</html>  // usa índice pré-calculado — evita iterar 21k comandas
+  const byParc={};
+  Object.entries(_idxComandas.porParceiro).forEach(function(entry){
+    const key=entry[0],arr=entry[1];
+    const label=PARCEIROS[key]?PARCEIROS[key].label:key;
+    const val=arr.reduce((a,c)=>a+c.valorTotal,0);
+    byParc[label]={qtd:arr.length,val};
+  });if(window.innerWidth<=768&&Object.keys(V).length)goTab('dash');
+
+// Carrega da PWI automaticamente ao abrir
+carregarDoPWI().catch(e=>{
+  // Se falhar, tenta Supabase como fallback
+  setSyncStatus('PWI indisponível — tentando nuvem...','var(--amber)');
+  sbLoadAll().then(ok=>{
+    if(ok){save();renderAll();setSyncStatus('✓ Dados da nuvem em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');}
+    else setSyncStatus('Sem dados','var(--text3)');
+  }).catch(()=>setSyncStatus('Offline — dados locais','var(--text3)'));
+});
+// Auto-atualiza a cada 10 minutos
+setInterval(()=>carregarDoPWI().catch(()=>{}),10*60*1000);
+
 </script>
 </body>
 </html>  // usa índice pré-calculado — evita iterar 21k comandas
