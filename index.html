@@ -730,11 +730,22 @@ async function apiGet(endpoint){
 }
 
 function normalizarSetor(setor, nomeProduto){
-  // Regra: ingresso, combo, cortesia → Bilheteria
-  const nome=(nomeProduto||'').toLowerCase();
-  const s=(setor||'').toLowerCase();
-  if(nome.includes('ingresso')||nome.includes('combo')||nome.includes('cortesia'))return 'Bilheteria';
-  if(s.includes('ingresso')||s.includes('bilheteria'))return 'Bilheteria';
+  const nome=(nomeProduto||'').toUpperCase();
+  const s=(setor||'').toUpperCase();
+  // Bilheteria: ingresso, combo, cortesia, ing. combo, cortesias supercarros
+  if(nome.includes('INGRESSO')||nome.includes('COMBO')||nome.includes('CORTESIA')
+     ||nome.includes('ING. COMBO')||nome.includes('CORTESIAS SUPERCARROS'))return 'Bilheteria';
+  if(s.includes('INGRESSO')||s.includes('BILHETERIA'))return 'Bilheteria';
+  // Fotos
+  if(nome.includes('FOTO')||s.includes('FOTO'))return 'Fotos';
+  // Videos On Board
+  if(nome.includes('VIDEO')||nome.includes('ON-BOARD')||nome.includes('ON BOARD')
+     ||s.includes('VIDEO'))return 'Videos On Board';
+  // Simulador
+  if(nome.includes('SIMULADOR')||s.includes('SIMULADOR'))return 'Simulador';
+  // Passeios (carona, drive, percurso)
+  if(nome.includes('CARONA')||nome.includes('DRIVE')||nome.includes('PERCURSO')
+     ||s.includes('CARONA')||s.includes('PASSEIO'))return 'Passeios';
   return setor||'(não classificado)';
 }
 function setorDoP(idProduto, nomeProduto){
@@ -855,24 +866,15 @@ async function sbSet(id,payload){
 }
 
 async function sbSaveAll(){
-  // Salva V e VI por ano para evitar payload grande
-  const anos=[...new Set(Object.keys(V).map(d=>d.slice(0,4)))];
-  const anosVI=[...new Set(Object.keys(VI).map(d=>d.slice(0,4)))];
-  const vPromises=anos.map(ano=>{
-    const vAno={};Object.keys(V).filter(d=>d.startsWith(ano)).forEach(d=>vAno[d]=V[d]);
-    return sbSet('bi_v_'+ano,vAno);
-  });
-  const viPromises=anosVI.map(ano=>{
-    const viAno={};Object.keys(VI).filter(d=>d.startsWith(ano)).forEach(d=>viAno[d]=VI[d]);
-    return sbSet('bi_vi_'+ano,viAno);
-  });
-  const outros={p:P,metas:METAS,ant:ANTERIOR,pontos:PONTOS,site:SITE,diversos:DIVERSOS,
+  // V e VI não são salvos no Supabase — vêm do banco da PWI via "Buscar do Sistema"
+  // Salva apenas configurações e dados manuais
+  const modulos={p:P,metas:METAS,ant:ANTERIOR,pontos:PONTOS,site:SITE,diversos:DIVERSOS,
     funcs:FUNCS,feriados:FERIADOS,carros:CARROS,histprec:HIST_PREC};
-  await Promise.all([...vPromises,...viPromises,...Object.entries(outros).map(([k,v])=>sbSet('bi_'+k,v))]);
+  await Promise.all(Object.entries(modulos).map(([k,v])=>sbSet('bi_'+k,v)));
 }
 
 async function sbLoadAll(){
-  // Carrega outros módulos
+  // Carrega apenas configurações e dados manuais (V e VI vêm do banco PWI)
   const keys=['p','metas','ant','pontos','site','diversos','funcs','feriados','carros','histprec'];
   const results=await Promise.all(keys.map(k=>sbGet('bi_'+k)));
   const[p,metas,ant,pontos,site,diversos,funcs,feriados,carros,histprec]=results;
@@ -880,14 +882,7 @@ async function sbLoadAll(){
   if(pontos)PONTOS=pontos;if(site)SITE=site;if(diversos)DIVERSOS=diversos;
   if(funcs)FUNCS=funcs;if(feriados)FERIADOS=feriados;
   if(carros)CARROS=carros;if(histprec)HIST_PREC=histprec;
-  // Carrega V e VI por ano (2025, 2026, ...)
-  const anosBI=[2025,2026,2027];
-  const vResults=await Promise.all(anosBI.map(ano=>sbGet('bi_v_'+ano)));
-  const viResults=await Promise.all(anosBI.map(ano=>sbGet('bi_vi_'+ano)));
-  V={};VI={};
-  vResults.forEach(vAno=>{if(vAno)Object.assign(V,vAno);});
-  viResults.forEach(viAno=>{if(viAno)Object.assign(VI,viAno);});
-  return results.some(r=>r!==null)||vResults.some(r=>r!==null);
+  return results.some(r=>r!==null);
 }
 
 function setSyncStatus(msg,cor){
@@ -1737,19 +1732,14 @@ function updDia(){
   if(diasF.includes(curD))sD.value=curD;
 }
 function updSetoresFiltro(){
-  const setoresSet=new Set();
-  // aplica setorAdj para garantir Carona/Direção → Passeios no filtro
-  Object.values(V).forEach(dia=>dia.forEach(i=>{
-    const s=setorAdj(i.setor);
-    if(!SETORES_EXCLUIR_DASH.includes(s))setoresSet.add(s);
-  }));
-  const setores=[...setoresSet].sort();
-  const sel=document.getElementById('fSetor'),cur=sel.value;
+  const SETORES_DASH=['Bilheteria','Fotos','Passeios','Videos On Board','Simulador'];
+  const sel=document.getElementById('fSetor');if(!sel)return;
+  const cur=sel.value;
   sel.innerHTML='<option value="">Todos</option>';
-  setores.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
-  const sep=document.createElement('option');sep.disabled=true;sep.textContent='──────────';sel.appendChild(sep);
-  const oT=document.createElement('option');oT.value=S_TOTAL;oT.textContent='★ Salão Total (todos)';sel.appendChild(oT);
-  if(cur)sel.value=cur;
+  SETORES_DASH.forEach(s=>{
+    const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);
+  });
+  if(SETORES_DASH.includes(cur))sel.value=cur;
 }
 function onFAno(){mesesSelecionados=[];updMesDia();updMesPickerLabel();document.getElementById('fDia').value='';renderDash();}
 // onFMes removido — substituído por multi-picker
