@@ -729,6 +729,16 @@ async function apiGet(endpoint){
   return r.json();
 }
 
+function setorDoP(idProduto, nomeProduto){
+  // Busca o setor na classificação manual (P) pelo nome do produto
+  if(!idProduto&&!nomeProduto)return null;
+  const nome=(nomeProduto||'').trim().toUpperCase();
+  for(const k of Object.keys(P)){
+    const pNome=(P[k].nome||'').trim().toUpperCase();
+    if(pNome===nome)return P[k].setor;
+  }
+  return null;
+}
 function formatarDataBI(dataStr){
   // Converte "2025-01-10" para chave de V
   return dataStr?dataStr.slice(0,10):null;
@@ -745,13 +755,18 @@ async function carregarDoPWI(){
     // ── 1. Carrega produtos (monta mapa id→setor) ──
     setSyncStatus('Carregando produtos...','var(--accent)');
     const produtos=await apiGet('/produtos');
+    // Monta mapa id→setor do banco (NÃO sobrescreve P — mantém classificação manual)
     const mapProdSetor={};
-    P={};
     produtos.forEach(p=>{
       mapProdSetor[p.id]=p.setor||'(não classificado)';
-      const chave='p'+(Object.keys(P).length+1);
-      P[chave]={nome:p.nome,setor:p.setor||'(não classificado)'};
     });
+    // Se P estiver vazio, popula com os produtos do banco
+    if(Object.keys(P).length===0){
+      produtos.forEach(p=>{
+        const chave='p'+(Object.keys(P).length+1);
+        P[chave]={nome:p.nome,setor:p.setor||'(não classificado)'};
+      });
+    }
 
     // ── 2. Carrega vendas mês a mês (evita timeout) ──
     V={};
@@ -771,12 +786,15 @@ async function carregarDoPWI(){
           if(!d)return;
           if(!V[d])V[d]=[];
           const qtdItem=parseFloat(item.qtd)||1;
-          const vlTot=parseFloat(item.vLiq)||0; // vLiq vem como VL_PRETOT do servidor
+          // servidor retorna vlTot (VL_PRETOT) como valor correto
+          const vlItem=parseFloat(item.vlTot)||parseFloat(item.vLiq)||0;
+          // setor: usa classificação manual (P) se existir, senão banco
+          const setorProd=setorDoP(item.idProduto,item.nome)||mapProdSetor[item.idProduto]||'(não classificado)';
           V[d].push({
             nome:item.nome||'',
-            setor:mapProdSetor[item.idProduto]||'(não classificado)',
+            setor:setorProd,
             qtd:qtdItem,
-            vLiq:vlTot  // valor total do item (VL_PRETOT)
+            vLiq:vlItem
           });
         });
         mesesCarregados++;
