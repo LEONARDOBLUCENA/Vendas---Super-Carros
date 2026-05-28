@@ -215,7 +215,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
   </div>
   <div class="card">
-    <div class="card-title"><i class="ti ti-list"></i>Produtos cadastrados <span id="prodCnt" style="color:var(--text3);font-weight:400;font-size:11px;margin-left:3px"></span></div>
+    <div class="card-title"><i class="ti ti-list"></i>Produtos cadastrados <span id="prodCnt" style="color:var(--text3);font-weight:400;font-size:11px;margin-left:3px"></span><button class="btn btn-sm" onclick="limparClassificacao()" style="margin-left:auto;color:var(--red)"><i class="ti ti-trash"></i>Limpar tudo</button></div>
     <div id="prodEmpty" class="empty"><i class="ti ti-tag"></i><p>Nenhum produto cadastrado.</p></div>
     <div id="prodWrap" style="display:none">
       <div class="tbl-wrap"><table class="tbl">
@@ -770,11 +770,13 @@ async function carregarDoPWI(){
           const d=formatarDataBI(item.data);
           if(!d)return;
           if(!V[d])V[d]=[];
+          const qtdItem=parseFloat(item.qtd)||1;
+          const vlTot=parseFloat(item.vLiq)||0; // vLiq vem como VL_PRETOT do servidor
           V[d].push({
             nome:item.nome||'',
             setor:mapProdSetor[item.idProduto]||'(não classificado)',
-            qtd:parseFloat(item.qtd)||0,
-            vLiq:parseFloat(item.vLiq)||0
+            qtd:qtdItem,
+            vLiq:vlTot  // valor total do item (VL_PRETOT)
           });
         });
         mesesCarregados++;
@@ -1129,6 +1131,10 @@ function addProd(){
   P[chave]={nome,setor};
   document.getElementById('inNome').value='';document.getElementById('inNome').focus();
   save('p');renderProds();renderAjustado();toast('"'+nome+'" adicionado!');
+}
+function limparClassificacao(){
+  if(!confirm('Apagar TODOS os produtos cadastrados? Os dados de vendas permanecem.'))return;
+  P={};save('p');renderProds();renderAjustado();toast('Classificação limpa!');
 }
 function renderProds(){
   const arr=Object.entries(P).map(([k,v])=>({k,...v})).sort((a,b)=>a.setor.localeCompare(b.setor)||a.nome.localeCompare(b.nome));
