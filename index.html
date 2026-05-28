@@ -732,18 +732,18 @@ async function apiGet(endpoint){
 function normalizarSetor(setor, nomeProduto){
   const nome=(nomeProduto||'').toUpperCase();
   const s=(setor||'').toUpperCase();
-  // Bilheteria: ingresso, combo, cortesia, ing. combo, cortesias supercarros
+  // Bilheteria
   if(nome.includes('INGRESSO')||nome.includes('COMBO')||nome.includes('CORTESIA')
      ||nome.includes('ING. COMBO')||nome.includes('CORTESIAS SUPERCARROS'))return 'Bilheteria';
   if(s.includes('INGRESSO')||s.includes('BILHETERIA'))return 'Bilheteria';
   // Fotos
   if(nome.includes('FOTO')||s.includes('FOTO'))return 'Fotos';
-  // Videos On Board
+  // Videos (On Board → Videos)
   if(nome.includes('VIDEO')||nome.includes('ON-BOARD')||nome.includes('ON BOARD')
-     ||s.includes('VIDEO'))return 'Videos On Board';
-  // Simulador
-  if(nome.includes('SIMULADOR')||s.includes('SIMULADOR'))return 'Simulador';
-  // Passeios (carona, drive, percurso)
+     ||s.includes('VIDEO'))return 'Videos';
+  // Simuladores
+  if(nome.includes('SIMULADOR')||s.includes('SIMULADOR'))return 'Simuladores';
+  // Passeios
   if(nome.includes('CARONA')||nome.includes('DRIVE')||nome.includes('PERCURSO')
      ||s.includes('CARONA')||s.includes('PASSEIO'))return 'Passeios';
   return setor||'(não classificado)';
@@ -823,7 +823,13 @@ async function carregarDoPWI(){
       }catch(e){console.warn('Erro período '+ini+'-'+fim+':',e.message);}
     }
 
-        // ── 4. Salva e renderiza ──
+        // ── 4. Salva localmente e renderiza ──
+    // Salva V e VI no localStorage para reload rápido
+    try{
+      localStorage.setItem('bi_v_cache',JSON.stringify(V));
+      localStorage.setItem('bi_vi_cache',JSON.stringify(VI));
+      localStorage.setItem('bi_cache_at',new Date().toISOString());
+    }catch(e){console.warn('Cache local cheio:',e.message);}
     save();renderAll();updFiltros();
     const nDias=Object.keys(V).length;
     const nItens=Object.values(V).reduce((a,d)=>a+d.length,0);
@@ -1732,7 +1738,7 @@ function updDia(){
   if(diasF.includes(curD))sD.value=curD;
 }
 function updSetoresFiltro(){
-  const SETORES_DASH=['Bilheteria','Fotos','Passeios','Videos On Board','Simulador'];
+  const SETORES_DASH=['Bilheteria','Fotos','Passeios','Videos','Simuladores'];
   const sel=document.getElementById('fSetor');if(!sel)return;
   const cur=sel.value;
   sel.innerHTML='<option value="">Todos</option>';
@@ -3370,17 +3376,45 @@ document.getElementById('brandSub').textContent=Object.keys(V).length?Object.key
     byParc[label]={qtd:arr.length,val};
   });if(window.innerWidth<=768&&Object.keys(V).length)goTab('dash');
 
-// Carrega da PWI automaticamente ao abrir
-carregarDoPWI().catch(e=>{
+// Carrega do cache local primeiro (instantâneo)
+const _cacheV=localStorage.getItem('bi_v_cache');
+const _cacheVI=localStorage.getItem('bi_vi_cache');
+const _cacheAt=localStorage.getItem('bi_cache_at');
+if(_cacheV&&_cacheVI){
+  try{
+    V=JSON.parse(_cacheV);VI=JSON.parse(_cacheVI);
+    renderAll();updFiltros();
+    if(Object.keys(V).length){
+      document.getElementById('btnPpt').style.display='flex';
+      document.getElementById('brandSub').textContent=Object.keys(V).length+' dias (cache local)';
+    }
+    // Verifica se o cache tem mais de 1 hora — se sim, atualiza em background
+    const cacheIdade=_cacheAt?(Date.now()-new Date(_cacheAt).getTime())/1000/60:999;
+    if(cacheIdade>60){
+      setSyncStatus('Atualizando dados...','var(--accent)');
+      carregarDoPWI().catch(()=>setSyncStatus('Usando cache local','var(--text3)'));
+    } else {
+      setSyncStatus('✓ Cache local de '+new Date(_cacheAt).toLocaleTimeString('pt-BR'),'var(--green)');
+    }
+  }catch(e){
+    carregarDoPWI().catch(()=>{});
+  }
+} else {
+  // Sem cache — busca do banco
+  carregarDoPWI().catch(e=>{
   // Se falhar, tenta Supabase como fallback
   setSyncStatus('PWI indisponível — tentando nuvem...','var(--amber)');
   sbLoadAll().then(ok=>{
     if(ok){save();renderAll();setSyncStatus('✓ Dados da nuvem em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');}
     else setSyncStatus('Sem dados','var(--text3)');
-  }).catch(()=>setSyncStatus('Offline — dados locais','var(--text3)'));
-});
-// Auto-atualiza a cada 10 minutos
-setInterval(()=>carregarDoPWI().catch(()=>{}),10*60*1000);
+      }).catch(()=>setSyncStatus('Offline','var(--text3)'));
+  });
+}
+// Auto-atualiza a cada hora
+setInterval(()=>{
+  setSyncStatus('Atualizando...','var(--accent)');
+  carregarDoPWI().catch(()=>setSyncStatus('Offline','var(--text3)'));
+},60*60*1000);
 
 </script>
 </body>
