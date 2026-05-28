@@ -737,62 +737,77 @@ function formatarDataBI(dataStr){
 async function carregarDoPWI(){
   setSyncStatus('Buscando dados do sistema...','var(--accent)');
   try{
-    const inicio='2025-01-01';
     const hoje=new Date().toISOString().slice(0,10);
+    const anoInicio=2025;
+    const anoAtual=parseInt(hoje.slice(0,4));
+    const mesAtual=parseInt(hoje.slice(5,7));
 
-    // Carrega produtos, vendas e visitantes em paralelo
+    // ── 1. Carrega produtos (monta mapa id→setor) ──
     setSyncStatus('Carregando produtos...','var(--accent)');
-    const [produtos, vendas, visitantes] = await Promise.all([
-      apiGet('/produtos'),
-      apiGet('/vendas?inicio='+inicio+'&fim='+hoje),
-      apiGet('/visitantes?inicio='+inicio+'&fim='+hoje)
-    ]);
-
-    // ── Processa Produtos → P ──
+    const produtos=await apiGet('/produtos');
+    const mapProdSetor={};
     P={};
     produtos.forEach(p=>{
-      const chave='p'+Object.keys(P).length;
-      P[chave]={nome:p.nome, setor:p.setor||'(não classificado)'};
+      mapProdSetor[p.id]=p.setor||'(não classificado)';
+      const chave='p'+(Object.keys(P).length+1);
+      P[chave]={nome:p.nome,setor:p.setor||'(não classificado)'};
     });
 
-    // ── Processa Vendas → V ──
+    // ── 2. Carrega vendas mês a mês (evita timeout) ──
     V={};
-    vendas.forEach(item=>{
-      const d=formatarDataBI(item.data);
-      if(!d)return;
-      if(!V[d])V[d]=[];
-      V[d].push({
-        nome:item.nome||'',
-        setor:item.setor||'(não classificado)',
-        qtd:parseFloat(item.qtd)||0,
-        vLiq:parseFloat(item.vLiq)||0
-      });
-    });
+    const meses=[];
+    for(let ano=anoInicio;ano<=anoAtual;ano++){
+      const mesMax=ano===anoAtual?mesAtual:12;
+      for(let mes=1;mes<=mesMax;mes++)meses.push({ano,mes:String(mes).padStart(2,'0')});
+    }
 
-    // ── Processa Visitantes → VI ──
+    let mesesCarregados=0;
+    for(const{ano,mes} of meses){
+      setSyncStatus('Carregando '+meses.indexOf({ano,mes}+1)+'/'+meses.length+' — '+mes+'/'+ano+'...','var(--accent)');
+      try{
+        const vendas=await apiGet('/vendas?ano='+ano+'&mes='+mes);
+        vendas.forEach(item=>{
+          const d=formatarDataBI(item.data);
+          if(!d)return;
+          if(!V[d])V[d]=[];
+          V[d].push({
+            nome:item.nome||'',
+            setor:mapProdSetor[item.idProduto]||'(não classificado)',
+            qtd:parseFloat(item.qtd)||0,
+            vLiq:parseFloat(item.vLiq)||0
+          });
+        });
+        mesesCarregados++;
+        setSyncStatus('Vendas: '+mesesCarregados+'/'+meses.length+' meses...','var(--accent)');
+      }catch(e){console.warn('Erro mês '+mes+'/'+ano+':',e.message);}
+    }
+
+    // ── 3. Carrega visitantes de uma vez (menor volume) ──
+    setSyncStatus('Carregando visitantes...','var(--accent)');
     VI={};
-    visitantes.forEach(v=>{
-      const d=formatarDataBI(v.data);
-      if(!d)return;
-      VI[d]={entradas:parseInt(v.entradas)||0, retorno:0, valido:parseInt(v.entradas)||0};
-    });
+    try{
+      const visitantes=await apiGet('/visitantes?inicio='+anoInicio+'-01-01&fim='+hoje);
+      visitantes.forEach(v=>{
+        const d=formatarDataBI(v.data);
+        if(!d)return;
+        VI[d]={entradas:parseInt(v.entradas)||0,retorno:0,valido:parseInt(v.entradas)||0};
+      });
+    }catch(e){console.warn('Erro visitantes:',e.message);}
 
-    // Salva localmente e renderiza
-    save();
-    renderAll();
-    updFiltros();
-
+    // ── 4. Salva e renderiza ──
+    save();renderAll();updFiltros();
     const nDias=Object.keys(V).length;
     const nItens=Object.values(V).reduce((a,d)=>a+d.length,0);
-    document.getElementById('btnPpt').style.display='flex';
+    const btnPpt=document.getElementById('btnPpt');
+    if(btnPpt)btnPpt.style.display='flex';
     document.getElementById('brandSub').textContent=nDias+' dias · '+nItens.toLocaleString()+' itens';
-    setSyncStatus('✓ '+nDias+' dias carregados do sistema em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');
+    setSyncStatus('✓ '+nDias+' dias carregados em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');
     toast('Dados carregados: '+nDias+' dias de vendas!');
 
   }catch(e){
-    console.error('Erro ao carregar da PWI:',e);
-    setSyncStatus('Erro ao buscar dados: '+e.message,'var(--red)');
-    toast('Erro ao buscar dados do sistema','err');
+    console.error('Erro PWI:',e);
+    setSyncStatus('Erro: '+e.message,'var(--red)');
+    toast('Erro ao buscar dados','err');
   }
 }
 // ── SUPABASE ──────────────────────────────────────────────────────────
