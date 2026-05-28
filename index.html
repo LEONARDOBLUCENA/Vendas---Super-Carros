@@ -729,6 +729,14 @@ async function apiGet(endpoint){
   return r.json();
 }
 
+function normalizarSetor(setor, nomeProduto){
+  // Regra: ingresso, combo, cortesia → Bilheteria
+  const nome=(nomeProduto||'').toLowerCase();
+  const s=(setor||'').toLowerCase();
+  if(nome.includes('ingresso')||nome.includes('combo')||nome.includes('cortesia'))return 'Bilheteria';
+  if(s.includes('ingresso')||s.includes('bilheteria'))return 'Bilheteria';
+  return setor||'(não classificado)';
+}
 function setorDoP(idProduto, nomeProduto){
   // Busca o setor na classificação manual (P) pelo nome do produto
   if(!idProduto&&!nomeProduto)return null;
@@ -775,7 +783,7 @@ async function carregarDoPWI(){
       dados.vendas.forEach(item=>{
         const d=formatarDataBI(item.data);if(!d)return;
         if(!V[d])V[d]=[];
-        const setorProd=setorDoP(item.idProduto,item.nome)||mapProdSetor[item.idProduto]||'(não classificado)';
+        const setorProd=normalizarSetor(setorDoP(item.idProduto,item.nome)||mapProdSetor[item.idProduto]||'(não classificado)',item.nome);
         V[d].push({nome:item.nome||'',setor:setorProd,qtd:parseFloat(item.qtd)||1,vLiq:parseFloat(item.vlTot)||0});
       });
       dados.visitantes.forEach(v=>{
@@ -847,22 +855,39 @@ async function sbSet(id,payload){
 }
 
 async function sbSaveAll(){
-  const modulos={p:P,v:V,vi:VI,metas:METAS,ant:ANTERIOR,
-    pontos:PONTOS,site:SITE,diversos:DIVERSOS,
+  // Salva V e VI por ano para evitar payload grande
+  const anos=[...new Set(Object.keys(V).map(d=>d.slice(0,4)))];
+  const anosVI=[...new Set(Object.keys(VI).map(d=>d.slice(0,4)))];
+  const vPromises=anos.map(ano=>{
+    const vAno={};Object.keys(V).filter(d=>d.startsWith(ano)).forEach(d=>vAno[d]=V[d]);
+    return sbSet('bi_v_'+ano,vAno);
+  });
+  const viPromises=anosVI.map(ano=>{
+    const viAno={};Object.keys(VI).filter(d=>d.startsWith(ano)).forEach(d=>viAno[d]=VI[d]);
+    return sbSet('bi_vi_'+ano,viAno);
+  });
+  const outros={p:P,metas:METAS,ant:ANTERIOR,pontos:PONTOS,site:SITE,diversos:DIVERSOS,
     funcs:FUNCS,feriados:FERIADOS,carros:CARROS,histprec:HIST_PREC};
-  await Promise.all(Object.entries(modulos).map(([k,v])=>sbSet('bi_'+k,v)));
+  await Promise.all([...vPromises,...viPromises,...Object.entries(outros).map(([k,v])=>sbSet('bi_'+k,v))]);
 }
 
 async function sbLoadAll(){
-  const keys=['p','v','vi','metas','ant','pontos','site','diversos','funcs','feriados','carros','histprec'];
+  // Carrega outros módulos
+  const keys=['p','metas','ant','pontos','site','diversos','funcs','feriados','carros','histprec'];
   const results=await Promise.all(keys.map(k=>sbGet('bi_'+k)));
-  const[p,v,vi,metas,ant,pontos,site,diversos,funcs,feriados,carros,histprec]=results;
-  if(p)P=p;if(v)V=v;if(vi)VI=vi;
-  if(metas)METAS=metas;if(ant)ANTERIOR=ant;
+  const[p,metas,ant,pontos,site,diversos,funcs,feriados,carros,histprec]=results;
+  if(p)P=p;if(metas)METAS=metas;if(ant)ANTERIOR=ant;
   if(pontos)PONTOS=pontos;if(site)SITE=site;if(diversos)DIVERSOS=diversos;
   if(funcs)FUNCS=funcs;if(feriados)FERIADOS=feriados;
   if(carros)CARROS=carros;if(histprec)HIST_PREC=histprec;
-  return results.some(r=>r!==null);
+  // Carrega V e VI por ano (2025, 2026, ...)
+  const anosBI=[2025,2026,2027];
+  const vResults=await Promise.all(anosBI.map(ano=>sbGet('bi_v_'+ano)));
+  const viResults=await Promise.all(anosBI.map(ano=>sbGet('bi_vi_'+ano)));
+  V={};VI={};
+  vResults.forEach(vAno=>{if(vAno)Object.assign(V,vAno);});
+  viResults.forEach(viAno=>{if(viAno)Object.assign(VI,viAno);});
+  return results.some(r=>r!==null)||vResults.some(r=>r!==null);
 }
 
 function setSyncStatus(msg,cor){
