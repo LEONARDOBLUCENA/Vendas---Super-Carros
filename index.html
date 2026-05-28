@@ -768,26 +768,41 @@ async function carregarDoPWI(){
       });
     }
 
-    // ── 2+3. Carrega tudo em uma única chamada ──
-    setSyncStatus('Carregando dados do sistema...','var(--accent)');
+    // ── 2+3. Carrega por semestre em paralelo ──
     V={};VI={};
-    const dados=await apiGet('/tudo?inicio='+anoInicio+'-01-01&fim='+hoje);
 
-    dados.vendas.forEach(item=>{
-      const d=formatarDataBI(item.data);
-      if(!d)return;
-      if(!V[d])V[d]=[];
-      const qtdItem=parseFloat(item.qtd)||1;
-      const vlItem=parseFloat(item.vlTot)||0;
-      const setorProd=setorDoP(item.idProduto,item.nome)||mapProdSetor[item.idProduto]||'(não classificado)';
-      V[d].push({nome:item.nome||'',setor:setorProd,qtd:qtdItem,vLiq:vlItem});
-    });
+    function processarDados(dados){
+      dados.vendas.forEach(item=>{
+        const d=formatarDataBI(item.data);if(!d)return;
+        if(!V[d])V[d]=[];
+        const setorProd=setorDoP(item.idProduto,item.nome)||mapProdSetor[item.idProduto]||'(não classificado)';
+        V[d].push({nome:item.nome||'',setor:setorProd,qtd:parseFloat(item.qtd)||1,vLiq:parseFloat(item.vlTot)||0});
+      });
+      dados.visitantes.forEach(v=>{
+        const d=formatarDataBI(v.data);if(!d)return;
+        VI[d]={entradas:parseInt(v.entradas)||0,retorno:0,valido:parseInt(v.entradas)||0};
+      });
+    }
 
-    dados.visitantes.forEach(v=>{
-      const d=formatarDataBI(v.data);
-      if(!d)return;
-      VI[d]={entradas:parseInt(v.entradas)||0,retorno:0,valido:parseInt(v.entradas)||0};
-    });
+    // Define semestres de 2025-01-01 até hoje
+    const periodos=[];
+    for(let ano=anoInicio;ano<=anoAtual;ano++){
+      const s1fim=ano+'-06-30';
+      const s2ini=ano+'-07-01';
+      const s2fim=ano===anoAtual?hoje:ano+'-12-31';
+      periodos.push([ano+'-01-01', s1fim]);
+      if(s2fim>=s2ini)periodos.push([s2ini, s2fim]);
+    }
+
+    let p=0;
+    for(const[ini,fim] of periodos){
+      p++;
+      setSyncStatus('Carregando '+p+'/'+periodos.length+': '+ini.slice(0,7)+' a '+fim.slice(0,7)+'...','var(--accent)');
+      try{
+        const dados=await apiGet('/tudo?inicio='+ini+'&fim='+fim);
+        processarDados(dados);
+      }catch(e){console.warn('Erro período '+ini+'-'+fim+':',e.message);}
+    }
 
         // ── 4. Salva e renderiza ──
     save();renderAll();updFiltros();
