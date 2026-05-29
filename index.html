@@ -930,6 +930,8 @@ function setSyncStatus(msg,cor){
 let _autoSaveTimer=null;
 function triggerAutoSave(){
   if(_autoSaveTimer)clearTimeout(_autoSaveTimer);
+  // Só salva se houver dados reais — evita sobrescrever Supabase no boot
+  if(!Object.keys(METAS).length&&!Object.keys(FERIADOS).length&&!Object.keys(PONTOS).length)return;
   setSyncStatus('Salvando...','var(--amber)');
   _autoSaveTimer=setTimeout(async()=>{
     try{
@@ -3410,7 +3412,10 @@ document.getElementById('brandSub').textContent='Carregando...';
 (function(){
   // Garante que P seja carregado do Supabase se localStorage estiver vazio
   if(!Object.keys(P).length){
-    sbLoadAll().then(ok=>{if(ok){save('p');}}).catch(()=>{});
+    sbLoadAll().then(ok=>{
+      // NÃO chama save() — evita triggerAutoSave sobrescrever Supabase com dados vazios no boot
+      if(ok){try{localStorage.setItem('bip',JSON.stringify(P));}catch(e){}}
+    }).catch(()=>{});
   }
   try{
     const anos=JSON.parse(localStorage.getItem('bi_cache_anos')||'[]');
