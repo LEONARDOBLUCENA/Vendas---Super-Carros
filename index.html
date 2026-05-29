@@ -835,6 +835,7 @@ async function carregarDoPWI(){
       // Renderiza com dados parciais (semestre atual) sem mover para V ainda
       // Apenas atualiza a tela com o que já tem no _Vtmp
       Object.assign(V,_Vtmp);Object.assign(VI,_VItmp);
+      salvarCacheLocal();
       renderAll();updFiltros();
       if(document.getElementById('btnPpt'))document.getElementById('btnPpt').style.display='flex';
       document.getElementById('brandSub').textContent=Object.keys(V).length+' dias (carregando histórico...)';
@@ -1158,6 +1159,7 @@ function tog(id){const c=document.getElementById(id);c.style.display=c.style.dis
 
 const NAV_IDS=['class','ajustado','vendas','visit','metas','funcs','pontos','site','diversos','feriados','precos','dash','dashext'];
 function goTab(t){
+  try{localStorage.setItem('bi_aba',t);}catch(e){}
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
   document.getElementById('sc-'+t).classList.add('on');
@@ -3440,6 +3442,8 @@ document.getElementById('brandSub').textContent=Object.keys(V).length?Object.key
       if(btnPpt)btnPpt.style.display='flex';
       document.getElementById('brandSub').textContent=totalDias+' dias (cache local)';
       setSyncStatus('✓ '+new Date(cacheAt).toLocaleTimeString('pt-BR')+' · atualizando...','var(--accent)');
+      // Restaura aba que estava ativa antes do F5
+      const _abaAtiva=localStorage.getItem('bi_aba');if(_abaAtiva)goTab(_abaAtiva);
       // Sempre busca em background ao abrir — sem zerar tela
       carregarDoPWI().catch(()=>setSyncStatus('✓ '+new Date(cacheAt).toLocaleTimeString('pt-BR')+' (cache)','var(--text3)'));
     } else {
