@@ -849,6 +849,7 @@ async function carregarDoPWI(){
       catch(e){console.warn('Erro '+ini+':',e.message);}
     }
     salvarCacheLocal();
+    console.log('Cache salvo! Anos:', localStorage.getItem('bi_cache_anos'), 'At:', localStorage.getItem('bi_cache_at'));
 
         // ── 4. Salva localmente e renderiza ──
     // cache salvo via salvarCacheLocal()
@@ -3398,46 +3399,56 @@ document.getElementById('brandSub').textContent=Object.keys(V).length?Object.key
   });if(window.innerWidth<=768&&Object.keys(V).length)goTab('dash');
 
 // Carrega do cache local primeiro (instantâneo)
+// Carrega do cache local (instantâneo)
 const _cacheAnos=localStorage.getItem('bi_cache_anos');
 const _cacheVI=localStorage.getItem('bi_vi_cache');
 const _cacheAt=localStorage.getItem('bi_cache_at');
-const _anos=_cacheAnos?JSON.parse(_cacheAnos):[];
-const _temCache=_anos.length>0&&_cacheVI&&_cacheAt;
-if(_temCache){
+
+function carregarDoCache(){
   try{
-    // Carrega V de cada ano
+    const anos=JSON.parse(_cacheAnos||'[]');
+    if(!anos.length)return false;
     V={};
-    _anos.forEach(ano=>{
-      const vAno=localStorage.getItem('bi_vc_'+ano);
-      if(!vAno)return;
-      const vParsed=JSON.parse(vAno);
+    let totalDias=0;
+    anos.forEach(ano=>{
+      const raw=localStorage.getItem('bi_vc_'+ano);
+      if(!raw)return;
+      const vParsed=JSON.parse(raw);
       Object.keys(vParsed).forEach(d=>{
         V[d]=[];
         Object.keys(vParsed[d]).forEach(setor=>{
           V[d].push({nome:setor,setor,qtd:vParsed[d][setor].qtd,vLiq:vParsed[d][setor].vLiq});
         });
+        totalDias++;
       });
     });
-    VI=JSON.parse(_cacheVI);
+    if(_cacheVI)VI=JSON.parse(_cacheVI);
+    return totalDias>0;
+  }catch(e){
+    console.error('Erro ao carregar cache:',e);
+    return false;
+  }
+}
+
+if(_cacheAnos&&_cacheAt){
+  const carregou=carregarDoCache();
+  if(carregou){
     renderAll();updFiltros();
     if(Object.keys(V).length){
-      document.getElementById('btnPpt').style.display='flex';
+      const btnPpt=document.getElementById('btnPpt');
+      if(btnPpt)btnPpt.style.display='flex';
       document.getElementById('brandSub').textContent=Object.keys(V).length+' dias (cache local)';
     }
-    // Verifica se o cache tem mais de 1 hora — se sim, atualiza em background
-    const cacheIdade=_cacheAt?(Date.now()-new Date(_cacheAt).getTime())/1000/60:999;
+    const cacheIdade=(Date.now()-new Date(_cacheAt).getTime())/1000/60;
     if(cacheIdade>60){
       setSyncStatus('Atualizando dados...','var(--accent)');
       carregarDoPWI().catch(()=>setSyncStatus('Usando cache local','var(--text3)'));
     } else {
-      setSyncStatus('✓ Cache local de '+new Date(_cacheAt).toLocaleTimeString('pt-BR'),'var(--green)');
+      setSyncStatus('✓ Cache: '+new Date(_cacheAt).toLocaleTimeString('pt-BR'),'var(--green)');
     }
-  }catch(e){
-    carregarDoPWI().catch(()=>{});
-  }
-} else {
-  // Sem cache — busca do banco
-  carregarDoPWI().catch(e=>{
+  } else {
+    // Sem cache válido — busca do banco
+    carregarDoPWI().catch(e=>{
   // Se falhar, tenta Supabase como fallback
   setSyncStatus('PWI indisponível — tentando nuvem...','var(--amber)');
   sbLoadAll().then(ok=>{
