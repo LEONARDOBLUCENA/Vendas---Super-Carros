@@ -761,6 +761,7 @@ function formatarDataBI(dataStr){
 }
 
 async function carregarDoPWI(){
+  console.log('[BI-DEBUG] carregarDoPWI iniciou. V.length=',Object.keys(V).length);
   setSyncStatus('Buscando dados do sistema...','var(--accent)');
   try{
     const hoje=new Date().toISOString().slice(0,10);
@@ -3427,6 +3428,7 @@ document.getElementById('brandSub').textContent='Carregando...';
   try{
     const anos=JSON.parse(localStorage.getItem('bi_cache_anos')||'[]');
     const cacheAt=localStorage.getItem('bi_cache_at');
+    console.log('[BI-DEBUG] IIFE iniciou. anos=',anos,'cacheAt=',cacheAt,'V.length=',Object.keys(V).length);
     if(!anos.length||!cacheAt){carregarDoPWI().catch(()=>{});return;}
     // Carrega cada ano do cache — instantâneo, não zera V/VI
     let totalDias=0;
@@ -3444,11 +3446,14 @@ document.getElementById('brandSub').textContent='Carregando...';
     });
     const viRaw=localStorage.getItem('bi_vi_cache');
     if(viRaw)VI=JSON.parse(viRaw);
+    console.log('[BI-DEBUG] Cache lido. totalDias=',totalDias,'VI.length=',Object.keys(VI).length);
     if(totalDias>0){
+      console.log('[BI-DEBUG] renderAll() chamado com V.length=',Object.keys(V).length);
       renderAll();updFiltros();
       const btnPpt=document.getElementById('btnPpt');
       if(btnPpt)btnPpt.style.display='flex';
       document.getElementById('brandSub').textContent=totalDias+' dias (cache local)';
+      console.log('[BI-DEBUG] Após renderAll. V.length=',Object.keys(V).length);
       setSyncStatus('✓ '+new Date(cacheAt).toLocaleTimeString('pt-BR')+' · atualizando...','var(--accent)');
       const _abaAtiva=localStorage.getItem('bi_aba');if(_abaAtiva)goTab(_abaAtiva);
       // Sempre busca em background ao abrir — sem zerar tela
@@ -3457,7 +3462,7 @@ document.getElementById('brandSub').textContent='Carregando...';
       carregarDoPWI().catch(()=>{});
     }
   }catch(e){
-    console.error('Erro cache:',e);
+    console.error('[BI-DEBUG] ERRO no IIFE:',e);
     carregarDoPWI().catch(()=>{});
   }
 })();
