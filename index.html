@@ -864,8 +864,7 @@ function save(modulo){
   const salvarTudo=!modulo;
   try{
     if(salvarTudo||modulo==='p'){saveKey('bip',P);_dirty.p=false;}
-    if(salvarTudo||modulo==='v'){saveKey('biv',V);_dirty.v=false;}
-    if(salvarTudo||modulo==='vi'){saveKey('bivi',VI);_dirty.vi=false;}
+    // V e VI não são salvos no localStorage (muito grandes) — vêm do banco PWI
     if(salvarTudo||modulo==='metas'){saveKey('bimetas',METAS);_dirty.metas=false;}
     if(salvarTudo||modulo==='ant'){saveKey('biant',ANTERIOR);_dirty.ant=false;}
     if(salvarTudo||modulo==='pontos'){saveKey('bipontos',PONTOS);_dirty.pontos=false;}
