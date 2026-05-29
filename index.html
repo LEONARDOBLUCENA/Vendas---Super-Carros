@@ -731,7 +731,7 @@ function normalizarSetor(setor, nomeProduto){
   const s=(setor||'').toUpperCase();
   // Bilheteria
   if(nome.includes('INGRESSO')||nome.includes('COMBO')||nome.includes('CORTESIA')
-     ||nome.includes('ING. COMBO')||nome.includes('CORTESIAS SUPERCARROS'))return 'Bilheteria';
+     ||nome.includes('ING. COMBO')||nome.includes('ING. INDIVIDUAL')||nome.includes('CORTESIAS SUPERCARROS'))return 'Bilheteria';
   if(s.includes('INGRESSO')||s.includes('BILHETERIA')||s.includes('COMBO')||s.includes('CORTESIA'))return 'Bilheteria';
   // Fotos
   if(nome.includes('FOTO')||s.includes('FOTO'))return 'Fotos';
@@ -739,7 +739,7 @@ function normalizarSetor(setor, nomeProduto){
   if(nome.includes('VIDEO')||nome.includes('ON-BOARD')||nome.includes('ON BOARD')
      ||s.includes('VIDEO'))return 'Videos';
   // Simuladores
-  if(nome.includes('SIMULADOR')||s.includes('SIMULADOR'))return 'Simuladores';
+  if(nome.includes('SIMULADOR')||nome.includes('JOGO PREMIO')||nome.includes('JOGO PRÊMIO')||s.includes('SIMULADOR'))return 'Simuladores';
   // Passeios
   if(nome.includes('CARONA')||nome.includes('DRIVE')||nome.includes('PERCURSO')
      ||s.includes('CARONA')||s.includes('PASSEIO'))return 'Passeios';
@@ -785,19 +785,21 @@ async function carregarDoPWI(){
     }
 
     // ── 2+3. Semestre atual primeiro, histórico em background ──
-    V={};VI={};
+    // Usa variáveis temporárias: só move para V/VI quando tudo estiver pronto
+    // Assim a tela nunca fica vazia durante o fetch
+    const _Vtmp={};const _VItmp={};
 
     function processarDados(dados){
       if(!dados||!dados.vendas)return;
       dados.vendas.forEach(item=>{
         const d=formatarDataBI(item.data);if(!d)return;
-        if(!V[d])V[d]=[];
+        if(!_Vtmp[d])_Vtmp[d]=[];
         const setorProd=normalizarSetor(setorDoP(item.idProduto,item.nome)||mapProdSetor[item.idProduto]||'(não classificado)',item.nome);
-        V[d].push({nome:item.nome||'',setor:setorProd,qtd:parseFloat(item.qtd)||1,vLiq:parseFloat(item.vlTot)||0});
+        _Vtmp[d].push({nome:item.nome||'',setor:setorProd,qtd:parseFloat(item.qtd)||1,vLiq:parseFloat(item.vlTot)||0});
       });
       if(dados.visitantes)dados.visitantes.forEach(v=>{
         const d=formatarDataBI(v.data);if(!d)return;
-        VI[d]={entradas:parseInt(v.entradas)||0,retorno:0,valido:parseInt(v.entradas)||0};
+        _VItmp[d]={entradas:parseInt(v.entradas)||0,retorno:0,valido:parseInt(v.entradas)||0};
       });
     }
 
@@ -830,7 +832,10 @@ async function carregarDoPWI(){
     try{
       const dadosAtuais=await apiGet('/tudo?inicio='+sIni+'&fim='+sFim);
       processarDados(dadosAtuais);
-      save();renderAll();updFiltros();
+      // Renderiza com dados parciais (semestre atual) sem mover para V ainda
+      // Apenas atualiza a tela com o que já tem no _Vtmp
+      Object.assign(V,_Vtmp);Object.assign(VI,_VItmp);
+      renderAll();updFiltros();
       if(document.getElementById('btnPpt'))document.getElementById('btnPpt').style.display='flex';
       document.getElementById('brandSub').textContent=Object.keys(V).length+' dias (carregando histórico...)';
       setSyncStatus('Recentes OK — buscando histórico...','var(--accent)');
@@ -848,11 +853,10 @@ async function carregarDoPWI(){
       try{const d=await apiGet('/tudo?inicio='+ini+'&fim='+fim);processarDados(d);}
       catch(e){console.warn('Erro '+ini+':',e.message);}
     }
+    // ── 4. Só agora move _Vtmp/_VItmp para V/VI e salva ──
+    Object.assign(V,_Vtmp);Object.assign(VI,_VItmp);
     salvarCacheLocal();
     console.log('Cache salvo! Anos:', localStorage.getItem('bi_cache_anos'), 'At:', localStorage.getItem('bi_cache_at'));
-
-        // ── 4. Salva localmente e renderiza ──
-    // cache salvo via salvarCacheLocal()
     save();renderAll();updFiltros();
     const nDias=Object.keys(V).length;
     const nItens=Object.values(V).reduce((a,d)=>a+d.length,0);
@@ -3403,6 +3407,13 @@ document.getElementById('brandSub').textContent=Object.keys(V).length?Object.key
 
 // Carrega do cache local primeiro (instantâneo) e atualiza em background
 (function(){
+  // Garante que P (classificação) seja carregado do Supabase se localStorage estiver vazio
+  // Isso resolve números diferentes em computadores diferentes
+  if(!Object.keys(P).length){
+    sbLoadAll().then(ok=>{
+      if(ok){save('p');}
+    }).catch(()=>{});
+  }
   try{
     const anos=JSON.parse(localStorage.getItem('bi_cache_anos')||'[]');
     const cacheAt=localStorage.getItem('bi_cache_at');
