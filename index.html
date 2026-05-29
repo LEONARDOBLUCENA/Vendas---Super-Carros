@@ -819,8 +819,10 @@ async function carregarDoPWI(){
           try{localStorage.setItem('bi_vc_'+ano,JSON.stringify(vComp));}catch(e){}
         });
         try{localStorage.setItem('bi_vi_cache',JSON.stringify(VI));}catch(e){}
-        localStorage.setItem('bi_cache_at',new Date().toISOString());
-        localStorage.setItem('bi_cache_anos',JSON.stringify(anos));
+        // CRÍTICO: bi_cache_at e bi_cache_anos em try/catch próprios
+        // para não serem bloqueados por QuotaExceededError dos itens grandes
+        try{localStorage.setItem('bi_cache_at',new Date().toISOString());}catch(e){}
+        try{localStorage.setItem('bi_cache_anos',JSON.stringify(anos));}catch(e){}
       }catch(e){console.warn('Cache:',e.message);}
     }
 
@@ -835,7 +837,6 @@ async function carregarDoPWI(){
       // Renderiza com dados parciais (semestre atual) sem mover para V ainda
       // Apenas atualiza a tela com o que já tem no _Vtmp
       Object.assign(V,_Vtmp);Object.assign(VI,_VItmp);
-      salvarCacheLocal();
       renderAll();updFiltros();
       if(document.getElementById('btnPpt'))document.getElementById('btnPpt').style.display='flex';
       document.getElementById('brandSub').textContent=Object.keys(V).length+' dias (carregando histórico...)';
@@ -1029,7 +1030,10 @@ function load(){
           m=localStorage.getItem('bimetas'),a=localStorage.getItem('biant'),fu=localStorage.getItem('bifuncs'),
           fer=localStorage.getItem('biferiados'),car=localStorage.getItem('bicarros'),hp=localStorage.getItem('bihistprec'),nid=localStorage.getItem('bi_nid'),
           po=localStorage.getItem('bipontos'),si=localStorage.getItem('bisite'),di=localStorage.getItem('bidiversos');
-    if(p)P=JSON.parse(p);if(v)V=JSON.parse(v);if(vi)VI=JSON.parse(vi);
+    if(p)P=JSON.parse(p);
+    // V e VI NÃO são carregados de biv/bivi — vêm do cache bi_vc_* via IIFE
+    // Remove biv/bivi do localStorage para liberar quota
+    try{localStorage.removeItem('biv');localStorage.removeItem('bivi');}catch(e){}
     if(m)METAS=JSON.parse(m);if(a)ANTERIOR=JSON.parse(a);if(fu)FUNCS=JSON.parse(fu);
     if(fer)FERIADOS=JSON.parse(fer);if(car)CARROS=JSON.parse(car);if(hp)HIST_PREC=JSON.parse(hp);
     if(po)PONTOS=JSON.parse(po);if(si)SITE=JSON.parse(si);if(di)DIVERSOS=JSON.parse(di);
@@ -3395,12 +3399,11 @@ document.getElementById('dataVisit').value=hoje();
 document.getElementById('pontosData').value=hoje();
 document.getElementById('siteData').value=hoje();
   document.getElementById('diversosData').value=hoje();
-// NÃO chama renderAll() aqui — o IIFE abaixo carrega o cache e renderiza
-// Renderiza apenas módulos que não dependem de V/VI
+// V e VI são carregados pelo IIFE abaixo — não chamar renderAll() aqui
 renderProds();renderAjustado();renderMetas();renderAnterior();
 renderHistPontos();renderHistSite();renderHistDiversos();
 renderFuncs();renderFeriados();renderPrecos();renderHistPrecos();
-document.getElementById('brandSub').textContent='Sistema de gestão';
+document.getElementById('brandSub').textContent='Carregando...';
 </script>
 </body>
 </html>  // usa índice pré-calculado — evita iterar 21k comandas
