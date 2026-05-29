@@ -997,8 +997,8 @@ function save(modulo){
   const salvarTudo=!modulo;
   try{
     if(salvarTudo||modulo==='p'){saveKey('bip',P);_dirty.p=false;}
-    if(salvarTudo||modulo==='v'){saveKey('biv',V);_dirty.v=false;}
-    if(salvarTudo||modulo==='vi'){saveKey('bivi',VI);_dirty.vi=false;}
+    if(salvarTudo||modulo==='v'){_dirty.v=false;}
+    if(salvarTudo||modulo==='vi'){_dirty.vi=false;}
     if(salvarTudo||modulo==='metas'){saveKey('bimetas',METAS);_dirty.metas=false;}
     if(salvarTudo||modulo==='ant'){saveKey('biant',ANTERIOR);_dirty.ant=false;}
     if(salvarTudo||modulo==='pontos'){saveKey('bipontos',PONTOS);_dirty.pontos=false;}
@@ -1009,12 +1009,14 @@ function save(modulo){
     if(salvarTudo||modulo==='carros'){saveKey('bicarros',CARROS);_dirty.carros=false;}
     if(salvarTudo||modulo==='histprec'){saveKey('bihistprec',HIST_PREC);_dirty.histprec=false;}
     if(salvarTudo||modulo==='comandas'){
-      const _cc=new Array(COMANDAS.length);
-      for(let i=0;i<COMANDAS.length;i++){
-        const cx=COMANDAS[i];
-        _cc[i]={i:cx.id,n:cx.nro,d:cx.data,p:cx.parceiro,v:Math.round(cx.valorTotal*100)/100};
+      if(typeof COMANDAS!=='undefined'&&COMANDAS.length){
+        const _cc=new Array(COMANDAS.length);
+        for(let i=0;i<COMANDAS.length;i++){
+          const cx=COMANDAS[i];
+          _cc[i]={i:cx.id,n:cx.nro,d:cx.data,p:cx.parceiro,v:Math.round(cx.valorTotal*100)/100};
+        }
+        saveKey('bicomandas',_cc);
       }
-      saveKey('bicomandas',_cc);
       _dirty.comandas=false;
     }
     if(salvarTudo||modulo==='nid'){saveKey('bi_nid',String(_nid));_dirty.nid=false;}
@@ -3442,7 +3444,6 @@ document.getElementById('brandSub').textContent=Object.keys(V).length?Object.key
       if(btnPpt)btnPpt.style.display='flex';
       document.getElementById('brandSub').textContent=totalDias+' dias (cache local)';
       setSyncStatus('✓ '+new Date(cacheAt).toLocaleTimeString('pt-BR')+' · atualizando...','var(--accent)');
-      // Restaura aba que estava ativa antes do F5
       const _abaAtiva=localStorage.getItem('bi_aba');if(_abaAtiva)goTab(_abaAtiva);
       // Sempre busca em background ao abrir — sem zerar tela
       carregarDoPWI().catch(()=>setSyncStatus('✓ '+new Date(cacheAt).toLocaleTimeString('pt-BR')+' (cache)','var(--text3)'));
