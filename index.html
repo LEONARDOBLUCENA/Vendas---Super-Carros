@@ -235,7 +235,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
   </div>
   <div class="card">
-    <div class="card-title"><i class="ti ti-list"></i>Produtos por setor ajustado <span id="adjCnt" style="color:var(--text3);font-weight:400;font-size:11px;margin-left:3px"></span></div>
+    <div class="card-title"><i class="ti ti-list"></i>Produtos por setor ajustado <span id="adjCnt" style="color:var(--text3);font-weight:400;font-size:11px;margin-left:3px"></span>
+      <select id="adjSetorFiltro" onchange="renderAjustado()" style="margin-left:auto;padding:4px 8px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;cursor:pointer">
+        <option value="">Todos os setores</option>
+        <option>Bilheteria</option><option>Passeios</option><option>Fotos</option>
+        <option>Simuladores</option><option>Vídeos</option><option>Eventos</option>
+      </select>
+    </div>
     <div id="adjEmpty" class="empty"><i class="ti ti-adjustments"></i><p>Nenhum produto cadastrado ainda.<br>Adicione na aba Classificação.</p></div>
     <div id="adjWrap" style="display:none">
       <div class="tbl-wrap"><table class="tbl">
@@ -1250,7 +1256,9 @@ function procImpClass(){
 
 // ── CADASTRO AJUSTADO ─────────────────────────────────────────────────
 function renderAjustado(){
+  const _adjFiltro=document.getElementById('adjSetorFiltro')?document.getElementById('adjSetorFiltro').value:'';
   const arr=Object.entries(P).map(([k,v])=>({k,...v,adj:setorAdj(v.setor)}))
+    .filter(i=>!_adjFiltro||i.adj===_adjFiltro)
     .sort((a,b)=>a.adj.localeCompare(b.adj)||a.nome.localeCompare(b.nome));
   document.getElementById('adjCnt').textContent=arr.length?'('+arr.length+')':'';
   const em=document.getElementById('adjEmpty'),wr=document.getElementById('adjWrap');
@@ -2122,7 +2130,7 @@ function renderDash(){
   let kpiVisit='<div class="kpi"><div class="kpi-lbl">Visitantes</div>'
     +'<div class="kpi-val">'+(tVisit?tVisit.toLocaleString():'—')+'</div>'
     +'<div class="kpi-sub">Entradas − Vale Retorno</div>';
-  if(temVisitAnt&&tVisitAnt>0&&!dia){
+  if(temVisitAnt&&tVisitAnt>0){
     const vv=((tVisit-tVisitAnt)/tVisitAnt*100).toFixed(1);
     const sv=parseFloat(vv)>=0?'+':'';
     const cvCor=parseFloat(vv)>=0?'color:var(--green)':'color:var(--red)';
@@ -2134,7 +2142,7 @@ function renderDash(){
   let kpiTicket='<div class="kpi"><div class="kpi-lbl">Ticket / visitante</div>'
     +'<div class="kpi-val">'+(tVisit?fR(ticket):'—')+'</div>'
     +'<div class="kpi-sub">líquido ÷ visitantes</div>';
-  if(ticketAnt>0&&tVisit&&!dia){
+  if(ticketAnt>0&&tVisit){
     const vt=((ticket-ticketAnt)/ticketAnt*100).toFixed(1);
     const st=parseFloat(vt)>=0?'+':'';
     const ctCor=parseFloat(vt)>=0?'color:var(--green)':'color:var(--red)';
