@@ -801,6 +801,7 @@ async function carregarDoPWI(){
       setSyncStatus('Histórico: '+i2.slice(0,7)+'...','var(--accent)');
       try{proc(await apiGet('/tudo?inicio='+i2+'&fim='+f2));}catch(e){}
     }
+    recalcValeRetorno();
     salvarCache();
     save();renderAll();updFiltros();
     const nd=Object.keys(V).length;
@@ -873,7 +874,8 @@ function save(modulo){
   const salvarTudo=!modulo;
   try{
     if(salvarTudo||modulo==='p'){saveKey('bip',P);_dirty.p=false;}
-    // V e VI não são salvos no localStorage (usam cache bi_vc_YYYY)
+    if(salvarTudo||modulo==='v'){saveKey('biv',V);_dirty.v=false;}
+    if(salvarTudo||modulo==='vi'){saveKey('bivi',VI);_dirty.vi=false;}
     if(salvarTudo||modulo==='metas'){saveKey('bimetas',METAS);_dirty.metas=false;}
     if(salvarTudo||modulo==='ant'){saveKey('biant',ANTERIOR);_dirty.ant=false;}
     if(salvarTudo||modulo==='pontos'){saveKey('bipontos',PONTOS);_dirty.pontos=false;}
@@ -2499,34 +2501,21 @@ function renderHistPrecos(){
 
 // ── INIT ─────────────────────────────────────────────────────────────
 function load(){
-  // Limpa chaves antigas que ocupam espaço
   try{localStorage.removeItem('biv');localStorage.removeItem('bivi');}catch(e){}
   try{
-    const p=localStorage.getItem('bip');
-    const m=localStorage.getItem('bimetas');
-    const a=localStorage.getItem('biant');
-    const fu=localStorage.getItem('bifuncs');
-    const fer=localStorage.getItem('biferiados');
-    const car=localStorage.getItem('bicarros');
-    const hp=localStorage.getItem('bihistprec');
-    const nid=localStorage.getItem('bi_nid');
-    const po=localStorage.getItem('bipontos');
-    const si=localStorage.getItem('bisite');
-    const di=localStorage.getItem('bidiversos');
-    if(p)P=JSON.parse(p);
-    if(m)METAS=JSON.parse(m);
-    if(a)ANTERIOR=JSON.parse(a);
-    if(fu)FUNCS=JSON.parse(fu);
-    if(fer)FERIADOS=JSON.parse(fer);
-    if(car)CARROS=JSON.parse(car);
-    if(hp)HIST_PREC=JSON.parse(hp);
-    if(po)PONTOS=JSON.parse(po);
-    if(si)SITE=JSON.parse(si);
-    if(di)DIVERSOS=JSON.parse(di);
-    if(nid)_nid=parseInt(nid)||1;
+    const _p=localStorage.getItem('bip');if(_p)P=JSON.parse(_p);
+    const _m=localStorage.getItem('bimetas');if(_m)METAS=JSON.parse(_m);
+    const _a=localStorage.getItem('biant');if(_a)ANTERIOR=JSON.parse(_a);
+    const _fu=localStorage.getItem('bifuncs');if(_fu)FUNCS=JSON.parse(_fu);
+    const _fer=localStorage.getItem('biferiados');if(_fer)FERIADOS=JSON.parse(_fer);
+    const _car=localStorage.getItem('bicarros');if(_car)CARROS=JSON.parse(_car);
+    const _hp=localStorage.getItem('bihistprec');if(_hp)HIST_PREC=JSON.parse(_hp);
+    const _po=localStorage.getItem('bipontos');if(_po)PONTOS=JSON.parse(_po);
+    const _si=localStorage.getItem('bisite');if(_si)SITE=JSON.parse(_si);
+    const _di=localStorage.getItem('bidiversos');if(_di)DIVERSOS=JSON.parse(_di);
+    const _nidRaw=localStorage.getItem('bi_nid');if(_nidRaw)_nid=parseInt(_nidRaw)||1;
   }catch(e){console.error('load:',e);}
 }
-
 
 function renderAll(){
   renderProds();renderAjustado();renderHistV();renderHistVI();
