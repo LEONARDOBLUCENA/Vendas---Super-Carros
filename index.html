@@ -144,7 +144,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="nav-sec">Cadastro</div>
     <button class="nav-btn on" onclick="goTab('class')" data-grupo="cadastro"><i class="ti ti-tag"></i>Classificação</button>
     <button class="nav-btn" onclick="goTab('ajustado')" data-grupo="cadastro"><i class="ti ti-adjustments"></i>Cadastro ajustado</button>
-    <button class="nav-btn" onclick="goTab('parceiros')"><i class="ti ti-users-group"></i>Parceiros</button>
     <button class="nav-btn" onclick="goTab('feriados')" data-grupo="cadastro"><i class="ti ti-calendar-event"></i>Feriados</button>
     <button class="nav-btn" onclick="goTab('metas')" data-grupo="cadastro"><i class="ti ti-target"></i>Metas</button>
     <div class="nav-sec">Operação diária</div>
@@ -154,12 +153,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="nav-btn" onclick="goTab('pontos')" data-grupo="operacao"><i class="ti ti-map-pin"></i>Pontos Externos</button>
     <button class="nav-btn" onclick="goTab('site')" data-grupo="operacao"><i class="ti ti-world"></i>Site Oficial</button>
     <button class="nav-btn" onclick="goTab('diversos')" data-grupo="operacao"><i class="ti ti-coins"></i>Faturamentos Diversos</button>
-    <button class="nav-btn" onclick="goTab('comandas')"><i class="ti ti-file-invoice"></i>Relatório de Comandas</button>
     <button class="nav-btn" onclick="goTab('precos')" data-grupo="operacao"><i class="ti ti-target-arrow"></i>Geração de Metas</button>
     <div class="nav-sec">Resultados</div>
     <button class="nav-btn" onclick="goTab('dash')"><i class="ti ti-chart-bar"></i>Dashboard</button>
     <button class="nav-btn" onclick="goTab('dashext')"><i class="ti ti-chart-dots"></i>Dashboard Externos</button>
-    <button class="nav-btn" onclick="goTab('dashparc')"><i class="ti ti-handshake"></i>Dashboard Parceiros</button>
   </nav>
   <div class="sidebar-foot">
     <button class="btn btn-p btn-sm" onclick="carregarDoPWI()" id="btnPWI"><i class="ti ti-database-import"></i>Buscar do sistema</button>
@@ -711,138 +708,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
 </div>
 
-<!-- CADASTRO DE PARCEIROS -->
-<div id="sc-parceiros" class="screen">
-  <div class="topbar">
-    <div><div class="page-title">Cadastro de Parceiros</div>
-    <div class="page-sub">Cadastre os nomes exatos como aparecem na coluna Produto do relatório</div></div>
-  </div>
-  <div class="card">
-    <div class="card-title"><i class="ti ti-circle-plus"></i>Adicionar parceiro</div>
-    <div class="alert alert-info"><i class="ti ti-info-circle"></i>
-      <span>O <strong>nome do parceiro</strong> deve ser idêntico ao texto que aparece na coluna <strong>Produto</strong> do relatório de comandas.</span>
-    </div>
-    <div class="g2">
-      <div class="field"><label>Nome do parceiro (como aparece no Produto)</label>
-        <input id="inParcNome" placeholder="Ex: HOTEL MARINA" onkeydown="if(event.key==='Enter')addParceiro()">
-      </div>
-      <div class="field"><label>Nome de exibição (opcional)</label>
-        <input id="inParcLabel" placeholder="Ex: Hotel Marina (nome amigável)">
-      </div>
-    </div>
-    <div class="act">
-      <button class="btn btn-p btn-sm" onclick="addParceiro()"><i class="ti ti-plus"></i>Adicionar</button>
-      <button class="btn btn-sm" onclick="tog('parcImp')"><i class="ti ti-table-import"></i>Importar lista</button>
-    </div>
-  </div>
-  <div class="card" id="parcImp" style="display:none">
-    <div class="card-title"><i class="ti ti-table-import"></i>Importar lista do Excel</div>
-    <div class="alert alert-info"><i class="ti ti-info-circle"></i>
-      <span>Com cabeçalho na linha 1 (ignorado):<br>
-      <span style="font-family:'DM Mono',monospace;font-size:11px">Nome no Produto [tab] Nome de exibição</span><br>
-      O nome de exibição é opcional.</span>
-    </div>
-    <div class="field"><label>Tabela copiada</label>
-      <textarea id="parcImpTxt" placeholder="Nome no Produto	Nome exibição&#10;HOTEL MARINA	Hotel Marina&#10;AGENCIA XYZ	Agência XYZ"></textarea>
-    </div>
-    <div class="act">
-      <button class="btn btn-p btn-sm" onclick="impParceiros()"><i class="ti ti-check"></i>Importar</button>
-      <button class="btn btn-sm" onclick="tog('parcImp')">Cancelar</button>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title"><i class="ti ti-list"></i>Parceiros cadastrados <span id="parcCnt" style="color:var(--text3);font-weight:400;font-size:11px;margin-left:3px"></span></div>
-    <div id="parcEmpty" class="empty"><i class="ti ti-users-group"></i><p>Nenhum parceiro cadastrado ainda.</p></div>
-    <div id="parcWrap" style="display:none">
-      <div class="tbl-wrap"><table class="tbl">
-        <thead><tr><th>Nome no Produto</th><th>Nome de exibição</th><th style="width:40px"></th></tr></thead>
-        <tbody id="parcBody"></tbody>
-      </table></div>
-    </div>
-  </div>
-</div>
-
-<!-- RELATÓRIO DE COMANDAS -->
-<div id="sc-comandas" class="screen">
-  <div class="topbar">
-    <div><div class="page-title">Relatório de Comandas</div>
-    <div class="page-sub">Importe o relatório — o sistema identifica parceiros e calcula o valor total por comanda</div></div>
-  </div>
-  <div class="card">
-    <div class="card-title"><i class="ti ti-table-import"></i>Importar relatório</div>
-    <div class="alert alert-info"><i class="ti ti-info-circle"></i>
-      <span>Selecione o arquivo do Excel (<strong>.xlsx</strong> ou <strong>.xls</strong>) ou CSV diretamente. Colunas esperadas:<br>
-      <span style="font-family:'DM Mono',monospace;font-size:11px">ID Comanda · Nro.comanda · Dh.comanda · Dh.finalizado · Dh.cancelamento · Nro.item · ID · Produto · Und. · Qtd. · Vl.líquido</span></span>
-    </div>
-    <div id="comandasStatus" style="margin-bottom:10px;display:none">
-      <div class="alert alert-info" style="margin:0"><i class="ti ti-info-circle"></i>
-        <span id="comandasStatusTxt"></span>
-      </div>
-    </div>
-    <div class="field">
-      <label>Arquivo Excel (.xlsx) ou CSV</label>
-      <input type="file" id="comandasFile" accept=".xlsx,.xls,.csv,.txt,.tsv" style="padding:8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);width:100%">
-    </div>
-    <div class="field" style="margin:0">
-      <label>Modo de importação</label>
-      <select id="comandasModo" style="padding:8px 11px;font-size:13px;font-family:'DM Sans',sans-serif;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);width:100%">
-        <option value="incremental">Incremental — adiciona apenas comandas novas (recomendado)</option>
-        <option value="substituir">Substituir — apaga tudo e reimporta</option>
-      </select>
-    </div>
-    <div id="comandasProgresso" style="display:none;margin-top:8px">
-      <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
-        <div id="comandasProgressBar" style="height:100%;background:var(--accent);border-radius:3px;width:0%;transition:width .3s"></div>
-      </div>
-      <div id="comandasProgressTxt" style="font-size:12px;color:var(--text2);margin-top:5px">Processando...</div>
-    </div>
-    <div class="act" style="margin-top:8px">
-      <button class="btn btn-p" onclick="procComandasFile()"><i class="ti ti-cpu"></i>Processar arquivo</button>
-      <button class="btn btn-sm" onclick="limparComandas()" style="color:var(--red)"><i class="ti ti-trash"></i>Limpar dados</button>
-    </div>
-  </div>
-  <div class="card" id="prevComandas" style="display:none">
-    <div class="card-title"><i class="ti ti-eye"></i>Pré-visualização</div>
-    <div id="prevComandasAlerta"></div>
-    <div class="tbl-wrap">
-      <table class="tbl">
-        <thead><tr><th>Data</th><th>ID Comanda</th><th>Parceiro</th><th>Itens</th><th>Valor Total Comanda</th></tr></thead>
-        <tbody id="prevComandasBody"></tbody>
-      </table>
-    </div>
-    <div class="sep"></div>
-    <div class="act">
-      <button class="btn btn-p" onclick="salvarComandas()"><i class="ti ti-device-floppy"></i>Salvar</button>
-      <button class="btn" onclick="document.getElementById('prevComandas').style.display='none'">Cancelar</button>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title"><i class="ti ti-history"></i>Comandas registradas
-      <div style="display:flex;gap:6px;margin-left:auto">
-        <span id="comandasResumo" style="font-size:12px;color:var(--text2);align-self:center"></span>
-        <button class="btn btn-sm" id="btnExportComandas" onclick="exportarComandasExcel()" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
-      </div>
-    </div>
-    <div id="histComandas"><div class="empty"><i class="ti ti-file-invoice"></i><p>Nenhuma comanda registrada ainda.</p></div></div>
-  </div>
-</div>
-
-<!-- DASHBOARD PARCEIROS -->
-<div id="sc-dashparc" class="screen">
-  <div class="topbar">
-    <div><div class="page-title">Dashboard Parceiros</div>
-    <div class="page-sub" id="dashparcSub">Análise de rentabilidade por parceiro</div></div>
-    <button class="btn btn-p" id="btnPptParc" style="display:none" onclick="gerarApresParc()"><i class="ti ti-presentation"></i>Gerar apresentação</button>
-  </div>
-  <div class="fbar">
-    <div class="fbar-item"><label>Ano</label><select id="fParcAno" onchange="onFParcAno()"></select></div>
-    <div class="fbar-item"><label>Mês</label><select id="fParcMes" onchange="onFParcMes()"><option value="">Todos</option></select></div>
-    <div class="fbar-item"><label>Dia</label><select id="fParcDia" onchange="renderDashParc()"><option value="">Todos</option></select></div>
-    <div class="fbar-item"><label>Parceiro</label><select id="fParcNome" onchange="renderDashParc()"><option value="">Todos</option></select></div>
-  </div>
-  <div id="dashparcContent"><div class="empty"><i class="ti ti-handshake"></i><p>Importe o relatório de comandas para ver o dashboard</p></div></div>
-</div>
-
 </main>
 
 <script>
@@ -1049,7 +914,7 @@ function parseData(s){
 function toast(msg,t){const el=document.getElementById('toast');if(!el)return;el.textContent=msg;el.style.background=t==='err'?'#c0392b':t==='warn'?'#b45309':'#0e7d55';el.style.opacity='1';clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',2800);}
 function tog(id){const c=document.getElementById(id);c.style.display=c.style.display==='none'?'block':'none';}
 
-const NAV_IDS=['class','ajustado','vendas','visit','metas','funcs','pontos','site','diversos','parceiros','comandas','feriados','precos','dash','dashext','dashparc'];
+const NAV_IDS=['class','ajustado','vendas','visit','metas','funcs','pontos','site','diversos','feriados','precos','dash','dashext'];
 function goTab(t){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
