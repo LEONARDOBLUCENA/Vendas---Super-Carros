@@ -170,9 +170,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="btn btn-sm" onclick="exportar()"><i class="ti ti-download"></i>Backup local</button>
     <button class="btn btn-sm" onclick="document.getElementById('fileIn').click()"><i class="ti ti-upload"></i>Restaurar</button>
     <input type="file" id="fileIn" accept=".json" style="display:none" onchange="importar(event)">
-    <button class="btn btn-sm" onclick="rodarDiagnostico()" style="color:var(--text3)"><i class="ti ti-activity"></i>Diagnóstico</button>
-    <button class="btn btn-sm" onclick="migrarComandas()" style="color:var(--text3)" id="btnMigrar"><i class="ti ti-database"></i>Compactar dados</button>
-    <button class="btn btn-sm" onclick="infoStorage()" style="color:var(--text3)"><i class="ti ti-info-circle"></i>Info</button>
   </div>
 </aside>
 
@@ -787,59 +784,74 @@ async function carregarDoPWI(){
       });
     }
 
-    // ── 2+3. Carrega por semestre em paralelo ──
+    // ── 2+3. Semestre atual primeiro, histórico em background ──
     V={};VI={};
 
     function processarDados(dados){
+      if(!dados||!dados.vendas)return;
       dados.vendas.forEach(item=>{
         const d=formatarDataBI(item.data);if(!d)return;
         if(!V[d])V[d]=[];
         const setorProd=normalizarSetor(setorDoP(item.idProduto,item.nome)||mapProdSetor[item.idProduto]||'(não classificado)',item.nome);
         V[d].push({nome:item.nome||'',setor:setorProd,qtd:parseFloat(item.qtd)||1,vLiq:parseFloat(item.vlTot)||0});
       });
-      dados.visitantes.forEach(v=>{
+      if(dados.visitantes)dados.visitantes.forEach(v=>{
         const d=formatarDataBI(v.data);if(!d)return;
         VI[d]={entradas:parseInt(v.entradas)||0,retorno:0,valido:parseInt(v.entradas)||0};
       });
     }
 
-    // Define semestres de 2025-01-01 até hoje
-    const periodos=[];
-    for(let ano=anoInicio;ano<=anoAtual;ano++){
-      const s1fim=ano+'-06-30';
-      const s2ini=ano+'-07-01';
-      const s2fim=ano===anoAtual?hoje:ano+'-12-31';
-      periodos.push([ano+'-01-01', s1fim]);
-      if(s2fim>=s2ini)periodos.push([s2ini, s2fim]);
+    function salvarCacheLocal(){
+      try{
+        const anos=[...new Set(Object.keys(V).map(d=>d.slice(0,4)))];
+        anos.forEach(ano=>{
+          const vComp={};
+          Object.keys(V).filter(d=>d.startsWith(ano)).forEach(d=>{
+            const bySe={};
+            V[d].forEach(i=>{
+              if(!bySe[i.setor])bySe[i.setor]={qtd:0,vLiq:0};
+              bySe[i.setor].qtd+=i.qtd;bySe[i.setor].vLiq+=i.vLiq;
+            });
+            vComp[d]=bySe;
+          });
+          try{localStorage.setItem('bi_vc_'+ano,JSON.stringify(vComp));}catch(e){}
+        });
+        try{localStorage.setItem('bi_vi_cache',JSON.stringify(VI));}catch(e){}
+        localStorage.setItem('bi_cache_at',new Date().toISOString());
+        localStorage.setItem('bi_cache_anos',JSON.stringify(anos));
+      }catch(e){console.warn('Cache:',e.message);}
     }
 
-    let p=0;
-    for(const[ini,fim] of periodos){
-      p++;
-      setSyncStatus('Carregando '+p+'/'+periodos.length+': '+ini.slice(0,7)+' a '+fim.slice(0,7)+'...','var(--accent)');
-      try{
-        const dados=await apiGet('/tudo?inicio='+ini+'&fim='+fim);
-        processarDados(dados);
-      }catch(e){console.warn('Erro período '+ini+'-'+fim+':',e.message);}
+    const sMesAtual=mesAtual<=6?1:2;
+    const sIni=anoAtual+'-'+(sMesAtual===1?'01':'07')+'-01';
+    const sFimAtual=sMesAtual===1?(anoAtual+'-06-30'):(anoAtual+'-12-31');
+    const sFim=hoje<sFimAtual?hoje:sFimAtual;
+    setSyncStatus('Carregando dados recentes...','var(--accent)');
+    try{
+      const dadosAtuais=await apiGet('/tudo?inicio='+sIni+'&fim='+sFim);
+      processarDados(dadosAtuais);
+      save();renderAll();updFiltros();
+      if(document.getElementById('btnPpt'))document.getElementById('btnPpt').style.display='flex';
+      document.getElementById('brandSub').textContent=Object.keys(V).length+' dias (carregando histórico...)';
+      setSyncStatus('Recentes OK — buscando histórico...','var(--accent)');
+    }catch(e){console.warn('Erro semestre atual:',e.message);}
+
+    const periodos=[];
+    for(let ano=anoInicio;ano<anoAtual;ano++){
+      periodos.push([ano+'-01-01',ano+'-06-30']);
+      periodos.push([ano+'-07-01',ano+'-12-31']);
     }
+    if(sMesAtual===1)periodos.push([anoAtual+'-07-01',anoAtual+'-12-31']);
+    else periodos.push([anoAtual+'-01-01',anoAtual+'-06-30']);
+    for(const[ini,fim] of periodos){
+      setSyncStatus('Histórico: '+ini.slice(0,7)+'...','var(--accent)');
+      try{const d=await apiGet('/tudo?inicio='+ini+'&fim='+fim);processarDados(d);}
+      catch(e){console.warn('Erro '+ini+':',e.message);}
+    }
+    salvarCacheLocal();
 
         // ── 4. Salva localmente e renderiza ──
-    // Salva cache compacto (só totais por dia por setor)
-    try{
-      const vComp={};
-      Object.keys(V).forEach(d=>{
-        const bySe={};
-        V[d].forEach(i=>{
-          if(!bySe[i.setor])bySe[i.setor]={qtd:0,vLiq:0};
-          bySe[i.setor].qtd+=i.qtd;bySe[i.setor].vLiq+=i.vLiq;
-        });
-        vComp[d]=bySe;
-      });
-      localStorage.setItem('bi_v_cache',JSON.stringify(vComp));
-      localStorage.setItem('bi_vi_cache',JSON.stringify(VI));
-      localStorage.setItem('bi_cache_at',new Date().toISOString());
-      console.log('Cache salvo: '+Object.keys(vComp).length+' dias');
-    }catch(e){console.warn('Cache local cheio:',e.message);}
+    // cache salvo via salvarCacheLocal()
     save();renderAll();updFiltros();
     const nDias=Object.keys(V).length;
     const nItens=Object.values(V).reduce((a,d)=>a+d.length,0);
@@ -3386,27 +3398,26 @@ document.getElementById('brandSub').textContent=Object.keys(V).length?Object.key
   });if(window.innerWidth<=768&&Object.keys(V).length)goTab('dash');
 
 // Carrega do cache local primeiro (instantâneo)
-const _cacheV=localStorage.getItem('bi_v_cache');
+const _cacheAnos=localStorage.getItem('bi_cache_anos');
 const _cacheVI=localStorage.getItem('bi_vi_cache');
 const _cacheAt=localStorage.getItem('bi_cache_at');
-if(_cacheV&&_cacheVI){
+const _anos=_cacheAnos?JSON.parse(_cacheAnos):[];
+const _temCache=_anos.length>0&&_cacheVI&&_cacheAt;
+if(_temCache){
   try{
-    // Cache pode ser compacto (bySe) ou completo
-    const _vParsed=JSON.parse(_cacheV);
-    // Verifica se é formato compacto (valores são objetos com qtd/vLiq por setor)
-    const _primeiraChave=Object.keys(_vParsed)[0];
-    if(_primeiraChave&&!Array.isArray(_vParsed[_primeiraChave])){
-      // Formato compacto — expande para formato completo
-      V={};
-      Object.keys(_vParsed).forEach(d=>{
+    // Carrega V de cada ano
+    V={};
+    _anos.forEach(ano=>{
+      const vAno=localStorage.getItem('bi_vc_'+ano);
+      if(!vAno)return;
+      const vParsed=JSON.parse(vAno);
+      Object.keys(vParsed).forEach(d=>{
         V[d]=[];
-        Object.keys(_vParsed[d]).forEach(setor=>{
-          V[d].push({nome:setor,setor,qtd:_vParsed[d][setor].qtd,vLiq:_vParsed[d][setor].vLiq});
+        Object.keys(vParsed[d]).forEach(setor=>{
+          V[d].push({nome:setor,setor,qtd:vParsed[d][setor].qtd,vLiq:vParsed[d][setor].vLiq});
         });
       });
-    } else {
-      V=_vParsed;
-    }
+    });
     VI=JSON.parse(_cacheVI);
     renderAll();updFiltros();
     if(Object.keys(V).length){
