@@ -3395,9 +3395,12 @@ document.getElementById('dataVisit').value=hoje();
 document.getElementById('pontosData').value=hoje();
 document.getElementById('siteData').value=hoje();
   document.getElementById('diversosData').value=hoje();
-renderAll();
-if(Object.keys(V).length)document.getElementById('btnPpt').style.display='flex';
-document.getElementById('brandSub').textContent=Object.keys(V).length?Object.keys(V).length+' dia(s) registrado(s)':'Sistema de gestão';
+// NÃO chama renderAll() aqui — o IIFE abaixo carrega o cache e renderiza
+// Renderiza apenas módulos que não dependem de V/VI
+renderProds();renderAjustado();renderMetas();renderAnterior();
+renderHistPontos();renderHistSite();renderHistDiversos();
+renderFuncs();renderFeriados();renderPrecos();renderHistPrecos();
+document.getElementById('brandSub').textContent='Sistema de gestão';
 </script>
 </body>
 </html>  // usa índice pré-calculado — evita iterar 21k comandas
