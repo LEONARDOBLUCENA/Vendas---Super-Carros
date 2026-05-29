@@ -732,7 +732,7 @@ function normalizarSetor(setor, nomeProduto){
   // Bilheteria
   if(nome.includes('INGRESSO')||nome.includes('COMBO')||nome.includes('CORTESIA')
      ||nome.includes('ING. COMBO')||nome.includes('CORTESIAS SUPERCARROS'))return 'Bilheteria';
-  if(s.includes('INGRESSO')||s.includes('BILHETERIA'))return 'Bilheteria';
+  if(s.includes('INGRESSO')||s.includes('BILHETERIA')||s.includes('COMBO')||s.includes('CORTESIA'))return 'Bilheteria';
   // Fotos
   if(nome.includes('FOTO')||s.includes('FOTO'))return 'Fotos';
   // Videos (On Board → Videos)
@@ -3400,63 +3400,47 @@ document.getElementById('brandSub').textContent=Object.keys(V).length?Object.key
 
 // Carrega do cache local primeiro (instantâneo)
 // Carrega do cache local (instantâneo)
-const _cacheAnos=localStorage.getItem('bi_cache_anos');
-const _cacheVI=localStorage.getItem('bi_vi_cache');
-const _cacheAt=localStorage.getItem('bi_cache_at');
-
-function carregarDoCache(){
+(function(){
   try{
-    const anos=JSON.parse(_cacheAnos||'[]');
-    if(!anos.length)return false;
-    V={};
+    const anos=JSON.parse(localStorage.getItem('bi_cache_anos')||'[]');
+    const cacheAt=localStorage.getItem('bi_cache_at');
+    if(!anos.length||!cacheAt){carregarDoPWI().catch(()=>{});return;}
+    // Carrega cada ano
     let totalDias=0;
-    anos.forEach(ano=>{
+    anos.forEach(function(ano){
       const raw=localStorage.getItem('bi_vc_'+ano);
       if(!raw)return;
       const vParsed=JSON.parse(raw);
-      Object.keys(vParsed).forEach(d=>{
+      Object.keys(vParsed).forEach(function(d){
         V[d]=[];
-        Object.keys(vParsed[d]).forEach(setor=>{
-          V[d].push({nome:setor,setor,qtd:vParsed[d][setor].qtd,vLiq:vParsed[d][setor].vLiq});
+        Object.keys(vParsed[d]).forEach(function(setor){
+          V[d].push({nome:setor,setor:setor,qtd:vParsed[d][setor].qtd,vLiq:vParsed[d][setor].vLiq});
         });
         totalDias++;
       });
     });
-    if(_cacheVI)VI=JSON.parse(_cacheVI);
-    return totalDias>0;
-  }catch(e){
-    console.error('Erro ao carregar cache:',e);
-    return false;
-  }
-}
-
-if(_cacheAnos&&_cacheAt){
-  const carregou=carregarDoCache();
-  if(carregou){
-    renderAll();updFiltros();
-    if(Object.keys(V).length){
+    const viRaw=localStorage.getItem('bi_vi_cache');
+    if(viRaw)VI=JSON.parse(viRaw);
+    if(totalDias>0){
+      renderAll();updFiltros();
       const btnPpt=document.getElementById('btnPpt');
       if(btnPpt)btnPpt.style.display='flex';
-      document.getElementById('brandSub').textContent=Object.keys(V).length+' dias (cache local)';
-    }
-    const cacheIdade=(Date.now()-new Date(_cacheAt).getTime())/1000/60;
-    if(cacheIdade>60){
-      setSyncStatus('Atualizando dados...','var(--accent)');
-      carregarDoPWI().catch(()=>setSyncStatus('Usando cache local','var(--text3)'));
+      document.getElementById('brandSub').textContent=totalDias+' dias (cache local)';
+      const idadeMin=(Date.now()-new Date(cacheAt).getTime())/60000;
+      if(idadeMin>60){
+        setSyncStatus('Atualizando...','var(--accent)');
+        carregarDoPWI().catch(()=>setSyncStatus('Cache local','var(--text3)'));
+      } else {
+        setSyncStatus('✓ '+new Date(cacheAt).toLocaleTimeString('pt-BR'),'var(--green)');
+      }
     } else {
-      setSyncStatus('✓ Cache: '+new Date(_cacheAt).toLocaleTimeString('pt-BR'),'var(--green)');
+      carregarDoPWI().catch(()=>{});
     }
-  } else {
-    // Sem cache válido — busca do banco
-    carregarDoPWI().catch(e=>{
-  // Se falhar, tenta Supabase como fallback
-  setSyncStatus('PWI indisponível — tentando nuvem...','var(--amber)');
-  sbLoadAll().then(ok=>{
-    if(ok){save();renderAll();setSyncStatus('✓ Dados da nuvem em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');}
-    else setSyncStatus('Sem dados','var(--text3)');
-      }).catch(()=>setSyncStatus('Offline','var(--text3)'));
-  });
-}
+  }catch(e){
+    console.error('Erro cache:',e);
+    carregarDoPWI().catch(()=>{});
+  }
+})();
 // Auto-atualiza a cada hora
 setInterval(()=>{
   setSyncStatus('Atualizando...','var(--accent)');
