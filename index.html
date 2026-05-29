@@ -734,16 +734,14 @@ function getPontoTotal(d){if(!d)return 0;if(typeof d==='number')return d;if(type
 const RAZOES_PONTOS_VALIDAS=['Largo','Loja'];
 
 function recalcValeRetorno(){
-  // Preenche VI[d].retorno com a qtd de "SUPERGRAMADO: VALE RETORNO"
-  Object.keys(VI).forEach(d=>{
+  Object.keys(VI).forEach(function(d){
     if(!V[d])return;
-    const ret=V[d].filter(i=>(i.nome||'').toUpperCase().includes('SUPERGRAMADO: VALE RETORNO'))
-                   .reduce((a,i)=>a+(i.qtd||0),0);
+    var ret=V[d].filter(function(i){return(i.nome||'').toUpperCase().includes('SUPERGRAMADO: VALE RETORNO');})
+               .reduce(function(a,i){return a+(i.qtd||0);},0);
     VI[d].retorno=ret;
     VI[d].valido=Math.max(0,VI[d].entradas-ret);
   });
 }
-
 async function carregarDoPWI(){
   setSyncStatus('Buscando...','var(--accent)');
   try{
@@ -875,7 +873,7 @@ function save(modulo){
   const salvarTudo=!modulo;
   try{
     if(salvarTudo||modulo==='p'){saveKey('bip',P);_dirty.p=false;}
-    // V e VI não são salvos no localStorage (muito grandes) — vêm do banco PWI
+    // V e VI não são salvos no localStorage (usam cache bi_vc_YYYY)
     if(salvarTudo||modulo==='metas'){saveKey('bimetas',METAS);_dirty.metas=false;}
     if(salvarTudo||modulo==='ant'){saveKey('biant',ANTERIOR);_dirty.ant=false;}
     if(salvarTudo||modulo==='pontos'){saveKey('bipontos',PONTOS);_dirty.pontos=false;}
@@ -2500,6 +2498,36 @@ function renderHistPrecos(){
 }
 
 // ── INIT ─────────────────────────────────────────────────────────────
+function load(){
+  // Limpa chaves antigas que ocupam espaço
+  try{localStorage.removeItem('biv');localStorage.removeItem('bivi');}catch(e){}
+  try{
+    const p=localStorage.getItem('bip');
+    const m=localStorage.getItem('bimetas');
+    const a=localStorage.getItem('biant');
+    const fu=localStorage.getItem('bifuncs');
+    const fer=localStorage.getItem('biferiados');
+    const car=localStorage.getItem('bicarros');
+    const hp=localStorage.getItem('bihistprec');
+    const nid=localStorage.getItem('bi_nid');
+    const po=localStorage.getItem('bipontos');
+    const si=localStorage.getItem('bisite');
+    const di=localStorage.getItem('bidiversos');
+    if(p)P=JSON.parse(p);
+    if(m)METAS=JSON.parse(m);
+    if(a)ANTERIOR=JSON.parse(a);
+    if(fu)FUNCS=JSON.parse(fu);
+    if(fer)FERIADOS=JSON.parse(fer);
+    if(car)CARROS=JSON.parse(car);
+    if(hp)HIST_PREC=JSON.parse(hp);
+    if(po)PONTOS=JSON.parse(po);
+    if(si)SITE=JSON.parse(si);
+    if(di)DIVERSOS=JSON.parse(di);
+    if(nid)_nid=parseInt(nid)||1;
+  }catch(e){console.error('load:',e);}
+}
+
+
 function renderAll(){
   renderProds();renderAjustado();renderHistV();renderHistVI();
   renderMetas();renderAnterior();renderHistPontos();renderHistSite();renderHistDiversos();
@@ -2531,7 +2559,6 @@ if(window.innerWidth<=768&&Object.keys(V).length)goTab('dash');
     });
     var viRaw=localStorage.getItem('bi_vi_cache');
     if(viRaw)VI=JSON.parse(viRaw);
-    // VI já tem retorno calculado pois foi salvo após recalcValeRetorno()
     if(totalDias>0){
       renderAll();updFiltros();
       var bp=document.getElementById('btnPpt');if(bp)bp.style.display='flex';
