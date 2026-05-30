@@ -1858,7 +1858,13 @@ function renderDash(){
   if(!diasKey.length){document.getElementById('dashContent').innerHTML='<div class="empty"><i class="ti ti-filter-off"></i><p>Nenhum dado para o filtro selecionado</p></div>';return;}
   const itens=getItens(diasKey,setorF);
   const tLiq=itens.reduce((a,i)=>a+i.vLiq,0);
-  const tVisit=diasKey.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);
+  // Visitantes válidos: entradas − Vale Retorno (calculado em tempo real de V[d])
+  function getValidosReal(d){
+    if(!VI[d])return 0;
+    const ret=V[d]?V[d].filter(i=>(i.nome||'').toUpperCase().includes('SUPERGRAMADO: VALE RETORNO')).reduce((a,i)=>a+(i.qtd||0),0):VI[d].retorno||0;
+    return Math.max(0,VI[d].entradas-ret);
+  }
+  const tVisit=diasKey.reduce((a,d)=>a+getValidosReal(d),0);
   const ticket=tVisit?tLiq/tVisit:0;
 
   const anoAnt=String(parseInt(ano)-1);
@@ -1869,7 +1875,10 @@ function renderDash(){
   let tVisitAnt=0,temVisitAnt=false,tLiqAnt=0;
   diasKey.forEach(function(d){
     const dAnt=anoAnt+d.slice(4);
-    if(VI[dAnt]){tVisitAnt+=VI[dAnt].valido;temVisitAnt=true;}
+    if(VI[dAnt]){
+      const retAnt=V[dAnt]?V[dAnt].filter(i=>(i.nome||'').toUpperCase().includes('SUPERGRAMADO: VALE RETORNO')).reduce((a,i)=>a+(i.qtd||0),0):VI[dAnt].retorno||0;
+      tVisitAnt+=Math.max(0,VI[dAnt].entradas-retAnt);temVisitAnt=true;
+    }
     if(V[dAnt]){tLiqAnt+=V[dAnt].reduce(function(a,i){return a+i.vLiq;},0);}
   });
   const ticketAnt=tVisitAnt&&tLiqAnt?tLiqAnt/tVisitAnt:0;
@@ -2063,7 +2072,7 @@ function renderDash(){
     // meses selecionados: gráfico diário
     sLabels=diasKey.map(d=>d.slice(8)+'/'+d.slice(5,7));
     sFat=diasKey.map(d=>+getItens([d],setorF).reduce((a,i)=>a+i.vLiq,0).toFixed(2));
-    sTick=diasKey.map(d=>{const fat=getItens([d],setorF).reduce((a,i)=>a+i.vLiq,0);const vis=VI[d]?VI[d].valido:0;return vis?+(fat/vis).toFixed(2):0;});
+    sTick=diasKey.map(d=>{const fat=getItens([d],setorF).reduce((a,i)=>a+i.vLiq,0);const vis=getValidosReal(d);return vis?+(fat/vis).toFixed(2):0;});
     sMeta=null;
   }
 
