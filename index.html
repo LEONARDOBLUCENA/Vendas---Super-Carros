@@ -806,7 +806,10 @@ async function carregarDoPWI(){
       });
       if(dados.visitantes)dados.visitantes.forEach(v=>{
         const d=formatarDataBI(v.data);if(!d)return;
-        _VItmp[d]={entradas:parseInt(v.entradas)||0,retorno:0,valido:parseInt(v.entradas)||0};
+        const _ent=parseInt(v.entradas)||0;
+        // Calcula Vale Retorno a partir dos itens de venda do dia
+        const _ret=(_Vtmp[d]||[]).filter(i=>(i.nome||'').toUpperCase().includes('SUPERGRAMADO: VALE RETORNO')).reduce((a,i)=>a+(i.qtd||0),0);
+        _VItmp[d]={entradas:_ent,retorno:_ret,valido:Math.max(0,_ent-_ret)};
       });
     }
 
@@ -1949,7 +1952,13 @@ function renderDash(){
   const ultimoDiaAnt=ultimoDiaAtual?anoAnt+ultimoDiaAtual.slice(4):null; // ex: 2025-05-17
 
   let antGeral=null;
-  if(!dia){
+  if(dia){
+    // Dia específico: compara com o mesmo dia do ano anterior
+    const diaAnt=anoAnt+dia.slice(4);
+    if(V[diaAnt]){
+      antGeral=V[diaAnt].filter(i=>!SETORES_EXT_EXCLUIR.includes(setorAdj(i.setor))&&(!setorF||setorF===S_TOTAL||setorAdj(i.setor)===setorF)).reduce((a,i)=>a+i.vLiq,0)||null;
+    }
+  } else {
     if(mesesSelecionados.length>0){
       // meses específicos: soma apenas até o mesmo dia do ano anterior
       let soma=0,found=false;
