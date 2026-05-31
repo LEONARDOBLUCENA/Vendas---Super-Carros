@@ -858,7 +858,14 @@ async function carregarDoPWI(){
       setSyncStatus('✓ '+label+' — carregando mais...','var(--accent)');
     }
 
-    // 1. Semana atual — aparece primeiro
+    // 1. Hoje primeiro — aparece em segundos
+    setSyncStatus('Carregando hoje...','var(--accent)');
+    try{
+      const d=await apiGet('/tudo?inicio='+hoje+'&fim='+hoje);
+      processarDados(d);renderParcial('hoje');salvarCacheLocal();
+    }catch(e){console.warn('Erro hoje:',e.message);}
+
+    // 2. Semana atual
     setSyncStatus('Carregando semana atual...','var(--accent)');
     try{
       const d=await apiGet('/tudo?inicio='+semanaIni+'&fim='+hoje);
