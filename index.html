@@ -131,7 +131,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   .kpi-grid{grid-template-columns:1fr 1fr}
   .g3,.g4{grid-template-columns:1fr}
   .fbar{flex-wrap:wrap;gap:6px}
-  .fbar-item{min-width:120px;flex:1}
+  .fbar-item{min-width:calc(50% - 3px);flex:1 1 calc(50% - 3px)}
+  .fbar-item:last-child{min-width:100%;flex:1 1 100%}
   .card{padding:12px}
   .topbar{flex-direction:column;align-items:flex-start;gap:8px}
 }
