@@ -836,36 +836,64 @@ async function carregarDoPWI(){
       }catch(e){console.warn('Cache:',e.message);}
     }
 
+    // ── Carregamento progressivo: semana → mês → trimestre → semestre → histórico ──
     const sMesAtual=mesAtual<=6?1:2;
-    const sIni=anoAtual+'-'+(sMesAtual===1?'01':'07')+'-01';
-    const sFimAtual=sMesAtual===1?(anoAtual+'-06-30'):(anoAtual+'-12-31');
-    const sFim=hoje<sFimAtual?hoje:sFimAtual;
-    setSyncStatus('Carregando dados recentes...','var(--accent)');
-    try{
-      const dadosAtuais=await apiGet('/tudo?inicio='+sIni+'&fim='+sFim);
-      processarDados(dadosAtuais);
-      // Renderiza com dados parciais (semestre atual) sem mover para V ainda
-      // Apenas atualiza a tela com o que já tem no _Vtmp
+    const d7ini=new Date(hoje);d7ini.setDate(d7ini.getDate()-7);
+    const semanaIni=d7ini.toISOString().slice(0,10);
+    const mesIni=anoAtual+'-'+String(mesAtual).padStart(2,'0')+'-01';
+    const trimMes=Math.max(1,mesAtual-2);
+    const trimIni=anoAtual+'-'+String(trimMes).padStart(2,'0')+'-01';
+    const semIni=anoAtual+'-'+(sMesAtual===1?'01':'07')+'-01';
+
+    // Helper: move _Vtmp/_VItmp para V/VI e renderiza sem zerar
+    function renderParcial(label){
       Object.assign(V,_Vtmp);Object.assign(VI,_VItmp);
       renderAll();updFiltros();
       if(document.getElementById('btnPpt'))document.getElementById('btnPpt').style.display='flex';
-      document.getElementById('brandSub').textContent=Object.keys(V).length+' dias (carregando histórico...)';
-      setSyncStatus('Recentes OK — buscando histórico...','var(--accent)');
-    }catch(e){console.warn('Erro semestre atual:',e.message);}
+      document.getElementById('brandSub').textContent=Object.keys(V).length+' dias ('+label+')';
+      setSyncStatus('✓ '+label+' — carregando mais...','var(--accent)');
+    }
 
+    // 1. Semana atual — aparece primeiro
+    setSyncStatus('Carregando semana atual...','var(--accent)');
+    try{
+      const d=await apiGet('/tudo?inicio='+semanaIni+'&fim='+hoje);
+      processarDados(d);renderParcial('semana atual');salvarCacheLocal();
+    }catch(e){console.warn('Erro semana:',e.message);}
+
+    // 2. Mês atual completo
+    setSyncStatus('Carregando mês atual...','var(--accent)');
+    try{
+      const d=await apiGet('/tudo?inicio='+mesIni+'&fim='+hoje);
+      processarDados(d);renderParcial('mês atual');salvarCacheLocal();
+    }catch(e){console.warn('Erro mês:',e.message);}
+
+    // 3. Trimestre atual
+    setSyncStatus('Carregando trimestre...','var(--accent)');
+    try{
+      const d=await apiGet('/tudo?inicio='+trimIni+'&fim='+hoje);
+      processarDados(d);renderParcial('trimestre');
+    }catch(e){console.warn('Erro trimestre:',e.message);}
+
+    // 4. Semestre atual completo
+    setSyncStatus('Carregando semestre...','var(--accent)');
+    try{
+      const d=await apiGet('/tudo?inicio='+semIni+'&fim='+hoje);
+      processarDados(d);renderParcial('semestre');salvarCacheLocal();
+    }catch(e){console.warn('Erro semestre:',e.message);}
+
+    // 5. Histórico anos anteriores
     const periodos=[];
     for(let ano=anoInicio;ano<anoAtual;ano++){
       periodos.push([ano+'-01-01',ano+'-06-30']);
       periodos.push([ano+'-07-01',ano+'-12-31']);
     }
-    if(sMesAtual===1)periodos.push([anoAtual+'-07-01',anoAtual+'-12-31']);
-    else periodos.push([anoAtual+'-01-01',anoAtual+'-06-30']);
     for(const[ini,fim] of periodos){
       setSyncStatus('Histórico: '+ini.slice(0,7)+'...','var(--accent)');
       try{const d=await apiGet('/tudo?inicio='+ini+'&fim='+fim);processarDados(d);}
       catch(e){console.warn('Erro '+ini+':',e.message);}
     }
-    // ── 4. Só agora move _Vtmp/_VItmp para V/VI e salva ──
+    // ── Commit final: move _Vtmp/_VItmp para V/VI e salva ──
     Object.assign(V,_Vtmp);Object.assign(VI,_VItmp);
     salvarCacheLocal();
     console.log('Cache salvo! Anos:', localStorage.getItem('bi_cache_anos'), 'At:', localStorage.getItem('bi_cache_at'));
@@ -3472,7 +3500,9 @@ document.getElementById('brandSub').textContent='Carregando...';
       document.getElementById('brandSub').textContent=totalDias+' dias (cache local)';
       setSyncStatus('✓ '+new Date(cacheAt).toLocaleTimeString('pt-BR')+' · atualizando...','var(--accent)');
       console.log('[BI-DEBUG] Após renderAll. V.length=',Object.keys(V).length);
-      const _abaAtiva=localStorage.getItem('bi_aba');if(_abaAtiva)goTab(_abaAtiva);
+      // Mobile sempre abre no Dashboard; desktop restaura aba salva
+      if(window.innerWidth<=768){goTab('dash');}
+      else{const _abaAtiva=localStorage.getItem('bi_aba');if(_abaAtiva)goTab(_abaAtiva);}
       // Sempre busca em background ao abrir — sem zerar tela
       carregarDoPWI().catch(()=>setSyncStatus('✓ '+new Date(cacheAt).toLocaleTimeString('pt-BR')+' (cache)','var(--text3)'));
     } else {
