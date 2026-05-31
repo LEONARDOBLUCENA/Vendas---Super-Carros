@@ -798,12 +798,16 @@ async function carregarDoPWI(){
 
     function processarDados(dados){
       if(!dados||!dados.vendas)return;
+      // Agrupa por dia primeiro para evitar duplicação no carregamento progressivo
+      const diasNovos={};
       dados.vendas.forEach(item=>{
         const d=formatarDataBI(item.data);if(!d)return;
-        if(!_Vtmp[d])_Vtmp[d]=[];
+        if(!diasNovos[d])diasNovos[d]=[];
         const setorProd=normalizarSetor(setorDoP(item.idProduto,item.nome)||mapProdSetor[item.idProduto]||'(não classificado)',item.nome);
-        _Vtmp[d].push({nome:item.nome||'',setor:setorProd,qtd:parseFloat(item.qtd)||1,vLiq:parseFloat(item.vlTot)||0});
+        diasNovos[d].push({nome:item.nome||'',setor:setorProd,qtd:parseFloat(item.qtd)||1,vLiq:parseFloat(item.vlTot)||0});
       });
+      // Sobrescreve o dia (não acumula) — evita duplicação entre semana→mês→trimestre etc
+      Object.keys(diasNovos).forEach(d=>{_Vtmp[d]=diasNovos[d];});
       if(dados.visitantes)dados.visitantes.forEach(v=>{
         const d=formatarDataBI(v.data);if(!d)return;
         const _ent=parseInt(v.entradas)||0;
