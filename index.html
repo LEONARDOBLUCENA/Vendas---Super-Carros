@@ -1204,7 +1204,7 @@ function parseN(s){
     return parseFloat(str)||0;
   }
 }
-function fR(v){if(v>=1e6)return'R$ '+(v/1e6).toFixed(2).replace('.',',')+' M';if(v>=1e3)return'R$ '+(v/1e3).toFixed(1).replace('.',',')+' k';return'R$ '+v.toFixed(2).replace('.',',');}
+function fR(v){if(window.innerWidth<=768)return fRF(v);if(v>=1e6)return'R$ '+(v/1e6).toFixed(2).replace('.',',')+' M';if(v>=1e3)return'R$ '+(v/1e3).toFixed(1).replace('.',',')+' k';return'R$ '+v.toFixed(2).replace('.',',');}
 function fRF(v){return'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function parseData(s){
   s=(s||'').trim();
