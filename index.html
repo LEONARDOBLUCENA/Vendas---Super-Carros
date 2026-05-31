@@ -853,8 +853,15 @@ async function carregarDoPWI(){
 
     // Helper: move _Vtmp/_VItmp para V/VI e renderiza sem zerar
     function renderParcial(label){
+      // Preserva filtros ativos antes de renderAll
+      const _diaAtivo=document.getElementById('fDia')?document.getElementById('fDia').value:'';
       Object.assign(V,_Vtmp);Object.assign(VI,_VItmp);
       renderAll();updFiltros();
+      // Restaura filtro de dia e re-renderiza dashboard
+      if(_diaAtivo&&document.getElementById('fDia')){
+        const _opts=[...(document.getElementById('fDia').options||[])].map(o=>o.value);
+        if(_opts.includes(_diaAtivo)){document.getElementById('fDia').value=_diaAtivo;renderDash();}
+      }
       if(document.getElementById('btnPpt'))document.getElementById('btnPpt').style.display='flex';
       document.getElementById('brandSub').textContent=Object.keys(V).length+' dias ('+label+')';
       setSyncStatus('✓ '+label+' — carregando mais...','var(--accent)');
