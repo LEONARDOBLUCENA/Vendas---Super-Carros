@@ -450,6 +450,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <!-- DASHBOARD -->
 <div id="sc-dash" class="screen">
+  <div id="dashSyncBar" style="display:none;font-size:11px;padding:5px 12px;background:var(--accent-bg);color:var(--accent-t);border-radius:var(--r);margin-bottom:10px;text-align:center"></div>
   <div class="topbar">
     <div><div class="page-title">Dashboard</div>
     <div class="page-sub" id="dashSub">Visão geral dos resultados</div></div>
@@ -971,8 +972,10 @@ async function sbLoadAll(){
 
 function setSyncStatus(msg,cor){
   const el=document.getElementById('syncStatus');
-  if(!el)return;
-  el.style.display='block';el.style.color=cor||'var(--text3)';el.textContent=msg;
+  if(el){el.style.display='block';el.style.color=cor||'var(--text3)';el.textContent=msg;}
+  // Espelha no dashboard
+  const db=document.getElementById('dashSyncBar');
+  if(db){db.style.display='block';db.style.background=cor==='var(--green)'?'var(--green-bg)':'var(--accent-bg)';db.style.color=cor==='var(--green)'?'var(--green)':'var(--accent-t)';db.textContent=msg;}
 }
 
 let _autoSaveTimer=null;
@@ -3512,7 +3515,19 @@ document.getElementById('brandSub').textContent='Carregando...';
       setSyncStatus('✓ '+new Date(cacheAt).toLocaleTimeString('pt-BR')+' · atualizando...','var(--accent)');
       console.log('[BI-DEBUG] Após renderAll. V.length=',Object.keys(V).length);
       // Mobile sempre abre no Dashboard; desktop restaura aba salva
-      if(window.innerWidth<=768){goTab('dash');}
+      if(window.innerWidth<=768){
+        goTab('dash');
+        // Filtra dia atual automaticamente no mobile
+        setTimeout(function(){
+          const _hoje=new Date().toISOString().slice(0,10);
+          const _fDia=document.getElementById('fDia');
+          if(_fDia){
+            // Verifica se hoje está disponível no select
+            const _opts=[...(_fDia.options||[])].map(o=>o.value);
+            if(_opts.includes(_hoje)){_fDia.value=_hoje;renderDash();}
+          }
+        },300);
+      }
       else{const _abaAtiva=localStorage.getItem('bi_aba');if(_abaAtiva)goTab(_abaAtiva);}
       // Sempre busca em background ao abrir — sem zerar tela
       carregarDoPWI().catch(()=>setSyncStatus('✓ '+new Date(cacheAt).toLocaleTimeString('pt-BR')+' (cache)','var(--text3)'));
