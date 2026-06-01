@@ -1860,10 +1860,12 @@ function getDias(){
   const ano=document.getElementById('fAno').value;
   const dia=document.getElementById('fDia').value;
   if(dia)return[dia];
+  // Inclui dias de VI (visitantes) mesmo sem vendas
+  const todosOsDias=[...new Set([...Object.keys(V),...Object.keys(VI)])];
   if(mesesSelecionados.length>0){
-    return Object.keys(V).filter(d=>d.startsWith(ano)&&mesesSelecionados.includes(d.slice(5,7))).sort();
+    return todosOsDias.filter(d=>d.startsWith(ano)&&mesesSelecionados.includes(d.slice(5,7))).sort();
   }
-  return Object.keys(V).filter(d=>d.startsWith(ano)).sort();
+  return todosOsDias.filter(d=>d.startsWith(ano)).sort();
 }
 const SETORES_EXCLUIR_DASH=['(não classificado)','Eventos'];
 function getItens(diasKey,setorF){
