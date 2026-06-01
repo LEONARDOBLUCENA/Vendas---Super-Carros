@@ -859,7 +859,11 @@ async function carregarDoPWI(){
       renderAll();updFiltros();
       if(_diaAtivo&&document.getElementById('fDia')){
         const _opts=[...(document.getElementById('fDia').options||[])].map(o=>o.value);
-        if(_opts.includes(_diaAtivo)){document.getElementById('fDia').value=_diaAtivo;renderDash();}
+        if(_opts.includes(_diaAtivo)){document.getElementById('fDia').value=_diaAtivo;}
+      }
+      // Sempre re-renderiza o dashboard para atualizar a tela automaticamente (PC e mobile)
+      if(document.getElementById('sc-dash')&&document.getElementById('sc-dash').classList.contains('on')){
+        renderDash();
       }
       if(document.getElementById('btnPpt'))document.getElementById('btnPpt').style.display='flex';
       document.getElementById('brandSub').textContent=Object.keys(V).length+' dias ('+label+')';
