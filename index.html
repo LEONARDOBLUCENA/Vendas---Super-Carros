@@ -1773,7 +1773,9 @@ function updFiltros(){
 function updMesDia(){
   const ano=document.getElementById('fAno').value;
   const diasAno=Object.keys(V).filter(d=>d.startsWith(ano)).sort();
-  const mesesDisp=[...new Set(diasAno.map(d=>d.slice(5,7)))].sort();
+  // Inclui também meses que têm visitantes (mesmo sem vendas ainda)
+  const diasVI=Object.keys(VI).filter(d=>d.startsWith(ano));
+  const mesesDisp=[...new Set([...diasAno,...diasVI].map(d=>d.slice(5,7)))].sort();
   const container=document.getElementById('mesPickerItems');
   if(!container)return;
   container.innerHTML='';
