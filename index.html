@@ -770,6 +770,7 @@ function formatarDataBI(dataStr){
 
 async function carregarDoPWI(){
   console.log('[BI-DEBUG] carregarDoPWI iniciou. V.length=',Object.keys(V).length);
+  _carregandoPWI=true;
   setSyncStatus('Buscando dados do sistema...','var(--accent)');
   try{
     const hoje=new Date().toISOString().slice(0,10);
@@ -853,8 +854,13 @@ async function carregarDoPWI(){
 
     // Helper: move _Vtmp/_VItmp para V/VI e renderiza sem zerar
     function renderParcial(label){
+      const _diaAtivo=document.getElementById('fDia')?document.getElementById('fDia').value:'';
       Object.assign(V,_Vtmp);Object.assign(VI,_VItmp);
       renderAll();updFiltros();
+      if(_diaAtivo&&document.getElementById('fDia')){
+        const _opts=[...(document.getElementById('fDia').options||[])].map(o=>o.value);
+        if(_opts.includes(_diaAtivo)){document.getElementById('fDia').value=_diaAtivo;renderDash();}
+      }
       if(document.getElementById('btnPpt'))document.getElementById('btnPpt').style.display='flex';
       document.getElementById('brandSub').textContent=Object.keys(V).length+' dias ('+label+')';
       setSyncStatus('✓ '+label+' — carregando mais...','var(--accent)');
@@ -907,6 +913,7 @@ async function carregarDoPWI(){
       catch(e){console.warn('Erro '+ini+':',e.message);}
     }
     // ── Commit final: move _Vtmp/_VItmp para V/VI e salva ──
+    _carregandoPWI=false;
     Object.assign(V,_Vtmp);Object.assign(VI,_VItmp);
     salvarCacheLocal();
     console.log('Cache salvo! Anos:', localStorage.getItem('bi_cache_anos'), 'At:', localStorage.getItem('bi_cache_at'));
@@ -1022,6 +1029,7 @@ async function syncBaixar(){
 }
 // ── ESTADO ────────────────────────────────────────────────────────────
 let P={}, V={}, VI={}, METAS={}, ANTERIOR={}, PONTOS={}, SITE={}, DIVERSOS={}, FUNCS={}, FERIADOS={}, CARROS={}, HIST_PREC=[], pending=null, charts=[], chartsExt=[];
+let _carregandoPWI=false; // flag: não limpar mesesSelecionados durante carregamento
 let _nid=1;
 function novaKey(){return 'p'+(++_nid);}
 
@@ -1756,13 +1764,9 @@ function updFiltros(){
   const sA=document.getElementById('fAno'),cur=sA.value;
   sA.innerHTML=anos.map(a=>`<option value="${a}">${a}</option>`).join('');
   if(anos.includes(cur))sA.value=cur;else sA.value=anos[anos.length-1];
-  // Se o ano selecionado é o ano atual e nenhum mês foi escolhido ainda,
-  // seleciona automaticamente o mês de hoje
   const _anoHoje=new Date().toISOString().slice(0,4);
   const _mesHoje=new Date().toISOString().slice(5,7);
-  if(sA.value===_anoHoje&&mesesSelecionados.length===0){
-    mesesSelecionados=[_mesHoje];
-  }
+  if(sA.value===_anoHoje&&mesesSelecionados.length===0)mesesSelecionados=[_mesHoje];
   updMesDia();updSetoresFiltro();
 }
 
@@ -1784,8 +1788,8 @@ function updMesDia(){
     item.appendChild(document.createTextNode(MNomes[parseInt(m)-1]));
     container.appendChild(item);
   });
-  // limpa meses selecionados que não estão mais disponíveis
-  mesesSelecionados=mesesSelecionados.filter(m=>mesesDisp.includes(m));
+  // Não limpa mesesSelecionados durante carregamento (Junho pode ainda não estar no cache)
+  if(!_carregandoPWI)mesesSelecionados=mesesSelecionados.filter(m=>mesesDisp.includes(m));
   updMesPickerLabel();
   updDia();
 }
