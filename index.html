@@ -1212,7 +1212,7 @@ function parseN(s){
     return parseFloat(str)||0;
   }
 }
-function fR(v){if(window.innerWidth<=768)return fRF(v);if(v>=1e6)return'R$ '+(v/1e6).toFixed(2).replace('.',',')+' M';if(v>=1e3)return'R$ '+(v/1e3).toFixed(1).replace('.',',')+' k';return'R$ '+v.toFixed(2).replace('.',',');}
+function fR(v){return fRF(v);}
 function fRF(v){return'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function parseData(s){
   s=(s||'').trim();
@@ -3534,24 +3534,27 @@ document.getElementById('brandSub').textContent='Carregando...';
       if(window.innerWidth<=768){
         goTab('dash');
         // Filtra dia atual automaticamente no mobile
-        setTimeout(function(){
+        // Função que tenta setar o dia atual, com retry se ainda não disponível
+        function _setarDiaHoje(tentativa){
           const _hoje=new Date().toISOString().slice(0,10);
           const _anoHoje=_hoje.slice(0,4);
           const _mesHoje=_hoje.slice(5,7);
-          // Garante ano correto
           const _fAno=document.getElementById('fAno');
           if(_fAno&&_fAno.value!==_anoHoje){
             _fAno.value=_anoHoje;mesesSelecionados=[];updMesDia();updMesPickerLabel();
           }
-          // Garante mês correto
           mesesSelecionados=[_mesHoje];updMesDia();updMesPickerLabel();
-          // Agora seta o dia
           const _fDia=document.getElementById('fDia');
           if(_fDia){
             const _opts=[...(_fDia.options||[])].map(o=>o.value);
             if(_opts.includes(_hoje)){_fDia.value=_hoje;renderDash();}
+            else if((tentativa||0)<10){
+              // Hoje ainda não está no select — tenta novamente em 2s
+              setTimeout(function(){_setarDiaHoje((tentativa||0)+1);},2000);
+            }
           }
-        },300);
+        }
+        setTimeout(function(){_setarDiaHoje(0);},500);
       }
       else{const _abaAtiva=localStorage.getItem('bi_aba');if(_abaAtiva)goTab(_abaAtiva);}
       // Sempre busca em background ao abrir — sem zerar tela
