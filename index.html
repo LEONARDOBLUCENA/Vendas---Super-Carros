@@ -853,15 +853,8 @@ async function carregarDoPWI(){
 
     // Helper: move _Vtmp/_VItmp para V/VI e renderiza sem zerar
     function renderParcial(label){
-      // Preserva filtros ativos antes de renderAll
-      const _diaAtivo=document.getElementById('fDia')?document.getElementById('fDia').value:'';
       Object.assign(V,_Vtmp);Object.assign(VI,_VItmp);
       renderAll();updFiltros();
-      // Restaura filtro de dia e re-renderiza dashboard
-      if(_diaAtivo&&document.getElementById('fDia')){
-        const _opts=[...(document.getElementById('fDia').options||[])].map(o=>o.value);
-        if(_opts.includes(_diaAtivo)){document.getElementById('fDia').value=_diaAtivo;renderDash();}
-      }
       if(document.getElementById('btnPpt'))document.getElementById('btnPpt').style.display='flex';
       document.getElementById('brandSub').textContent=Object.keys(V).length+' dias ('+label+')';
       setSyncStatus('✓ '+label+' — carregando mais...','var(--accent)');
@@ -1763,6 +1756,13 @@ function updFiltros(){
   const sA=document.getElementById('fAno'),cur=sA.value;
   sA.innerHTML=anos.map(a=>`<option value="${a}">${a}</option>`).join('');
   if(anos.includes(cur))sA.value=cur;else sA.value=anos[anos.length-1];
+  // Se o ano selecionado é o ano atual e nenhum mês foi escolhido ainda,
+  // seleciona automaticamente o mês de hoje
+  const _anoHoje=new Date().toISOString().slice(0,4);
+  const _mesHoje=new Date().toISOString().slice(5,7);
+  if(sA.value===_anoHoje&&mesesSelecionados.length===0){
+    mesesSelecionados=[_mesHoje];
+  }
   updMesDia();updSetoresFiltro();
 }
 
@@ -3528,9 +3528,18 @@ document.getElementById('brandSub').textContent='Carregando...';
         // Filtra dia atual automaticamente no mobile
         setTimeout(function(){
           const _hoje=new Date().toISOString().slice(0,10);
+          const _anoHoje=_hoje.slice(0,4);
+          const _mesHoje=_hoje.slice(5,7);
+          // Garante ano correto
+          const _fAno=document.getElementById('fAno');
+          if(_fAno&&_fAno.value!==_anoHoje){
+            _fAno.value=_anoHoje;mesesSelecionados=[];updMesDia();updMesPickerLabel();
+          }
+          // Garante mês correto
+          mesesSelecionados=[_mesHoje];updMesDia();updMesPickerLabel();
+          // Agora seta o dia
           const _fDia=document.getElementById('fDia');
           if(_fDia){
-            // Verifica se hoje está disponível no select
             const _opts=[...(_fDia.options||[])].map(o=>o.value);
             if(_opts.includes(_hoje)){_fDia.value=_hoje;renderDash();}
           }
