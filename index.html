@@ -1236,6 +1236,8 @@ function tog(id){const c=document.getElementById(id);c.style.display=c.style.dis
 const NAV_IDS=['class','ajustado','vendas','visit','metas','funcs','pontos','site','diversos','feriados','precos','dash','dashext'];
 function goTab(t){
   try{localStorage.setItem('bi_aba',t);}catch(e){}
+  // Mobile: ao abrir o dashboard, sempre seta o dia atual
+  if(t==='dash'&&window.innerWidth<=768){setTimeout(_setarHojeMobile,300);}
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
   document.getElementById('sc-'+t).classList.add('on');
@@ -3499,6 +3501,24 @@ renderHistPontos();renderHistSite();renderHistDiversos();
 renderFuncs();renderFeriados();renderPrecos();renderHistPrecos();
 document.getElementById('brandSub').textContent='Carregando...';
 
+// Função global: seta o dia atual no mobile
+function _setarHojeMobile(){
+  const _hoje=new Date().toISOString().slice(0,10);
+  const _anoHoje=_hoje.slice(0,4);
+  const _mesHoje=_hoje.slice(5,7);
+  const _fAno=document.getElementById('fAno');
+  if(_fAno&&_fAno.value!==_anoHoje){
+    _fAno.value=_anoHoje;mesesSelecionados=[];updMesDia();updMesPickerLabel();
+  }
+  mesesSelecionados=[_mesHoje];updMesDia();updMesPickerLabel();
+  const _fDia=document.getElementById('fDia');
+  if(_fDia){
+    const _opts=[...(_fDia.options||[])].map(o=>o.value);
+    if(_opts.includes(_hoje)){_fDia.value=_hoje;renderDash();}
+    else{setTimeout(_setarHojeMobile,2000);}
+  }
+}
+
 // Carrega do cache local primeiro (instantâneo) e atualiza em background
 (function(){
   // Garante que P seja carregado do Supabase se localStorage estiver vazio
@@ -3541,27 +3561,7 @@ document.getElementById('brandSub').textContent='Carregando...';
       if(window.innerWidth<=768){
         goTab('dash');
         // Filtra dia atual automaticamente no mobile
-        // Função que tenta setar o dia atual, com retry se ainda não disponível
-        function _setarDiaHoje(tentativa){
-          const _hoje=new Date().toISOString().slice(0,10);
-          const _anoHoje=_hoje.slice(0,4);
-          const _mesHoje=_hoje.slice(5,7);
-          const _fAno=document.getElementById('fAno');
-          if(_fAno&&_fAno.value!==_anoHoje){
-            _fAno.value=_anoHoje;mesesSelecionados=[];updMesDia();updMesPickerLabel();
-          }
-          mesesSelecionados=[_mesHoje];updMesDia();updMesPickerLabel();
-          const _fDia=document.getElementById('fDia');
-          if(_fDia){
-            const _opts=[...(_fDia.options||[])].map(o=>o.value);
-            if(_opts.includes(_hoje)){_fDia.value=_hoje;renderDash();}
-            else if((tentativa||0)<10){
-              // Hoje ainda não está no select — tenta novamente em 2s
-              setTimeout(function(){_setarDiaHoje((tentativa||0)+1);},2000);
-            }
-          }
-        }
-        setTimeout(function(){_setarDiaHoje(0);},500);
+        setTimeout(_setarHojeMobile,500);
       }
       else{const _abaAtiva=localStorage.getItem('bi_aba');if(_abaAtiva)goTab(_abaAtiva);}
       // Sempre busca em background ao abrir — sem zerar tela
@@ -3590,7 +3590,7 @@ document.getElementById('brandSub').textContent='Carregando...';
       carregarDoPWI().catch(()=>setSyncStatus('Offline','var(--text3)'));
     }
   }
-  setInterval(_verificarAgenda, 10*60*1000);
+  setInterval(_verificarAgenda, 30*60*1000);
 })();
 
 </script>
