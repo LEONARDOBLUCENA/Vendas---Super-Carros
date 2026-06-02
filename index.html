@@ -816,7 +816,10 @@ async function carregarDoPWI(){
         const _ent=parseInt(v.entradas)||0;
         // Calcula Vale Retorno a partir dos itens de venda do dia
         const _ret=(_Vtmp[d]||[]).filter(i=>(i.nome||'').toUpperCase().includes('SUPERGRAMADO: VALE RETORNO')).reduce((a,i)=>a+(i.qtd||0),0);
-        _VItmp[d]={entradas:_ent,retorno:_ret,valido:Math.max(0,_ent-_ret)};
+        // Usa o maior retorno já visto — evita oscilação entre cargas progressivas
+        const _retAnterior=(_VItmp[d]||{}).retorno||0;
+        const _retFinal=Math.max(_ret,_retAnterior);
+        _VItmp[d]={entradas:_ent,retorno:_retFinal,valido:Math.max(0,_ent-_retFinal)};
       });
     }
 
@@ -3571,10 +3574,24 @@ document.getElementById('brandSub').textContent='Carregando...';
     carregarDoPWI().catch(()=>{});
   }
 })();
-// Auto-atualiza a cada 10 minutos em background — sem zerar tela
-setInterval(()=>{
-  carregarDoPWI().catch(()=>setSyncStatus('Offline','var(--text3)'));
-},10*60*1000);
+// Agendador inteligente: carga às 08h + a cada 10min
+(function agendarCargas(){
+  let _ultimaCargaCompleta=null;
+  function _verificarAgenda(){
+    const agora=new Date();
+    const hhmm=agora.getHours()*100+agora.getMinutes();
+    const diaHoje=agora.toISOString().slice(0,10);
+    // Carga das 08h: se passou das 08:00 e ainda não fez carga hoje
+    if(hhmm>=800&&_ultimaCargaCompleta!==diaHoje){
+      _ultimaCargaCompleta=diaHoje;
+      carregarDoPWI().catch(()=>setSyncStatus('Offline','var(--text3)'));
+    } else {
+      // Fora do horário da carga das 08h: atualiza normalmente a cada 10min
+      carregarDoPWI().catch(()=>setSyncStatus('Offline','var(--text3)'));
+    }
+  }
+  setInterval(_verificarAgenda, 10*60*1000);
+})();
 
 </script>
 </body>
