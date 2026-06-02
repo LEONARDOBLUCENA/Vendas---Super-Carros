@@ -1926,8 +1926,8 @@ function renderDash(){
   // Visitantes válidos: entradas − Vale Retorno (calculado em tempo real de V[d])
   function getValidosReal(d){
     if(!VI[d])return 0;
-    const ret=V[d]?V[d].filter(i=>(i.nome||'').toUpperCase().includes('SUPERGRAMADO: VALE RETORNO')).reduce((a,i)=>a+(i.qtd||0),0):VI[d].retorno||0;
-    return Math.max(0,VI[d].entradas-ret);
+    // Usa VI[d].valido diretamente — valor correto da aba Visitantes
+    return VI[d].valido||0;
   }
   const tVisit=diasKey.reduce((a,d)=>a+getValidosReal(d),0);
   const ticket=tVisit?tLiq/tVisit:0;
@@ -1941,8 +1941,8 @@ function renderDash(){
   diasKey.forEach(function(d){
     const dAnt=anoAnt+d.slice(4);
     if(VI[dAnt]){
-      const retAnt=V[dAnt]?V[dAnt].filter(i=>(i.nome||'').toUpperCase().includes('SUPERGRAMADO: VALE RETORNO')).reduce((a,i)=>a+(i.qtd||0),0):VI[dAnt].retorno||0;
-      tVisitAnt+=Math.max(0,VI[dAnt].entradas-retAnt);temVisitAnt=true;
+      // Usa VI[dAnt].valido diretamente — valor correto da aba Visitantes
+      tVisitAnt+=VI[dAnt].valido||0;temVisitAnt=true;
     }
     if(V[dAnt]){tLiqAnt+=V[dAnt].reduce(function(a,i){return a+i.vLiq;},0);}
   });
