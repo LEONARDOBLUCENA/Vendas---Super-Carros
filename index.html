@@ -3574,23 +3574,29 @@ function _setarHojeMobile(){
     carregarDoPWI().catch(()=>{});
   }
 })();
-// Agendador inteligente: carga às 08h + a cada 10min
+// Agendador: atualiza nos :00, :15, :30 e :45 de cada hora (sincronizado entre usuários)
 (function agendarCargas(){
   let _ultimaCargaCompleta=null;
+  let _ultimoSlot=null;
   function _verificarAgenda(){
     const agora=new Date();
-    const hhmm=agora.getHours()*100+agora.getMinutes();
+    const min=agora.getMinutes();
+    const hhmm=agora.getHours()*100+min;
     const diaHoje=agora.toISOString().slice(0,10);
-    // Carga das 08h: se passou das 08:00 e ainda não fez carga hoje
+    // Slot atual: :00, :15, :30 ou :45
+    const slot=diaHoje+'T'+agora.getHours()+':'+Math.floor(min/15);
+    if(slot===_ultimoSlot)return; // já atualizou neste slot
+    _ultimoSlot=slot;
+    // Carga das 08h: primeira carga do dia
     if(hhmm>=800&&_ultimaCargaCompleta!==diaHoje){
       _ultimaCargaCompleta=diaHoje;
-      carregarDoPWI().catch(()=>setSyncStatus('Offline','var(--text3)'));
-    } else {
-      // Fora do horário da carga das 08h: atualiza normalmente a cada 10min
-      carregarDoPWI().catch(()=>setSyncStatus('Offline','var(--text3)'));
     }
+    carregarDoPWI().catch(()=>setSyncStatus('Offline','var(--text3)'));
   }
-  setInterval(_verificarAgenda, 30*60*1000);
+  // Verifica a cada 1 minuto para não perder o slot
+  setInterval(_verificarAgenda, 60*1000);
+  // Também verifica imediatamente ao abrir
+  setTimeout(_verificarAgenda, 2000);
 })();
 
 </script>
