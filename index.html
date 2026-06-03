@@ -1851,7 +1851,10 @@ function updDia(){
   const sD=document.getElementById('fDia'),curD=sD.value;
   sD.innerHTML='<option value="">Todos</option>';
   diasF.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4);sD.appendChild(o);});
-  if(diasF.includes(curD))sD.value=curD;
+  const _hojeStr=new Date().toISOString().slice(0,10);
+  if(diasF.includes(curD)&&curD>=_hojeStr.slice(0,7))sD.value=curD;
+  else if(diasF.includes(_hojeStr))sD.value=_hojeStr;
+  // Se hoje não está disponível ainda, deixa 'Todos'
 }
 function updSetoresFiltro(){
   const SETORES_DASH=['Bilheteria','Fotos','Passeios','Videos','Simuladores'];
