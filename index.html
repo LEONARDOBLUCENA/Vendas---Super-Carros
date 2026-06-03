@@ -2255,6 +2255,11 @@ function renderDash(){
 
     ${kpiMeta}${kpiAnt}
   </div>
+  <div class="card"><div class="card-title"><i class="ti ti-table"></i>Detalhamento por setor</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Setor</th><th>Fat. líquido</th><th>Participação</th><th>Ticket/visitante</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px">
     <div class="card" style="margin:0"><div class="card-title"><i class="ti ti-trending-up"></i>${g1}</div>
       <div style="position:relative;height:220px"><canvas id="cFat"></canvas></div></div>
@@ -2273,12 +2278,7 @@ function renderDash(){
     <div class="card-title"><i class="ti ti-receipt"></i>Ticket / visitante por setor</div>
       <div class="legend">${setores.map(s=>`<span class="leg"><span class="leg-dot" style="background:${cor(s)}80"></span>${s}</span>`).join('')}</div>
       <div style="position:relative;height:${Math.max(160,setores.length*42+50)}px"><canvas id="cTk"></canvas></div>
-  </div>
-  <div class="card"><div class="card-title"><i class="ti ti-table"></i>Detalhamento por setor</div>
-    <div class="tbl-wrap"><table class="tbl">
-      <thead><tr><th>Setor</th><th>Fat. líquido</th><th>Participação</th><th>Ticket/visitante</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div></div>`;
+  </div>`;
 
   const tipoF=(!mes&&!dia)?'bar':'line';
   const datasetsF=[{data:sFat,label:'Realizado',backgroundColor:tipoF==='bar'?sFat.map(v=>v>0?'#c0392b':'#c0392b22'):'rgba(192,57,43,.07)',borderColor:'#c0392b',fill:tipoF==='line',tension:.35,pointRadius:tipoF==='line'?sFat.map(v=>v>0?4:0):0,pointBackgroundColor:'#c0392b',borderRadius:tipoF==='bar'?4:0}];
