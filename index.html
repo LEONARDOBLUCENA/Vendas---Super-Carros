@@ -455,7 +455,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="topbar">
     <div><div class="page-title">Dashboard</div>
     <div class="page-sub" id="dashSub">Visão geral dos resultados</div></div>
-    <button class="btn btn-p" id="btnPpt" style="display:none" onclick="gerarApres()"><i class="ti ti-presentation"></i>Gerar apresentação</button>
+    <button class="btn btn-p" id="btnPpt" style="display:none" onclick="toggleApresentacao()"><i class="ti ti-presentation"></i>Modo Apresentação</button>
   </div>
   <div class="fbar">
     <div class="fbar-item"><label>Ano</label><select id="fAno" onchange="onFAno()"></select></div>
@@ -2316,6 +2316,21 @@ function renderDash(){
 }
 
 // ── APRESENTAÇÃO ─────────────────────────────────────────────────────
+function toggleApresentacao(){
+  const sidebar=document.querySelector('.sidebar');
+  const main=document.querySelector('.main');
+  const btn=document.getElementById('btnPpt');
+  const ativo=sidebar.style.display==='none';
+  if(ativo){
+    sidebar.style.display='';
+    main.style.marginLeft='220px';
+    btn.innerHTML='<i class="ti ti-presentation"></i>Modo Apresentação';
+  } else {
+    sidebar.style.display='none';
+    main.style.marginLeft='0';
+    btn.innerHTML='<i class="ti ti-layout-sidebar"></i>Mostrar menu';
+  }
+}
 function gerarApres(){
   const setorF=document.getElementById('fSetor').value;const diasKey=getDias();
   const itens=getItens(diasKey,setorF);const tLiq=itens.reduce((a,i)=>a+i.vLiq,0);
