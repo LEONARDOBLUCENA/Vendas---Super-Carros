@@ -127,6 +127,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   .nav-btn{flex:0 0 auto;font-size:11px;padding:6px 10px;border-radius:20px;white-space:nowrap}
   .nav-btn i{display:none}
   .nav-btn[data-grupo="cadastro"],.nav-btn[data-grupo="operacao"]{display:none}
+  .nav-btn[onclick*="dashext"]{display:none!important}
   .main{padding:10px}
   .kpi-grid{grid-template-columns:1fr 1fr}
   .g3,.g4{grid-template-columns:1fr}
@@ -1100,6 +1101,10 @@ function save(modulo){
   if(typeof triggerAutoSave!=='undefined')triggerAutoSave();
 }
 function load(){
+  // Mobile sempre abre no dashboard
+  if(window.innerWidth<=768||/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)){
+    try{localStorage.setItem('bi_aba','dash');}catch(e){}
+  }
   try{
     const p=localStorage.getItem('bip'),v=localStorage.getItem('biv'),vi=localStorage.getItem('bivi'),
           m=localStorage.getItem('bimetas'),a=localStorage.getItem('biant'),fu=localStorage.getItem('bifuncs'),
