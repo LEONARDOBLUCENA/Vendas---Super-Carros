@@ -127,7 +127,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   .nav-btn{flex:0 0 auto;font-size:11px;padding:6px 10px;border-radius:20px;white-space:nowrap}
   .nav-btn i{display:none}
   .nav-btn[data-grupo="cadastro"],.nav-btn[data-grupo="operacao"]{display:none}
-  .nav-btn[onclick*="dashext"]{display:none!important}
   .main{padding:10px}
   .kpi-grid{grid-template-columns:1fr 1fr}
   .g3,.g4{grid-template-columns:1fr}
@@ -178,7 +177,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <main class="main">
 
 <!-- CLASSIFICAÇÃO -->
-<div id="sc-class" class="screen on">
+<div id="sc-class" class="screen">
   <div class="topbar">
     <div><div class="page-title">Classificação de produtos</div>
     <div class="page-sub">Cadastro original — associe cada produto ao seu setor</div></div>
@@ -451,7 +450,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 <!-- DASHBOARD -->
-<div id="sc-dash" class="screen">
+<div id="sc-dash" class="screen on">
   <div id="dashSyncBar" style="display:none;font-size:11px;padding:5px 12px;background:var(--accent-bg);color:var(--accent-t);border-radius:var(--r);margin-bottom:10px;text-align:center"></div>
   <div class="topbar">
     <div><div class="page-title">Dashboard</div>
