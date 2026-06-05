@@ -1056,7 +1056,11 @@ const S_TOTAL='Salão Total';
 const MNomes=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
 function normStr(s){return(s||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
-function setorAdj(s){return PASSEIOS_NORM_LIST.includes(normStr(s))?S_PASSEIOS:s;}
+function setorAdj(s){
+  if(PASSEIOS_NORM_LIST.includes(normStr(s)))return S_PASSEIOS;
+  if((s||'').toUpperCase()==='ING. INDIVIDUAL')return 'Bilheteria';
+  return s;
+}
 
 // ── PERSIST ───────────────────────────────────────────────────────────
 // Controle de quais módulos foram modificados desde o último save
