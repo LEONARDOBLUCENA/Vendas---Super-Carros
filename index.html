@@ -825,7 +825,12 @@ async function carregarDoPWI(){
 
     function salvarCacheLocal(){
       try{
-        const anos=[...new Set(Object.keys(V).map(d=>d.slice(0,4)))];
+        const todosAnos=[...new Set(Object.keys(V).map(d=>d.slice(0,4)))];
+        // No mobile (iOS), limita aos 2 anos mais recentes para respeitar limite de 2.5MB
+        const anoAtualStr=new Date().getFullYear().toString();
+        const anoAntStr=String(parseInt(anoAtualStr)-1);
+        const isMobile=window.innerWidth<=768||/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const anos=isMobile?todosAnos.filter(a=>a>=anoAntStr):todosAnos;
         anos.forEach(ano=>{
           const vComp={};
           Object.keys(V).filter(d=>d.startsWith(ano)).forEach(d=>{
@@ -836,13 +841,13 @@ async function carregarDoPWI(){
             });
             vComp[d]=bySe;
           });
-          try{localStorage.setItem('bi_vc_'+ano,JSON.stringify(vComp));}catch(e){}
+          try{localStorage.setItem('bi_vc_'+ano,JSON.stringify(vComp));}catch(e){
+            console.warn('Cache '+ano+' falhou:',e.message);
+          }
         });
         try{localStorage.setItem('bi_vi_cache',JSON.stringify(VI));}catch(e){}
-        // CRÍTICO: bi_cache_at e bi_cache_anos em try/catch próprios
-        // para não serem bloqueados por QuotaExceededError dos itens grandes
         try{localStorage.setItem('bi_cache_at',new Date().toISOString());}catch(e){}
-        try{localStorage.setItem('bi_cache_anos',JSON.stringify(anos));}catch(e){}
+        try{localStorage.setItem('bi_cache_anos',JSON.stringify(isMobile?anos:todosAnos));}catch(e){}
       }catch(e){console.warn('Cache:',e.message);}
     }
 
@@ -1095,8 +1100,6 @@ function save(modulo){
   if(typeof triggerAutoSave!=='undefined')triggerAutoSave();
 }
 function load(){
-  // Mobile sempre salva dash como aba ativa
-  if(window.innerWidth<=768){try{localStorage.setItem('bi_aba','dash');}catch(e){}}
   try{
     const p=localStorage.getItem('bip'),v=localStorage.getItem('biv'),vi=localStorage.getItem('bivi'),
           m=localStorage.getItem('bimetas'),a=localStorage.getItem('biant'),fu=localStorage.getItem('bifuncs'),
@@ -3551,10 +3554,7 @@ function _setarHojeMobile(){
     const anos=JSON.parse(localStorage.getItem('bi_cache_anos')||'[]');
     const cacheAt=localStorage.getItem('bi_cache_at');
     console.log('[BI-DEBUG] IIFE iniciou. anos=',anos,'cacheAt=',cacheAt,'V.length=',Object.keys(V).length);
-    if(!anos.length||!cacheAt){
-      if(window.innerWidth<=768){goTab('dash');setTimeout(_setarHojeMobile,500);}
-      carregarDoPWI().catch(()=>{});return;
-    }
+    if(!anos.length||!cacheAt){carregarDoPWI().catch(()=>{});return;}
     let totalDias=0;
     anos.forEach(function(ano){
       const raw=localStorage.getItem('bi_vc_'+ano);
@@ -3593,7 +3593,6 @@ function _setarHojeMobile(){
     }
   }catch(e){
     console.error('[BI-DEBUG] ERRO no IIFE:',e);
-    if(window.innerWidth<=768){goTab('dash');setTimeout(_setarHojeMobile,500);}
     carregarDoPWI().catch(()=>{});
   }
 })();
