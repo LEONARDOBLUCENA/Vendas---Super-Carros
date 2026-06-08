@@ -322,17 +322,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="field"><label>Tabela copiada do Excel</label><textarea id="visitTxt" placeholder="Data	Visitantes	Entradas	Vale Retorno&#10;01/01/2025	500	520	20"></textarea></div>
     <div class="act"><button class="btn btn-p btn-sm" onclick="impVisit()"><i class="ti ti-check"></i>Importar</button></div>
   </div>
-  <div class="fbar" style="margin-bottom:10px">
-  <div class="fbar-item"><label>Ano</label><select id="fVisitAno" onchange="filtrarVisit()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option></select></div>
-  <div class="fbar-item"><label>Mês</label><select id="fVisitMes" onchange="filtrarVisit()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option><option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option><option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option><option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option></select></div>
-</div>
-<div class="card">
+  <div class="card">
     <div class="card-title"><i class="ti ti-calendar-stats"></i>Histórico
       <div style="display:flex;gap:6px;margin-left:auto">
         <button class="btn btn-sm" id="btnExportVisit" onclick="exportarVisitExcel()" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
         <button class="btn btn-sm" id="btnLimparVisit" onclick="limparVisit()" style="display:none;color:var(--red)"><i class="ti ti-trash"></i>Limpar dados</button>
       </div>
     </div>
+<div class="fbar" style="margin-bottom:10px">
+  <div class="fbar-item"><label>Ano</label><select id="fVisitAno" onchange="renderVisitFiltrado()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option></select></div>
+  <div class="fbar-item"><label>Mês</label><select id="fVisitMes" onchange="renderVisitFiltrado()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option><option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option><option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option><option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option></select></div>
+</div>
     <div id="histVisit" style="max-height:420px;overflow-y:auto"><div class="empty"><i class="ti ti-users"></i><p>Nenhum registro ainda.</p></div></div>
   </div>
 </div>
@@ -490,9 +490,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
         <div class="mes-picker-dropdown" id="diaPickerDrop">
           <div class="mes-picker-actions">
-            <button onclick="selecionarTodosDias()">Todos</button>
-            <button onclick="limparDias()">Nenhum</button>
-            <button onclick="aplicarDias()" style="background:var(--accent);color:#fff;border-color:var(--accent)">Aplicar</button>
+            <button onclick="selecionarTodosDiasPicker()">Todos</button>
+            <button onclick="limparDiasPicker()">Nenhum</button>
+            <button onclick="aplicarDiasPicker()" style="background:var(--accent);color:#fff;border-color:var(--accent)">Aplicar</button>
           </div>
           <div id="diaPickerItems" style="max-height:200px;overflow-y:auto"></div>
         </div>
@@ -533,17 +533,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div class="act"><button class="btn btn-p btn-sm" onclick="impPontos()"><i class="ti ti-check"></i>Importar</button></div>
   </div>
-  <div class="fbar" style="margin-bottom:10px">
-  <div class="fbar-item"><label>Ano</label><select id="fPontosAno" onchange="filtrarPontos()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option></select></div>
-  <div class="fbar-item"><label>Mês</label><select id="fPontosMes" onchange="filtrarPontos()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option><option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option><option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option><option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option></select></div>
-</div>
-<div class="card">
+  <div class="card">
     <div class="card-title"><i class="ti ti-history"></i>Registros importados
       <div style="display:flex;gap:6px;margin-left:auto">
         <button class="btn btn-sm" id="btnExportPontos" onclick="exportarPontosExcel()" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
         <button class="btn btn-sm" id="btnLimparPontos" onclick="limparPontos()" style="display:none;color:var(--red)"><i class="ti ti-trash"></i>Limpar dados</button>
       </div>
     </div>
+<div class="fbar" style="margin-bottom:10px">
+  <div class="fbar-item"><label>Ano</label><select id="fPontosAno" onchange="renderPontosFiltrado()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option></select></div>
+  <div class="fbar-item"><label>Mês</label><select id="fPontosMes" onchange="renderPontosFiltrado()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option><option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option><option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option><option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option></select></div>
+</div>
     <div id="histPontos" style="max-height:420px;overflow-y:auto"><div class="empty"><i class="ti ti-map-pin"></i><p>Nenhum registro ainda.</p></div></div>
   </div>
 </div>
@@ -574,17 +574,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div class="act"><button class="btn btn-p btn-sm" onclick="impSite()"><i class="ti ti-check"></i>Importar</button></div>
   </div>
-  <div class="fbar" style="margin-bottom:10px">
-  <div class="fbar-item"><label>Ano</label><select id="fSiteAno" onchange="filtrarSite()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option></select></div>
-  <div class="fbar-item"><label>Mês</label><select id="fSiteMes" onchange="filtrarSite()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option><option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option><option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option><option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option></select></div>
-</div>
-<div class="card">
+  <div class="card">
     <div class="card-title"><i class="ti ti-history"></i>Registros importados
       <div style="display:flex;gap:6px;margin-left:auto">
         <button class="btn btn-sm" id="btnExportSite" onclick="exportarSiteExcel()" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
         <button class="btn btn-sm" id="btnLimparSite" onclick="limparSite()" style="display:none;color:var(--red)"><i class="ti ti-trash"></i>Limpar dados</button>
       </div>
     </div>
+<div class="fbar" style="margin-bottom:10px">
+  <div class="fbar-item"><label>Ano</label><select id="fSiteAno" onchange="renderSiteFiltrado()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option></select></div>
+  <div class="fbar-item"><label>Mês</label><select id="fSiteMes" onchange="renderSiteFiltrado()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option><option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option><option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option><option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option></select></div>
+</div>
     <div id="histSite" style="max-height:420px;overflow-y:auto"><div class="empty"><i class="ti ti-world"></i><p>Nenhum registro ainda.</p></div></div>
   </div>
 </div>
@@ -616,17 +616,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div class="act"><button class="btn btn-p btn-sm" onclick="impDiversos()"><i class="ti ti-check"></i>Importar</button></div>
   </div>
-  <div class="fbar" style="margin-bottom:10px">
-  <div class="fbar-item"><label>Ano</label><select id="fDiversosAno" onchange="filtrarDiversos()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option></select></div>
-  <div class="fbar-item"><label>Mês</label><select id="fDiversosMes" onchange="filtrarDiversos()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option><option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option><option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option><option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option></select></div>
-</div>
-<div class="card">
+  <div class="card">
     <div class="card-title"><i class="ti ti-history"></i>Registros
       <div style="display:flex;gap:6px;margin-left:auto">
         <button class="btn btn-sm" id="btnExportDiversos" onclick="exportarDiversosExcel()" style="display:none"><i class="ti ti-table-export"></i>Exportar Excel</button>
         <button class="btn btn-sm" id="btnLimparDiversos" onclick="limparDiversos()" style="display:none;color:var(--red)"><i class="ti ti-trash"></i>Limpar dados</button>
       </div>
     </div>
+<div class="fbar" style="margin-bottom:10px">
+  <div class="fbar-item"><label>Ano</label><select id="fDiversosAno" onchange="renderDiversosFiltrado()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option></select></div>
+  <div class="fbar-item"><label>Mês</label><select id="fDiversosMes" onchange="renderDiversosFiltrado()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"><option value="">Todos</option><option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option><option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option><option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option></select></div>
+</div>
     <div id="histDiversos" style="max-height:420px;overflow-y:auto"><div class="empty"><i class="ti ti-coins"></i><p>Nenhum registro ainda.</p></div></div>
   </div>
 </div>
@@ -898,10 +898,9 @@ async function carregarDoPWI(){
       const _diaAtivo=document.getElementById('fDia')?document.getElementById('fDia').value:'';
       Object.assign(V,_Vtmp);Object.assign(VI,_VItmp);
       renderAll();updFiltros();
-      // Restaura dias selecionados no picker
-      updDia();
-      if(diasSelecionados.length===0&&_diaAtivo){
-        diasSelecionados=[_diaAtivo];updDia();updDiaPickerLabel();
+      if(_diaAtivo&&document.getElementById('fDia')){
+        const _opts=[...(document.getElementById('fDia').options||[])].map(o=>o.value);
+        if(_opts.includes(_diaAtivo)){document.getElementById('fDia').value=_diaAtivo;}
       }
       // Sempre re-renderiza o dashboard para atualizar a tela automaticamente (PC e mobile)
       if(document.getElementById('sc-dash')&&document.getElementById('sc-dash').classList.contains('on')){
@@ -1538,9 +1537,8 @@ function impVisit(){
 }
 function delVI(d){if(!confirm('Remover visitantes do dia '+d+'?'))return;delete VI[d];save('vi');renderHistVI();renderDash();toast('Removido');}
 function renderHistVI(){
-  _updAnosFiltro('Visit',Object.keys(VI));
-  const{ano,mes}=_getAnoMesFiltro('Visit');
-  const dias=Object.keys(VI).sort().reverse().filter(d=>{if(ano&&!d.startsWith(ano))return false;if(mes&&d.slice(5,7)!==mes)return false;return true;});const el=document.getElementById('histVisit');
+  _updAnoSelect('fVisitAno',Object.keys({'Visit':'VI','Pontos':'PONTOS','Site':'SITE','Diversos':'DIVERSOS'}['Visit']||{}));
+  const dias=Object.keys(VI).sort().reverse();const el=document.getElementById('histVisit');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-users"></i><p>Nenhum registro ainda.</p></div>';return;}
   let html=`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Entradas</th><th>Vale Retorno</th><th>Visitantes válidos</th><th>Fat. líquido</th><th>Ticket médio</th><th style="width:40px"></th></tr></thead><tbody>`;
   dias.forEach(d=>{
@@ -1811,21 +1809,20 @@ function limparAnt(){
 // ── DASHBOARD ─────────────────────────────────────────────────────────
 // ── MULTI-PICKER DE MESES ──────────────────────────────────────────
 let mesesSelecionados=[];
-let diasSelecionados=[]; // array de datas ex: ['2026-06-04','2026-06-05'] // array de "MM" ex: ["01","02","03"]
+let diasSelecionados=[]; // array de "MM" ex: ["01","02","03"]
 
 
 // ── MULTI-PICKER DE DIAS ──────────────────────────────────────────
 function toggleDiaPicker(){
-  const d=document.getElementById('diaPickerDrop');
-  d.classList.toggle('open');
+  document.getElementById('diaPickerDrop').classList.toggle('open');
 }
-function selecionarTodosDias(){
+function selecionarTodosDiasPicker(){
   document.querySelectorAll('#diaPickerItems input[type=checkbox]').forEach(cb=>{cb.checked=true;});
 }
-function limparDias(){
+function limparDiasPicker(){
   document.querySelectorAll('#diaPickerItems input[type=checkbox]').forEach(cb=>{cb.checked=false;});
 }
-function aplicarDias(){
+function aplicarDiasPicker(){
   diasSelecionados=[...document.querySelectorAll('#diaPickerItems input[type=checkbox]:checked')].map(cb=>cb.value);
   document.getElementById('diaPickerDrop').classList.remove('open');
   updDiaPickerLabel();
@@ -1836,6 +1833,22 @@ function updDiaPickerLabel(){
   if(!diasSelecionados.length)lbl.textContent='Todos os dias';
   else if(diasSelecionados.length===1)lbl.textContent=diasSelecionados[0].slice(8)+'/'+diasSelecionados[0].slice(5,7);
   else lbl.textContent=diasSelecionados.length+' dias';
+}
+function updDiaPickerItens(diasF){
+  const container=document.getElementById('diaPickerItems');if(!container)return;
+  container.innerHTML='';
+  [...diasF].reverse().forEach(d=>{
+    const item=document.createElement('label');
+    item.className='mes-picker-item';
+    const cb=document.createElement('input');
+    cb.type='checkbox';cb.value=d;
+    cb.checked=diasSelecionados.includes(d);
+    item.appendChild(cb);
+    item.appendChild(document.createTextNode(d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4)));
+    container.appendChild(item);
+  });
+  diasSelecionados=diasSelecionados.filter(d=>diasF.includes(d));
+  updDiaPickerLabel();
 }
 
 function updFiltros(){
@@ -1927,27 +1940,12 @@ function updDia(){
   } else {
     diasF=_todosOsDias.filter(d=>d.startsWith(ano)).sort();
   }
-  // Popula o picker de dias
-  const container=document.getElementById('diaPickerItems');if(!container)return;
-  container.innerHTML='';
-  diasF.forEach(d=>{
-    const item=document.createElement('label');
-    item.className='mes-picker-item';
-    const cb=document.createElement('input');
-    cb.type='checkbox';cb.value=d;
-    cb.checked=diasSelecionados.includes(d);
-    item.appendChild(cb);
-    item.appendChild(document.createTextNode(d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4)));
-    container.appendChild(item);
-  });
-  if(!_carregandoPWI)diasSelecionados=diasSelecionados.filter(d=>diasF.includes(d));
-  // Auto-seleciona hoje se nenhum dia selecionado
+  updDiaPickerItens(diasF);
   const _hojeStr=new Date().toISOString().slice(0,10);
   if(diasSelecionados.length===0&&diasF.includes(_hojeStr)){
-    diasSelecionados=[_hojeStr];
-    container.querySelectorAll('input').forEach(cb=>{if(cb.value===_hojeStr)cb.checked=true;});
+    diasSelecionados=[_hojeStr];updDiaPickerLabel();
+    document.querySelectorAll('#diaPickerItems input[type=checkbox]').forEach(cb=>{if(cb.value===_hojeStr)cb.checked=true;});
   }
-  updDiaPickerLabel();
 }
 function updSetoresFiltro(){
   const SETORES_DASH=['Bilheteria','Fotos','Passeios','Videos','Simuladores'];
@@ -1963,9 +1961,8 @@ function onFAno(){mesesSelecionados=[];diasSelecionados=[];updMesDia();updMesPic
 // onFMes removido — substituído por multi-picker
 function getDias(){
   const ano=document.getElementById('fAno').value;
-  // Inclui dias de VI (visitantes) mesmo sem vendas
   const todosOsDias=[...new Set([...Object.keys(V),...Object.keys(VI)])];
-  if(diasSelecionados.length>0)return diasSelecionados.filter(d=>d.startsWith(ano)).sort();
+  if(diasSelecionados.length>0)return diasSelecionados.slice().sort();
   if(mesesSelecionados.length>0){
     return todosOsDias.filter(d=>d.startsWith(ano)&&mesesSelecionados.includes(d.slice(5,7))).sort();
   }
@@ -2498,9 +2495,8 @@ function getPontoTotal(diaObj){
   return 0;
 }
 function renderHistPontos(){
-  _updAnosFiltro('Pontos',Object.keys(PONTOS));
-  const{ano,mes}=_getAnoMesFiltro('Pontos');
-  const dias=Object.keys(PONTOS).sort().reverse().filter(d=>{if(ano&&!d.startsWith(ano))return false;if(mes&&d.slice(5,7)!==mes)return false;return true;});
+  _updAnoSelect('fPontosAno',Object.keys({'Visit':'VI','Pontos':'PONTOS','Site':'SITE','Diversos':'DIVERSOS'}['Pontos']||{}));
+  const dias=Object.keys(PONTOS).sort().reverse();
   const el=document.getElementById('histPontos');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-map-pin"></i><p>Nenhum registro ainda.</p></div>';return;}
   let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th>';
@@ -2558,9 +2554,8 @@ function impSite(){
   else toast('Nenhum registro importado. Verifique o formato.','err');
 }
 function renderHistSite(){
-  _updAnosFiltro('Site',Object.keys(SITE));
-  const{ano,mes}=_getAnoMesFiltro('Site');
-  const dias=Object.keys(SITE).sort().reverse().filter(d=>{if(ano&&!d.startsWith(ano))return false;if(mes&&d.slice(5,7)!==mes)return false;return true;});
+  _updAnoSelect('fSiteAno',Object.keys({'Visit':'VI','Pontos':'PONTOS','Site':'SITE','Diversos':'DIVERSOS'}['Site']||{}));
+  const dias=Object.keys(SITE).sort().reverse();
   const el=document.getElementById('histSite');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-world"></i><p>Nenhum registro ainda.</p></div>';return;}
   let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Valor líquido</th><th style="width:40px"></th></tr></thead><tbody>';
@@ -2628,9 +2623,8 @@ function impDiversos(){
 }
 
 function renderHistDiversos(){
-  _updAnosFiltro('Diversos',Object.keys(DIVERSOS));
-  const{ano,mes}=_getAnoMesFiltro('Diversos');
-  const dias=Object.keys(DIVERSOS).sort().reverse().filter(d=>{if(ano&&!d.startsWith(ano))return false;if(mes&&d.slice(5,7)!==mes)return false;return true;});
+  _updAnoSelect('fDiversosAno',Object.keys({'Visit':'VI','Pontos':'PONTOS','Site':'SITE','Diversos':'DIVERSOS'}['Diversos']||{}));
+  const dias=Object.keys(DIVERSOS).sort().reverse();
   const el=document.getElementById('histDiversos');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-coins"></i><p>Nenhum registro ainda.</p></div>';return;}
   // atualiza datalist de setores
@@ -3596,29 +3590,26 @@ function renderHistPrecos(){
   el.innerHTML=html;
 }
 
-// ── INIT ─────────────────────────────────────────────────────────────
 
 // ── FILTROS ANO/MÊS NAS ABAS ─────────────────────────────────────────
-function _getAnoMesFiltro(prefix){
-  const ano=document.getElementById('f'+prefix+'Ano')?document.getElementById('f'+prefix+'Ano').value:'';
-  const mes=document.getElementById('f'+prefix+'Mes')?document.getElementById('f'+prefix+'Mes').value:'';
-  return{ano,mes};
-}
-function _updAnosFiltro(prefix, dias){
-  const sel=document.getElementById('f'+prefix+'Ano');if(!sel)return;
+function _updAnoSelect(selId, dias){
+  const sel=document.getElementById(selId); if(!sel)return;
   const cur=sel.value;
   const anos=[...new Set(dias.map(d=>d.slice(0,4)))].sort().reverse();
-  sel.innerHTML='<option value="">Todos</option>'+anos.map(a=>'<option value="'+a+'">'+a+'</option>').join('');
-  if(anos.includes(cur))sel.value=cur;
+  sel.innerHTML='<option value="">Todos</option>'+anos.map(a=>'<option'+(a===cur?' selected':'')+' value="'+a+'">'+a+'</option>').join('');
 }
-
-function filtrarVisit(){
-  const{ano,mes}=_getAnoMesFiltro('Visit');
-  const dias=Object.keys(VI).sort().reverse().filter(d=>{
+function _filtrarHist(dados, anoSelId, mesSelId){
+  const ano=document.getElementById(anoSelId)?document.getElementById(anoSelId).value:'';
+  const mes=document.getElementById(mesSelId)?document.getElementById(mesSelId).value:'';
+  return Object.keys(dados).sort().reverse().filter(d=>{
     if(ano&&!d.startsWith(ano))return false;
     if(mes&&d.slice(5,7)!==mes)return false;
     return true;
   });
+}
+function renderVisitFiltrado(){
+  _updAnoSelect('fVisitAno',Object.keys(VI));
+  const dias=_filtrarHist(VI,'fVisitAno','fVisitMes');
   const el=document.getElementById('histVisit');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-users"></i><p>Nenhum registro encontrado.</p></div>';return;}
   let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Entradas</th><th>Vale Retorno</th><th>Visitantes válidos</th><th>Fat. líquido</th><th>Ticket médio</th><th style="width:40px"></th></tr></thead><tbody>';
@@ -3631,52 +3622,31 @@ function filtrarVisit(){
   });
   html+='</tbody></table></div>';el.innerHTML=html;
 }
-
-function filtrarPontos(){
-  const{ano,mes}=_getAnoMesFiltro('Pontos');
-  const dias=Object.keys(PONTOS).sort().reverse().filter(d=>{
-    if(ano&&!d.startsWith(ano))return false;
-    if(mes&&d.slice(5,7)!==mes)return false;
-    return true;
-  });
+function renderPontosFiltrado(){
+  _updAnoSelect('fPontosAno',Object.keys(PONTOS));
+  const dias=_filtrarHist(PONTOS,'fPontosAno','fPontosMes');
   const el=document.getElementById('histPontos');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-map-pin"></i><p>Nenhum registro encontrado.</p></div>';return;}
-  let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th>';
-  ['Largo','Loja'].forEach(r=>html+='<th>'+r+'</th>');
-  html+='<th>Total</th><th style="width:40px"></th></tr></thead><tbody>';
+  let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Largo</th><th>Loja</th><th>Total</th><th style="width:40px"></th></tr></thead><tbody>';
   dias.forEach(d=>{
     const dadoDia=typeof PONTOS[d]==='object'?PONTOS[d]:{legado:PONTOS[d]};
     const total=getPontoTotal(PONTOS[d]);
-    html+='<tr><td><strong>'+d+'</strong></td>';
-    ['Largo','Loja'].forEach(r=>html+='<td>'+(dadoDia[r]?fRF(dadoDia[r]):'—')+'</td>');
-    html+='<td style="font-weight:600">'+fRF(total)+'</td><td><button class="del-btn" data-dia="'+d+'" onclick="delPonto(this.dataset.dia)">×</button></td></tr>';
+    html+='<tr><td><strong>'+d+'</strong></td><td>'+(dadoDia['Largo']?fRF(dadoDia['Largo']):'—')+'</td><td>'+(dadoDia['Loja']?fRF(dadoDia['Loja']):'—')+'</td><td style="font-weight:600">'+fRF(total)+'</td><td><button class="del-btn" data-dia="'+d+'" onclick="delPonto(this.dataset.dia)">×</button></td></tr>';
   });
   html+='</tbody></table></div>';el.innerHTML=html;
 }
-
-function filtrarSite(){
-  const{ano,mes}=_getAnoMesFiltro('Site');
-  const dias=Object.keys(SITE).sort().reverse().filter(d=>{
-    if(ano&&!d.startsWith(ano))return false;
-    if(mes&&d.slice(5,7)!==mes)return false;
-    return true;
-  });
+function renderSiteFiltrado(){
+  _updAnoSelect('fSiteAno',Object.keys(SITE));
+  const dias=_filtrarHist(SITE,'fSiteAno','fSiteMes');
   const el=document.getElementById('histSite');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-world"></i><p>Nenhum registro encontrado.</p></div>';return;}
   let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Valor líquido</th><th style="width:40px"></th></tr></thead><tbody>';
-  dias.forEach(d=>{
-    html+='<tr><td><strong>'+d+'</strong></td><td style="font-weight:500">'+fRF(SITE[d])+'</td><td><button class="del-btn" data-dia="'+d+'" onclick="delSite(this.dataset.dia)">×</button></td></tr>';
-  });
+  dias.forEach(d=>{html+='<tr><td><strong>'+d+'</strong></td><td style="font-weight:500">'+fRF(SITE[d])+'</td><td><button class="del-btn" data-dia="'+d+'" onclick="delSite(this.dataset.dia)">×</button></td></tr>';});
   html+='</tbody></table></div>';el.innerHTML=html;
 }
-
-function filtrarDiversos(){
-  const{ano,mes}=_getAnoMesFiltro('Diversos');
-  const dias=Object.keys(DIVERSOS).sort().reverse().filter(d=>{
-    if(ano&&!d.startsWith(ano))return false;
-    if(mes&&d.slice(5,7)!==mes)return false;
-    return true;
-  });
+function renderDiversosFiltrado(){
+  _updAnoSelect('fDiversosAno',Object.keys(DIVERSOS));
+  const dias=_filtrarHist(DIVERSOS,'fDiversosAno','fDiversosMes');
   const el=document.getElementById('histDiversos');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-coins"></i><p>Nenhum registro encontrado.</p></div>';return;}
   let html='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Setor</th><th>Valor líquido</th><th style="width:40px"></th></tr></thead><tbody>';
@@ -3684,14 +3654,12 @@ function filtrarDiversos(){
     const setores=Object.keys(DIVERSOS[d]).sort();
     const totDia=Object.values(DIVERSOS[d]).reduce((a,v)=>a+v,0);
     html+='<tr style="background:var(--surface2)"><td><strong>'+d+'</strong></td><td style="font-size:11px;color:var(--text2)">Total</td><td style="font-weight:600">'+fRF(totDia)+'</td><td><button class="del-btn" data-dia="'+d+'" onclick="delDiversoDia(this.dataset.dia)">×</button></td></tr>';
-    setores.forEach(s=>{
-      const cv=cor(s);
-      html+='<tr><td style="color:var(--text3);font-size:12px;padding-left:20px">'+d+'</td><td><span class="badge" style="background:'+cv+'18;color:'+cv+';border:1px solid '+cv+'28">'+s+'</span></td><td>'+fRF(DIVERSOS[d][s])+'</td><td><button class="del-btn" data-dia="'+d+'" data-setor="'+s+'" onclick="delDiversoItem(this.dataset.dia,this.dataset.setor)">×</button></td></tr>';
-    });
+    setores.forEach(s=>{const cv=cor(s);html+='<tr><td style="color:var(--text3);font-size:12px;padding-left:20px">'+d+'</td><td><span class="badge" style="background:'+cv+'18;color:'+cv+';border:1px solid '+cv+'28">'+s+'</span></td><td>'+fRF(DIVERSOS[d][s])+'</td><td><button class="del-btn" data-dia="'+d+'" data-setor="'+s+'" onclick="delDiversoItem(this.dataset.dia,this.dataset.setor)">×</button></td></tr>';});
   });
   html+='</tbody></table></div>';el.innerHTML=html;
 }
 
+// ── INIT ─────────────────────────────────────────────────────────────
 function renderAll(){
   renderProds();renderAjustado();
   renderHistV();renderHistVI();
