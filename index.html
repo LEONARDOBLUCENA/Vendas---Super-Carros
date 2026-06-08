@@ -3716,7 +3716,19 @@ function _setarHojeMobile(){
         // Filtra dia atual automaticamente no mobile
         setTimeout(_setarHojeMobile,500);
       }
-      else{const _abaAtiva=localStorage.getItem('bi_aba');if(_abaAtiva)goTab(_abaAtiva);}
+      else{
+        const _abaAtiva=localStorage.getItem('bi_aba');if(_abaAtiva)goTab(_abaAtiva);
+        // Desktop: tenta selecionar o dia atual se houver dados (V ou VI)
+        const _hojeDesktop=new Date().toISOString().slice(0,10);
+        const _temHoje=V[_hojeDesktop]||VI[_hojeDesktop];
+        if(_temHoje){
+          const _fDia=document.getElementById('fDia');
+          if(_fDia){
+            const _opts=[...(_fDia.options||[])].map(o=>o.value);
+            if(_opts.includes(_hojeDesktop)){_fDia.value=_hojeDesktop;renderDash();}
+          }
+        }
+      }
       // Sempre busca em background ao abrir — sem zerar tela
       carregarDoPWI().catch(()=>setSyncStatus('✓ '+new Date(cacheAt).toLocaleTimeString('pt-BR')+' (cache)','var(--text3)'));
     } else {
