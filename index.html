@@ -483,6 +483,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div class="fbar-item">
       <label>Dia</label>
+      <select id="fDia" style="display:none"></select>
       <div class="mes-picker" id="diaPicker">
         <div class="mes-picker-btn" onclick="toggleDiaPicker()" id="diaPickerBtn">
           <span id="diaPickerLbl">Todos os dias</span>
@@ -1537,7 +1538,7 @@ function impVisit(){
 }
 function delVI(d){if(!confirm('Remover visitantes do dia '+d+'?'))return;delete VI[d];save('vi');renderHistVI();renderDash();toast('Removido');}
 function renderHistVI(){
-  _updAnoSelect('fVisitAno',Object.keys({'Visit':'VI','Pontos':'PONTOS','Site':'SITE','Diversos':'DIVERSOS'}['Visit']||{}));
+  _updAnoSelect('fVisitAno',Object.keys(VI));
   const dias=Object.keys(VI).sort().reverse();const el=document.getElementById('histVisit');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-users"></i><p>Nenhum registro ainda.</p></div>';return;}
   let html=`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Entradas</th><th>Vale Retorno</th><th>Visitantes válidos</th><th>Fat. líquido</th><th>Ticket médio</th><th style="width:40px"></th></tr></thead><tbody>`;
@@ -1808,48 +1809,7 @@ function limparAnt(){
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────
 // ── MULTI-PICKER DE MESES ──────────────────────────────────────────
-let mesesSelecionados=[];
-let diasSelecionados=[]; // array de "MM" ex: ["01","02","03"]
-
-
-// ── MULTI-PICKER DE DIAS ──────────────────────────────────────────
-function toggleDiaPicker(){
-  document.getElementById('diaPickerDrop').classList.toggle('open');
-}
-function selecionarTodosDiasPicker(){
-  document.querySelectorAll('#diaPickerItems input[type=checkbox]').forEach(cb=>{cb.checked=true;});
-}
-function limparDiasPicker(){
-  document.querySelectorAll('#diaPickerItems input[type=checkbox]').forEach(cb=>{cb.checked=false;});
-}
-function aplicarDiasPicker(){
-  diasSelecionados=[...document.querySelectorAll('#diaPickerItems input[type=checkbox]:checked')].map(cb=>cb.value);
-  document.getElementById('diaPickerDrop').classList.remove('open');
-  updDiaPickerLabel();
-  renderDash();
-}
-function updDiaPickerLabel(){
-  const lbl=document.getElementById('diaPickerLbl');if(!lbl)return;
-  if(!diasSelecionados.length)lbl.textContent='Todos os dias';
-  else if(diasSelecionados.length===1)lbl.textContent=diasSelecionados[0].slice(8)+'/'+diasSelecionados[0].slice(5,7);
-  else lbl.textContent=diasSelecionados.length+' dias';
-}
-function updDiaPickerItens(diasF){
-  const container=document.getElementById('diaPickerItems');if(!container)return;
-  container.innerHTML='';
-  [...diasF].reverse().forEach(d=>{
-    const item=document.createElement('label');
-    item.className='mes-picker-item';
-    const cb=document.createElement('input');
-    cb.type='checkbox';cb.value=d;
-    cb.checked=diasSelecionados.includes(d);
-    item.appendChild(cb);
-    item.appendChild(document.createTextNode(d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4)));
-    container.appendChild(item);
-  });
-  diasSelecionados=diasSelecionados.filter(d=>diasF.includes(d));
-  updDiaPickerLabel();
-}
+let mesesSelecionados=[]; // array de "MM" ex: ["01","02","03"]
 
 function updFiltros(){
   const dias=Object.keys(V).sort();if(!dias.length)return;
@@ -1940,10 +1900,14 @@ function updDia(){
   } else {
     diasF=_todosOsDias.filter(d=>d.startsWith(ano)).sort();
   }
-  updDiaPickerItens(diasF);
+  const sD=document.getElementById('fDia');
+  if(sD){sD.innerHTML='<option value="">Todos</option>';diasF.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;sD.appendChild(o);});}
+  populaDiaPicker(diasF);
   const _hojeStr=new Date().toISOString().slice(0,10);
   if(diasSelecionados.length===0&&diasF.includes(_hojeStr)){
-    diasSelecionados=[_hojeStr];updDiaPickerLabel();
+    diasSelecionados=[_hojeStr];
+    if(sD)sD.value=_hojeStr;
+    updDiaPickerLabel();
     document.querySelectorAll('#diaPickerItems input[type=checkbox]').forEach(cb=>{if(cb.value===_hojeStr)cb.checked=true;});
   }
 }
@@ -1961,8 +1925,11 @@ function onFAno(){mesesSelecionados=[];diasSelecionados=[];updMesDia();updMesPic
 // onFMes removido — substituído por multi-picker
 function getDias(){
   const ano=document.getElementById('fAno').value;
+  const dia=document.getElementById('fDia').value;
+  // Multi-seleção: usa diasSelecionados se tiver mais de 1 dia
+  if(diasSelecionados.length>1)return diasSelecionados.slice().sort();
+  if(dia)return[dia];
   const todosOsDias=[...new Set([...Object.keys(V),...Object.keys(VI)])];
-  if(diasSelecionados.length>0)return diasSelecionados.slice().sort();
   if(mesesSelecionados.length>0){
     return todosOsDias.filter(d=>d.startsWith(ano)&&mesesSelecionados.includes(d.slice(5,7))).sort();
   }
@@ -2495,7 +2462,7 @@ function getPontoTotal(diaObj){
   return 0;
 }
 function renderHistPontos(){
-  _updAnoSelect('fPontosAno',Object.keys({'Visit':'VI','Pontos':'PONTOS','Site':'SITE','Diversos':'DIVERSOS'}['Pontos']||{}));
+  _updAnoSelect('fPontosAno',Object.keys(PONTOS));
   const dias=Object.keys(PONTOS).sort().reverse();
   const el=document.getElementById('histPontos');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-map-pin"></i><p>Nenhum registro ainda.</p></div>';return;}
@@ -2554,7 +2521,7 @@ function impSite(){
   else toast('Nenhum registro importado. Verifique o formato.','err');
 }
 function renderHistSite(){
-  _updAnoSelect('fSiteAno',Object.keys({'Visit':'VI','Pontos':'PONTOS','Site':'SITE','Diversos':'DIVERSOS'}['Site']||{}));
+  _updAnoSelect('fSiteAno',Object.keys(SITE));
   const dias=Object.keys(SITE).sort().reverse();
   const el=document.getElementById('histSite');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-world"></i><p>Nenhum registro ainda.</p></div>';return;}
@@ -2623,7 +2590,7 @@ function impDiversos(){
 }
 
 function renderHistDiversos(){
-  _updAnoSelect('fDiversosAno',Object.keys({'Visit':'VI','Pontos':'PONTOS','Site':'SITE','Diversos':'DIVERSOS'}['Diversos']||{}));
+  _updAnoSelect('fDiversosAno',Object.keys(DIVERSOS));
   const dias=Object.keys(DIVERSOS).sort().reverse();
   const el=document.getElementById('histDiversos');
   if(!dias.length){el.innerHTML='<div class="empty"><i class="ti ti-coins"></i><p>Nenhum registro ainda.</p></div>';return;}
@@ -3592,13 +3559,13 @@ function renderHistPrecos(){
 
 
 // ── FILTROS ANO/MÊS NAS ABAS ─────────────────────────────────────────
-function _updAnoSelect(selId, dias){
-  const sel=document.getElementById(selId); if(!sel)return;
+function _updAnoSelect(selId,dias){
+  const sel=document.getElementById(selId);if(!sel)return;
   const cur=sel.value;
   const anos=[...new Set(dias.map(d=>d.slice(0,4)))].sort().reverse();
   sel.innerHTML='<option value="">Todos</option>'+anos.map(a=>'<option'+(a===cur?' selected':'')+' value="'+a+'">'+a+'</option>').join('');
 }
-function _filtrarHist(dados, anoSelId, mesSelId){
+function _filtrarHist(dados,anoSelId,mesSelId){
   const ano=document.getElementById(anoSelId)?document.getElementById(anoSelId).value:'';
   const mes=document.getElementById(mesSelId)?document.getElementById(mesSelId).value:'';
   return Object.keys(dados).sort().reverse().filter(d=>{
@@ -3657,6 +3624,49 @@ function renderDiversosFiltrado(){
     setores.forEach(s=>{const cv=cor(s);html+='<tr><td style="color:var(--text3);font-size:12px;padding-left:20px">'+d+'</td><td><span class="badge" style="background:'+cv+'18;color:'+cv+';border:1px solid '+cv+'28">'+s+'</span></td><td>'+fRF(DIVERSOS[d][s])+'</td><td><button class="del-btn" data-dia="'+d+'" data-setor="'+s+'" onclick="delDiversoItem(this.dataset.dia,this.dataset.setor)">×</button></td></tr>';});
   });
   html+='</tbody></table></div>';el.innerHTML=html;
+}
+
+// ── MULTI-SELEÇÃO DE DIAS NO DASHBOARD ───────────────────────────────
+// Mantém fDia select original intacto para compatibilidade com renderDash
+// O picker apenas controla quais dias estão selecionados via diasSelecionados[]
+// getDias() usa diasSelecionados quando há múltiplos dias selecionados
+let diasSelecionados=[];
+
+function toggleDiaPicker(){
+  document.getElementById('diaPickerDrop').classList.toggle('open');
+}
+function selecionarTodosDiasPicker(){
+  document.querySelectorAll('#diaPickerItems input[type=checkbox]').forEach(cb=>{cb.checked=true;});
+}
+function limparDiasPicker(){
+  document.querySelectorAll('#diaPickerItems input[type=checkbox]').forEach(cb=>{cb.checked=false;});
+}
+function aplicarDiasPicker(){
+  diasSelecionados=[...document.querySelectorAll('#diaPickerItems input[type=checkbox]:checked')].map(cb=>cb.value);
+  document.getElementById('diaPickerDrop').classList.remove('open');
+  updDiaPickerLabel();
+  // Se 1 dia: seta fDia para compatibilidade com renderDash
+  const fDia=document.getElementById('fDia');
+  if(fDia){fDia.value=diasSelecionados.length===1?diasSelecionados[0]:'';}
+  renderDash();
+}
+function updDiaPickerLabel(){
+  const lbl=document.getElementById('diaPickerLbl');if(!lbl)return;
+  if(!diasSelecionados.length)lbl.textContent='Todos os dias';
+  else if(diasSelecionados.length===1)lbl.textContent=diasSelecionados[0].slice(8)+'/'+diasSelecionados[0].slice(5,7);
+  else lbl.textContent=diasSelecionados.length+' dias';
+}
+function populaDiaPicker(diasF){
+  const container=document.getElementById('diaPickerItems');if(!container)return;
+  container.innerHTML='';
+  [...diasF].reverse().forEach(d=>{
+    const item=document.createElement('label');item.className='mes-picker-item';
+    const cb=document.createElement('input');cb.type='checkbox';cb.value=d;
+    cb.checked=diasSelecionados.includes(d);
+    item.appendChild(cb);
+    item.appendChild(document.createTextNode(d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4)));
+    container.appendChild(item);
+  });
 }
 
 // ── INIT ─────────────────────────────────────────────────────────────
