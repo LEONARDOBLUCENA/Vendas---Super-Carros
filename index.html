@@ -970,6 +970,8 @@ async function carregarDoPWI(){
     // Monta todos os trimestres desde 2025 até o trimestre anterior ao atual
     // Pula trimestres que já têm 10+ dias no cache local
     function periodoJaCacheado(ini,fim){
+      // Trimestre ainda em curso — nunca pular, sempre buscar completo
+      if(fim>=hoje)return false;
       const ano=ini.slice(0,4);
       const raw=localStorage.getItem('bi_vc_v2_'+ano);
       if(!raw)return false;
