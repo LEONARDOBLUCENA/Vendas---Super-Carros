@@ -996,7 +996,9 @@ async function carregarDoPWI(){
     for(let ano=ANO_INICIO_HISTORICO;ano<=anoAtual;ano++){
       for(let q=0;q<4;q++){
         // Pula o trimestre atual e os futuros — estão cobertos pelas etapas 1-3
-        if(ano===anoAtual&&q>=trimAtual)break;
+        // Pula trimestres FUTUROS (q > trimAtual), mas inclui o atual (q === trimAtual)
+        // para cobrir meses passados do trimestre em curso (ex: Abr e Mai quando estamos em Jun)
+        if(ano===anoAtual&&q>trimAtual)break;
         periodos.push([ano+TRIMESTRES[q][0], ano+TRIMESTRES[q][1]]);
       }
     }
