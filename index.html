@@ -106,7 +106,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .vend-section-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .vend-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border2)}
 .vend-row:last-child{border-bottom:none}
-.vend-row.top1{background:linear-gradient(90deg,#f59e0b12,transparent);border-radius:6px;padding:7px 6px;margin:0 -2px 4px;border-bottom:none;box-shadow:0 1px 4px #f59e0b18}
+.vend-row.top1{background:linear-gradient(90deg,#f59e0b22,#f59e0b08);border-radius:8px;padding:9px 8px;margin:0 -4px 6px;border-bottom:none;box-shadow:0 2px 8px #f59e0b28;border:1px solid #f59e0b30}
+.vend-row.top1 .vend-nome{font-weight:700;font-size:14px}
+.vend-row.top1 .vend-fat{font-size:14px;color:#f59e0b}
+.vend-distancia{font-size:10px;color:var(--text3);margin-top:1px}
+.vend-total-row{display:flex;align-items:center;gap:6px;padding:7px 8px;margin:6px -4px 0;background:var(--surface2);border-radius:6px;border-top:2px solid var(--border2)}
+.vend-total-lbl{flex:1;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+.vend-total-vals{text-align:right}
+.vend-total-fat{font-size:13px;font-weight:700;color:var(--text)}
+.vend-total-tick{font-size:11px;color:var(--text2)}
 .vend-pos{width:20px;font-size:12px;font-weight:700;color:var(--text2);flex-shrink:0;text-align:center}
 .vend-pos.p1{color:#f59e0b}
 .vend-pos.p2{color:#94a3b8}
@@ -658,6 +666,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="topbar">
     <div><div class="page-title">Dashboard Vendedores</div>
     <div class="page-sub" id="dashvendSub">Ranking por setor</div></div>
+    <button class="btn btn-p" id="btnPptVend" style="display:none" onclick="toggleApresentacaoVend()"><i class="ti ti-presentation"></i>Modo Apresentação</button>
   </div>
   <div class="fbar">
     <div class="fbar-item"><label>Ano</label><select id="fVendAno" onchange="onFVendAno()"></select></div>
@@ -2464,6 +2473,21 @@ function toggleApresentacao(){
     btn.innerHTML='<i class="ti ti-layout-sidebar"></i>Mostrar menu';
   }
 }
+function toggleApresentacaoVend(){
+  const sidebar=document.querySelector('.sidebar');
+  const main=document.querySelector('.main');
+  const btn=document.getElementById('btnPptVend');
+  const ativo=sidebar.style.display==='none';
+  if(ativo){
+    sidebar.style.display='';
+    main.style.marginLeft='220px';
+    btn.innerHTML='<i class="ti ti-presentation"></i>Modo Apresentação';
+  } else {
+    sidebar.style.display='none';
+    main.style.marginLeft='0';
+    btn.innerHTML='<i class="ti ti-layout-sidebar"></i>Mostrar menu';
+  }
+}
 function gerarApres(){
   const setorF=document.getElementById('fSetor').value;const diasKey=getDias();
   const itens=getItens(diasKey,setorF);const tLiq=itens.reduce((a,i)=>a+i.vLiq,0);
@@ -3240,21 +3264,42 @@ function renderDashVend(){
     const topVal=document.getElementById('fVendTop')?document.getElementById('fVendTop').value:'';
     const lista=topVal?itens.slice(0,parseInt(topVal)):itens;
     if(!lista.length)return '<div class="vend-empty">Sem vendas no período</div>';
-    return lista.map((v,i)=>{
+    const fatTotal=lista.reduce((a,v)=>a+v.vLiq,0);
+    const ticketTotal=visitantes?fRF(fatTotal/visitantes):'—';
+    const rows=lista.map((v,i)=>{
       const posClass=i===0?'p1':i===1?'p2':i===2?'p3':'';
       const rowClass=i===0?'vend-row top1':'vend-row';
       const medalha=i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1)+'º';
       const ticket=visitantes?fRF(v.vLiq/visitantes):'—';
+      // distância do 2º para o 1º
+      let distHtml='';
+      if(i===1&&lista[0]){
+        const diff=lista[0].vLiq-v.vLiq;
+        const pct=lista[0].vLiq>0?(diff/lista[0].vLiq*100).toFixed(0):0;
+        distHtml=`<div class="vend-distancia">▲ ${fRF(diff)} (${pct}%) do 1º</div>`;
+      }
       return `<div class="${rowClass}">
         <div class="vend-pos ${posClass}">${medalha}</div>
-        <div class="vend-nome" title="${v.nome}">${v.nome}</div>
+        <div class="vend-nome" title="${v.nome}">${v.nome}${distHtml}</div>
         <div class="vend-vals">
           <div class="vend-fat">${fRF(v.vLiq)}</div>
           <div class="vend-qtd">Ticket: ${ticket}</div>
         </div>
       </div>`;
     }).join('');
+    const totalRow=`<div class="vend-total-row">
+      <div class="vend-total-lbl">Total</div>
+      <div class="vend-total-vals">
+        <div class="vend-total-fat">${fRF(fatTotal)}</div>
+        <div class="vend-total-tick">Ticket: ${ticketTotal}</div>
+      </div>
+    </div>`;
+    return rows+totalRow;
   }
+
+  // exibe botão apresentação quando há dados
+  const btnPptVend=document.getElementById('btnPptVend');
+  if(btnPptVend)btnPptVend.style.display='flex';
 
   // Visitantes válidos do dia e do período
   const visitHoje=diasHoje.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);
