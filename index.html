@@ -786,7 +786,6 @@ async function carregarDoPWI(){
   setSyncStatus('Buscando dados do sistema...','var(--accent)');
   try{
     const hoje=new Date().toISOString().slice(0,10);
-    const anoInicio=2025;
     const anoAtual=parseInt(hoje.slice(0,4));
     const mesAtual=parseInt(hoje.slice(5,7));
 
@@ -925,13 +924,31 @@ async function carregarDoPWI(){
       processarDados(d);renderParcial('semestre');salvarCacheLocal();
     }catch(e){console.warn('Erro semestre:',e.message);}
 
-    // 5. Histórico anos anteriores
+    // 5. Histórico anos anteriores (sempre desde 2025, independente do ano atual)
+    // Carga incremental: só busca semestres que ainda não estão no cache local
+    function periodoJaCacheado(ini,fim){
+      const ano=ini.slice(0,4);
+      const raw=localStorage.getItem('bi_vc_'+ano);
+      if(!raw)return false;
+      try{
+        const vComp=JSON.parse(raw);
+        const diasNoCache=Object.keys(vComp).filter(d=>d>=ini&&d<=fim);
+        // Considera cacheado se tiver pelo menos 10 dias no período
+        // (evita aceitar cache parcial de um semestre incompleto)
+        return diasNoCache.length>=10;
+      }catch(e){return false;}
+    }
+    const ANO_INICIO_HISTORICO=2025; // sempre busca a partir de 2025
     const periodos=[];
-    for(let ano=anoInicio;ano<anoAtual;ano++){
+    for(let ano=ANO_INICIO_HISTORICO;ano<anoAtual;ano++){
       periodos.push([ano+'-01-01',ano+'-06-30']);
       periodos.push([ano+'-07-01',ano+'-12-31']);
     }
     for(const[ini,fim] of periodos){
+      if(periodoJaCacheado(ini,fim)){
+        console.log('[BI] Histórico '+ini.slice(0,7)+' já no cache — pulando');
+        continue;
+      }
       setSyncStatus('Histórico: '+ini.slice(0,7)+'...','var(--accent)');
       try{const d=await apiGet('/tudo?inicio='+ini+'&fim='+fim);processarDados(d);}
       catch(e){console.warn('Erro '+ini+':',e.message);}
