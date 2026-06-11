@@ -97,7 +97,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .leg-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
 .sep{height:1px;background:var(--border);margin:14px 0}
 .hist-scroll{max-height:520px;overflow-y:auto;border-radius:var(--r)}
-.empty{text-align:center;padding:44px 20px;color:var(--text3)}
+.vend-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:13px}
+@media(max-width:1200px){.vend-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:768px){.vend-grid{grid-template-columns:1fr}}
+.vend-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.vend-card-title{padding:12px 14px 10px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:6px}
+.vend-section{padding:10px 14px 6px}
+.vend-section-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.vend-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border2)}
+.vend-row:last-child{border-bottom:none}
+.vend-pos{width:20px;font-size:12px;font-weight:700;color:var(--text2);flex-shrink:0;text-align:center}
+.vend-pos.p1{color:#f59e0b}
+.vend-pos.p2{color:#94a3b8}
+.vend-pos.p3{color:#b45309}
+.vend-nome{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vend-vals{text-align:right;flex-shrink:0}
+.vend-fat{font-size:13px;font-weight:600}
+.vend-qtd{font-size:11px;color:var(--text2)}
+.vend-empty{padding:10px 14px;font-size:12px;color:var(--text3);font-style:italic}
 .empty i{font-size:32px;display:block;margin-bottom:9px;opacity:.35}
 .empty p{font-size:13px;line-height:1.6}
 .del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:4px 8px;line-height:1;transition:color .1s;border-radius:4px}
@@ -164,6 +181,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="nav-sec">Resultados</div>
     <button class="nav-btn" onclick="goTab('dash')"><i class="ti ti-chart-bar"></i>Dashboard</button>
     <button class="nav-btn" onclick="goTab('dashext')"><i class="ti ti-chart-dots"></i>Dashboard Externos</button>
+    <button class="nav-btn" onclick="goTab('dashvend')"><i class="ti ti-users-group"></i>Dashboard Vendedores</button>
   </nav>
   <div class="sidebar-foot">
     <button class="btn btn-p btn-sm" onclick="carregarDoPWI()" id="btnPWI"><i class="ti ti-database-import"></i>Buscar do sistema</button>
@@ -634,6 +652,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 
+<!-- DASHBOARD VENDEDORES -->
+<div id="sc-dashvend" class="screen">
+  <div class="topbar">
+    <div><div class="page-title">Dashboard Vendedores</div>
+    <div class="page-sub" id="dashvendSub">Ranking por setor</div></div>
+  </div>
+  <div class="fbar">
+    <div class="fbar-item"><label>Ano</label><select id="fVendAno" onchange="onFVendAno()"></select></div>
+    <div class="fbar-item"><label>Mês</label><select id="fVendMes" onchange="renderDashVend()"><option value="">Todos</option></select></div>
+    <div class="fbar-item"><label>Dia</label><select id="fVendDia" onchange="renderDashVend()"><option value="">Todos</option></select></div>
+  </div>
+  <div id="dashvendContent"><div class="empty"><i class="ti ti-users-group"></i><p>Aguardando dados de vendas...</p></div></div>
+</div>
+
 <!-- FERIADOS -->
 <div id="sc-feriados" class="screen">
   <div class="topbar">
@@ -818,7 +850,7 @@ async function carregarDoPWI(){
         const d=formatarDataBI(item.data);if(!d)return;
         if(!diasNovos[d])diasNovos[d]=[];
         const setorProd=normalizarSetor(setorDoP(item.idProduto,item.nome)||mapProdSetor[item.idProduto]||'(não classificado)',item.nome);
-        diasNovos[d].push({nome:item.nome||'',setor:setorProd,qtd:parseFloat(item.qtd)||1,vLiq:parseFloat(item.vlTot)||0});
+        diasNovos[d].push({nome:item.nome||'',setor:setorProd,qtd:parseFloat(item.qtd)||1,vLiq:parseFloat(item.vlTot)||0,vendedor:item.nomeVendedor||'(sem vendedor)'});
       });
       // Sobrescreve o dia (não acumula) — evita duplicação entre semana→mês→trimestre etc
       Object.keys(diasNovos).forEach(d=>{_Vtmp[d]=diasNovos[d];});
@@ -1285,6 +1317,7 @@ function goTab(t){
   if(t==='site')renderHistSite();
   if(t==='diversos')renderHistDiversos();
   if(t==='dashext'){updFiltrosExt();renderDashExt();}
+  if(t==='dashvend'){updFiltrosVend();renderDashVend();}
   if(t==='parceiros')renderListaParceiros();
   if(t==='feriados')renderFeriados();
   if(t==='precos'){renderPrecos();renderHistPrecos();populaAnoBasePicker();}
@@ -3081,6 +3114,172 @@ function renderDashExt(){
 }
 
 
+// ── DASHBOARD VENDEDORES ──────────────────────────────────────────────
+const SETORES_VEND=['Bilheteria','Passeios','Fotos','Videos','Simuladores'];
+
+function updFiltrosVend(){
+  const selAno=document.getElementById('fVendAno');
+  if(!selAno)return;
+  const anos=[...new Set(Object.keys(V).map(d=>d.slice(0,4)))].sort().reverse();
+  const cur=selAno.value||new Date().getFullYear().toString();
+  selAno.innerHTML='';
+  anos.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;selAno.appendChild(o);});
+  if(anos.includes(cur))selAno.value=cur;
+  updFiltrosVendMesDia();
+}
+function updFiltrosVendMesDia(){
+  const ano=document.getElementById('fVendAno')?document.getElementById('fVendAno').value:'';
+  const selMes=document.getElementById('fVendMes');
+  const selDia=document.getElementById('fVendDia');
+  if(!selMes||!selDia)return;
+  const dias=Object.keys(V).filter(d=>!ano||d.startsWith(ano)).sort();
+  const meses=[...new Set(dias.map(d=>d.slice(5,7)))].sort();
+  const curMes=selMes.value;
+  selMes.innerHTML='<option value="">Todos</option>';
+  meses.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=MNomes[parseInt(m)-1];selMes.appendChild(o);});
+  if(meses.includes(curMes))selMes.value=curMes;
+  updFiltrosVendDia();
+}
+function updFiltrosVendDia(){
+  const ano=document.getElementById('fVendAno')?document.getElementById('fVendAno').value:'';
+  const mes=document.getElementById('fVendMes')?document.getElementById('fVendMes').value:'';
+  const selDia=document.getElementById('fVendDia');
+  if(!selDia)return;
+  const pref=ano+(mes?'-'+mes:'');
+  const dias=Object.keys(V).filter(d=>!pref||d.startsWith(pref)).sort().reverse();
+  const cur=selDia.value;
+  selDia.innerHTML='<option value="">Todos</option>';
+  dias.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;selDia.appendChild(o);});
+  if(dias.includes(cur))selDia.value=cur;
+}
+function onFVendAno(){updFiltrosVendMesDia();document.getElementById('fVendMes').value='';document.getElementById('fVendDia').value='';renderDashVend();}
+
+function renderDashVend(){
+  const el=document.getElementById('dashvendContent');
+  if(!el)return;
+  const ano=document.getElementById('fVendAno')?document.getElementById('fVendAno').value:'';
+  const mes=document.getElementById('fVendMes')?document.getElementById('fVendMes').value:'';
+  const dia=document.getElementById('fVendDia')?document.getElementById('fVendDia').value:'';
+
+  // dias filtrados
+  function diasFiltrados(prefAno,prefMes,prefDia){
+    return Object.keys(V).filter(d=>{
+      if(prefDia)return d===prefDia;
+      if(prefMes)return d.startsWith(prefAno+'-'+prefMes);
+      if(prefAno)return d.startsWith(prefAno);
+      return true;
+    });
+  }
+
+  const diasSel=diasFiltrados(ano,mes,dia);
+
+  // Verifica se há itens com vendedor
+  const temVendedor=diasSel.some(d=>V[d]&&V[d].some(i=>i.vendedor&&i.vendedor!=='(sem vendedor)'));
+  if(!temVendedor){
+    el.innerHTML='<div class="empty"><i class="ti ti-users-group"></i><p>Dados de vendedor não disponíveis — aguarde a próxima carga da API.</p></div>';
+    return;
+  }
+
+  // Período label
+  let periLbl=dia||((mes?MNomes[parseInt(mes)-1]+' ':'')+ano)||'Todos';
+  document.getElementById('dashvendSub').textContent=periLbl;
+
+  // Agrega vendedor por setor para o período selecionado (dia ou mês/período)
+  // Sempre mostra também o ranking do DIA atual separado
+  const hojeStr=new Date().toISOString().slice(0,10);
+  const diasHoje=V[hojeStr]?[hojeStr]:[];
+
+  function rankingVendedor(diasArr,setor){
+    const map={};
+    diasArr.forEach(d=>{
+      (V[d]||[]).forEach(i=>{
+        const s=setorAdj(i.setor);
+        if(s!==setor)return;
+        const v=i.vendedor||'(sem vendedor)';
+        if(!map[v])map[v]={vLiq:0,qtd:0};
+        map[v].vLiq+=i.vLiq;
+        map[v].qtd+=i.qtd;
+      });
+    });
+    return Object.entries(map).map(([nome,d])=>({nome,...d})).sort((a,b)=>b.vLiq-a.vLiq);
+  }
+
+  function rankingNaoClass(diasArr){
+    const map={};
+    diasArr.forEach(d=>{
+      (V[d]||[]).forEach(i=>{
+        const s=setorAdj(i.setor);
+        if(SETORES_VEND.includes(s))return;
+        if(SETORES_EXCLUIR_DASH.includes(s))return;
+        const v=i.vendedor||'(sem vendedor)';
+        if(!map[v])map[v]={vLiq:0,qtd:0};
+        map[v].vLiq+=i.vLiq;
+        map[v].qtd+=i.qtd;
+      });
+    });
+    return Object.entries(map).map(([nome,d])=>({nome,...d})).sort((a,b)=>b.vLiq-a.vLiq);
+  }
+
+  function htmlRanking(itens){
+    if(!itens.length)return '<div class="vend-empty">Sem vendas no período</div>';
+    return itens.map((v,i)=>{
+      const posClass=i===0?'p1':i===1?'p2':i===2?'p3':'';
+      const medalha=i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1)+'º';
+      return `<div class="vend-row">
+        <div class="vend-pos ${posClass}">${medalha}</div>
+        <div class="vend-nome" title="${v.nome}">${v.nome}</div>
+        <div class="vend-vals">
+          <div class="vend-fat">${fRF(v.vLiq)}</div>
+          <div class="vend-qtd">${v.qtd} venda${v.qtd!==1?'s':''}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function cardSetor(setor,cor_){
+    const rankDia=rankingVendedor(diasHoje,setor);
+    const rankPer=rankingVendedor(diasSel,setor);
+    const c=cor_||cor(setor);
+    return `<div class="vend-card">
+      <div class="vend-card-title" style="border-top:3px solid ${c}">
+        <span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}28">${setor}</span>
+      </div>
+      <div class="vend-section">
+        <div class="vend-section-label">🗓 Ranking do Dia</div>
+        ${htmlRanking(rankDia)}
+      </div>
+      <div class="sep" style="margin:0 14px"></div>
+      <div class="vend-section">
+        <div class="vend-section-label">📅 Ranking do Período</div>
+        ${htmlRanking(rankPer)}
+      </div>
+    </div>`;
+  }
+
+  // Card "outros" para setores não classificados
+  const rankOutrosDia=rankingNaoClass(diasHoje);
+  const rankOutrosPer=rankingNaoClass(diasSel);
+  const cardOutros=`<div class="vend-card">
+    <div class="vend-card-title" style="border-top:3px solid var(--text3)">
+      <span class="badge" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border2)">Outros / Não classificados</span>
+    </div>
+    <div class="vend-section">
+      <div class="vend-section-label">🗓 Ranking do Dia</div>
+      ${htmlRanking(rankOutrosDia)}
+    </div>
+    <div class="sep" style="margin:0 14px"></div>
+    <div class="vend-section">
+      <div class="vend-section-label">📅 Ranking do Período</div>
+      ${htmlRanking(rankOutrosPer)}
+    </div>
+  </div>`;
+
+  el.innerHTML=`<div class="vend-grid">
+    ${SETORES_VEND.map(s=>cardSetor(s)).join('')}
+    ${cardOutros}
+  </div>`;
+}
+
 // ── GERAÇÃO DE METAS ─────────────────────────────────────────────────
 function populaAnoBasePicker(){
   const anosDisp=[...new Set(Object.keys(V).map(d=>d.slice(0,4)))].sort();
@@ -3656,6 +3855,7 @@ function renderAll(){
   renderFuncs();renderFeriados();renderPrecos();renderHistPrecos();
   updFiltros();
   if(Object.keys(PONTOS).length||Object.keys(SITE).length||Object.keys(DIVERSOS).length)updFiltrosExt();
+  if(document.getElementById('sc-dashvend')&&document.getElementById('sc-dashvend').classList.contains('on')){updFiltrosVend();renderDashVend();}
 }
 load();
 document.getElementById('dataVisit').value=hoje();
