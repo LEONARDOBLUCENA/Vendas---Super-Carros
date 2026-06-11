@@ -106,6 +106,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .vend-section-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .vend-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border2)}
 .vend-row:last-child{border-bottom:none}
+.vend-row.top1{background:linear-gradient(90deg,#f59e0b12,transparent);border-radius:6px;padding:7px 6px;margin:0 -2px 4px;border-bottom:none;box-shadow:0 1px 4px #f59e0b18}
 .vend-pos{width:20px;font-size:12px;font-weight:700;color:var(--text2);flex-shrink:0;text-align:center}
 .vend-pos.p1{color:#f59e0b}
 .vend-pos.p2{color:#94a3b8}
@@ -662,6 +663,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="fbar-item"><label>Ano</label><select id="fVendAno" onchange="onFVendAno()"></select></div>
     <div class="fbar-item"><label>Mês</label><select id="fVendMes" onchange="renderDashVend()"><option value="">Todos</option></select></div>
     <div class="fbar-item"><label>Dia</label><select id="fVendDia" onchange="renderDashVend()"><option value="">Todos</option></select></div>
+    <div class="fbar-item"><label>Exibir</label>
+      <select id="fVendTop" onchange="renderDashVend()">
+        <option value="3">Top 3</option>
+        <option value="5">Top 5</option>
+        <option value="10">Top 10</option>
+        <option value="">Todos</option>
+      </select>
+    </div>
   </div>
   <div id="dashvendContent"><div class="empty"><i class="ti ti-users-group"></i><p>Aguardando dados de vendas...</p></div></div>
 </div>
@@ -3221,11 +3230,14 @@ function renderDashVend(){
   }
 
   function htmlRanking(itens){
-    if(!itens.length)return '<div class="vend-empty">Sem vendas no período</div>';
-    return itens.map((v,i)=>{
+    const topVal=document.getElementById('fVendTop')?document.getElementById('fVendTop').value:'';
+    const lista=topVal?itens.slice(0,parseInt(topVal)):itens;
+    if(!lista.length)return '<div class="vend-empty">Sem vendas no período</div>';
+    return lista.map((v,i)=>{
       const posClass=i===0?'p1':i===1?'p2':i===2?'p3':'';
+      const rowClass=i===0?'vend-row top1':'vend-row';
       const medalha=i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1)+'º';
-      return `<div class="vend-row">
+      return `<div class="${rowClass}">
         <div class="vend-pos ${posClass}">${medalha}</div>
         <div class="vend-nome" title="${v.nome}">${v.nome}</div>
         <div class="vend-vals">
