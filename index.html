@@ -862,14 +862,13 @@ async function carregarDoPWI(){
       }catch(e){console.warn('Cache:',e.message);}
     }
 
-    // ── Carregamento progressivo: semana → mês → trimestre → semestre → histórico ──
-    const sMesAtual=mesAtual<=6?1:2;
+    // ── Carregamento progressivo ──────────────────────────────────────────
+    // Etapas 1-3: sempre executadas a cada ciclo
+    // Etapa 4: períodos anteriores — trimestral incremental (pula se já cacheado)
+
     const d7ini=new Date(hoje);d7ini.setDate(d7ini.getDate()-7);
     const semanaIni=d7ini.toISOString().slice(0,10);
     const mesIni=anoAtual+'-'+String(mesAtual).padStart(2,'0')+'-01';
-    const trimMes=Math.max(1,mesAtual-2);
-    const trimIni=anoAtual+'-'+String(trimMes).padStart(2,'0')+'-01';
-    const semIni=anoAtual+'-'+(sMesAtual===1?'01':'07')+'-01';
 
     // Helper: move _Vtmp/_VItmp para V/VI e renderiza sem zerar
     function renderParcial(label){
@@ -889,7 +888,7 @@ async function carregarDoPWI(){
       setSyncStatus('✓ '+label+' — carregando mais...','var(--accent)');
     }
 
-    // 1. Hoje primeiro — aparece em segundos
+    // 1. Hoje — aparece em segundos
     setSyncStatus('Carregando hoje...','var(--accent)');
     try{
       const d=await apiGet('/tudo?inicio='+hoje+'&fim='+hoje);
@@ -903,29 +902,16 @@ async function carregarDoPWI(){
       processarDados(d);renderParcial('semana atual');salvarCacheLocal();
     }catch(e){console.warn('Erro semana:',e.message);}
 
-    // 2. Mês atual completo
+    // 3. Mês atual completo
     setSyncStatus('Carregando mês atual...','var(--accent)');
     try{
       const d=await apiGet('/tudo?inicio='+mesIni+'&fim='+hoje);
       processarDados(d);renderParcial('mês atual');salvarCacheLocal();
     }catch(e){console.warn('Erro mês:',e.message);}
 
-    // 3. Trimestre atual
-    setSyncStatus('Carregando trimestre...','var(--accent)');
-    try{
-      const d=await apiGet('/tudo?inicio='+trimIni+'&fim='+hoje);
-      processarDados(d);renderParcial('trimestre');
-    }catch(e){console.warn('Erro trimestre:',e.message);}
-
-    // 4. Semestre atual completo
-    setSyncStatus('Carregando semestre...','var(--accent)');
-    try{
-      const d=await apiGet('/tudo?inicio='+semIni+'&fim='+hoje);
-      processarDados(d);renderParcial('semestre');salvarCacheLocal();
-    }catch(e){console.warn('Erro semestre:',e.message);}
-
-    // 5. Histórico anos anteriores (sempre desde 2025, independente do ano atual)
-    // Carga incremental: só busca semestres que ainda não estão no cache local
+    // 4. Períodos anteriores — trimestral incremental
+    // Monta todos os trimestres desde 2025 até o trimestre anterior ao atual
+    // Pula trimestres que já têm 10+ dias no cache local
     function periodoJaCacheado(ini,fim){
       const ano=ini.slice(0,4);
       const raw=localStorage.getItem('bi_vc_'+ano);
@@ -933,23 +919,34 @@ async function carregarDoPWI(){
       try{
         const vComp=JSON.parse(raw);
         const diasNoCache=Object.keys(vComp).filter(d=>d>=ini&&d<=fim);
-        // Considera cacheado se tiver pelo menos 10 dias no período
-        // (evita aceitar cache parcial de um semestre incompleto)
         return diasNoCache.length>=10;
       }catch(e){return false;}
     }
-    const ANO_INICIO_HISTORICO=2025; // sempre busca a partir de 2025
+
+    // Mapa de trimestres: Q1=Jan-Mar, Q2=Abr-Jun, Q3=Jul-Set, Q4=Out-Dez
+    const TRIMESTRES=[
+      ['-01-01','-03-31'],
+      ['-04-01','-06-30'],
+      ['-07-01','-09-30'],
+      ['-10-01','-12-31'],
+    ];
+    // Trimestre atual (0-based)
+    const trimAtual=Math.floor((mesAtual-1)/3);
+    const ANO_INICIO_HISTORICO=2025;
     const periodos=[];
-    for(let ano=ANO_INICIO_HISTORICO;ano<anoAtual;ano++){
-      periodos.push([ano+'-01-01',ano+'-06-30']);
-      periodos.push([ano+'-07-01',ano+'-12-31']);
+    for(let ano=ANO_INICIO_HISTORICO;ano<=anoAtual;ano++){
+      for(let q=0;q<4;q++){
+        // Pula o trimestre atual e os futuros — estão cobertos pelas etapas 1-3
+        if(ano===anoAtual&&q>=trimAtual)break;
+        periodos.push([ano+TRIMESTRES[q][0], ano+TRIMESTRES[q][1]]);
+      }
     }
     for(const[ini,fim] of periodos){
       if(periodoJaCacheado(ini,fim)){
-        console.log('[BI] Histórico '+ini.slice(0,7)+' já no cache — pulando');
+        console.log('[BI] Período '+ini.slice(0,7)+' já no cache — pulando');
         continue;
       }
-      setSyncStatus('Histórico: '+ini.slice(0,7)+'...','var(--accent)');
+      setSyncStatus('Carregando '+ini.slice(0,7)+'...','var(--accent)');
       try{const d=await apiGet('/tudo?inicio='+ini+'&fim='+fim);processarDados(d);}
       catch(e){console.warn('Erro '+ini+':',e.message);}
     }
