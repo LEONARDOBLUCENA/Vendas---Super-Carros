@@ -106,7 +106,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .vend-section-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .vend-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border2)}
 .vend-row:last-child{border-bottom:none}
-.vend-row.top1{background:linear-gradient(90deg,#f59e0b12,transparent);border-radius:6px;padding:7px 6px;margin:0 -2px 4px;border-bottom:none;box-shadow:0 1px 4px #f59e0b18}
 .vend-pos{width:20px;font-size:12px;font-weight:700;color:var(--text2);flex-shrink:0;text-align:center}
 .vend-pos.p1{color:#f59e0b}
 .vend-pos.p2{color:#94a3b8}
@@ -663,14 +662,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="fbar-item"><label>Ano</label><select id="fVendAno" onchange="onFVendAno()"></select></div>
     <div class="fbar-item"><label>Mês</label><select id="fVendMes" onchange="renderDashVend()"><option value="">Todos</option></select></div>
     <div class="fbar-item"><label>Dia</label><select id="fVendDia" onchange="renderDashVend()"><option value="">Todos</option></select></div>
-    <div class="fbar-item"><label>Exibir</label>
-      <select id="fVendTop" onchange="renderDashVend()">
-        <option value="3">Top 3</option>
-        <option value="5">Top 5</option>
-        <option value="10">Top 10</option>
-        <option value="">Todos</option>
-      </select>
-    </div>
   </div>
   <div id="dashvendContent"><div class="empty"><i class="ti ti-users-group"></i><p>Aguardando dados de vendas...</p></div></div>
 </div>
@@ -888,13 +879,20 @@ async function carregarDoPWI(){
           Object.keys(V).filter(d=>d.startsWith(ano)).forEach(d=>{
             const bySe={};
             V[d].forEach(i=>{
-              if(!bySe[i.setor])bySe[i.setor]={qtd:0,vLiq:0};
-              bySe[i.setor].qtd+=i.qtd;bySe[i.setor].vLiq+=i.vLiq;
+              if(!bySe[i.setor])bySe[i.setor]={qtd:0,vLiq:0,vendedores:{}};
+              bySe[i.setor].qtd+=i.qtd;
+              bySe[i.setor].vLiq+=i.vLiq;
+              // Agrupa vendedor dentro do setor
+              const vnd=i.vendedor||'(sem vendedor)';
+              if(!bySe[i.setor].vendedores[vnd])bySe[i.setor].vendedores[vnd]={qtd:0,vLiq:0};
+              bySe[i.setor].vendedores[vnd].qtd+=i.qtd;
+              bySe[i.setor].vendedores[vnd].vLiq+=i.vLiq;
             });
             vComp[d]=bySe;
           });
-          try{localStorage.setItem('bi_vc_'+ano,JSON.stringify(vComp));}catch(e){
-            console.warn('Cache '+ano+' falhou:',e.message);
+          // Chave v2 — separada do cache antigo para não quebrar sessões anteriores
+          try{localStorage.setItem('bi_vc_v2_'+ano,JSON.stringify(vComp));}catch(e){
+            console.warn('Cache v2 '+ano+' falhou:',e.message);
           }
         });
         try{localStorage.setItem('bi_vi_cache',JSON.stringify(VI));}catch(e){}
@@ -955,7 +953,7 @@ async function carregarDoPWI(){
     // Pula trimestres que já têm 10+ dias no cache local
     function periodoJaCacheado(ini,fim){
       const ano=ini.slice(0,4);
-      const raw=localStorage.getItem('bi_vc_'+ano);
+      const raw=localStorage.getItem('bi_vc_v2_'+ano);
       if(!raw)return false;
       try{
         const vComp=JSON.parse(raw);
@@ -3230,14 +3228,11 @@ function renderDashVend(){
   }
 
   function htmlRanking(itens){
-    const topVal=document.getElementById('fVendTop')?document.getElementById('fVendTop').value:'';
-    const lista=topVal?itens.slice(0,parseInt(topVal)):itens;
-    if(!lista.length)return '<div class="vend-empty">Sem vendas no período</div>';
-    return lista.map((v,i)=>{
+    if(!itens.length)return '<div class="vend-empty">Sem vendas no período</div>';
+    return itens.map((v,i)=>{
       const posClass=i===0?'p1':i===1?'p2':i===2?'p3':'';
-      const rowClass=i===0?'vend-row top1':'vend-row';
       const medalha=i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1)+'º';
-      return `<div class="${rowClass}">
+      return `<div class="vend-row">
         <div class="vend-pos ${posClass}">${medalha}</div>
         <div class="vend-nome" title="${v.nome}">${v.nome}</div>
         <div class="vend-vals">
@@ -3914,13 +3909,23 @@ function _setarHojeMobile(){
     if(!anos.length||!cacheAt){carregarDoPWI().catch(()=>{});return;}
     let totalDias=0;
     anos.forEach(function(ano){
-      const raw=localStorage.getItem('bi_vc_'+ano);
+      const raw=localStorage.getItem('bi_vc_v2_'+ano);
       if(!raw)return;
       const vParsed=JSON.parse(raw);
       Object.keys(vParsed).forEach(function(d){
         V[d]=[];
         Object.keys(vParsed[d]).forEach(function(setor){
-          V[d].push({nome:setor,setor:setor,qtd:vParsed[d][setor].qtd,vLiq:vParsed[d][setor].vLiq});
+          const se=vParsed[d][setor];
+          const vendedores=se.vendedores||{};
+          if(Object.keys(vendedores).length>0){
+            // Expande de volta em itens individuais por vendedor
+            Object.keys(vendedores).forEach(function(vnd){
+              V[d].push({nome:setor,setor:setor,qtd:vendedores[vnd].qtd,vLiq:vendedores[vnd].vLiq,vendedor:vnd});
+            });
+          } else {
+            // Cache antigo sem vendedores — compatibilidade
+            V[d].push({nome:setor,setor:setor,qtd:se.qtd,vLiq:se.vLiq,vendedor:'(sem vendedor)'});
+          }
         });
         totalDias++;
       });
