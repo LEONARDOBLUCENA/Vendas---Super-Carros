@@ -966,11 +966,11 @@ async function carregarDoPWI(){
       processarDados(d);renderParcial('mês atual');salvarCacheLocal();
     }catch(e){console.warn('Erro mês:',e.message);}
 
-    // 4. Períodos anteriores — trimestral incremental
-    // Monta todos os trimestres desde 2025 até o trimestre anterior ao atual
-    // Pula trimestres que já têm 10+ dias no cache local
+    // 4. Períodos anteriores — mensal incremental
+    // Busca mês a mês desde 2025 até o mês anterior ao atual
+    // Pula meses que já têm 10+ dias no cache local
     function periodoJaCacheado(ini,fim){
-      // Trimestre ainda em curso — nunca pular, sempre buscar completo
+      // Mês ainda em curso — nunca pular, sempre buscar completo
       if(fim>=hoje)return false;
       const ano=ini.slice(0,4);
       const raw=localStorage.getItem('bi_vc_v2_'+ano);
@@ -978,33 +978,26 @@ async function carregarDoPWI(){
       try{
         const vComp=JSON.parse(raw);
         const diasNoCache=Object.keys(vComp).filter(d=>d>=ini&&d<=fim);
-        return diasNoCache.length>=10;
+        return diasNoCache.length>=5; // 5 dias mínimos para considerar mês cacheado
       }catch(e){return false;}
     }
 
-    // Mapa de trimestres: Q1=Jan-Mar, Q2=Abr-Jun, Q3=Jul-Set, Q4=Out-Dez
-    const TRIMESTRES=[
-      ['-01-01','-03-31'],
-      ['-04-01','-06-30'],
-      ['-07-01','-09-30'],
-      ['-10-01','-12-31'],
-    ];
-    // Trimestre atual (0-based)
-    const trimAtual=Math.floor((mesAtual-1)/3);
     const ANO_INICIO_HISTORICO=2025;
     const periodos=[];
     for(let ano=ANO_INICIO_HISTORICO;ano<=anoAtual;ano++){
-      for(let q=0;q<4;q++){
-        // Pula o trimestre atual e os futuros — estão cobertos pelas etapas 1-3
-        // Pula trimestres FUTUROS (q > trimAtual), mas inclui o atual (q === trimAtual)
-        // para cobrir meses passados do trimestre em curso (ex: Abr e Mai quando estamos em Jun)
-        if(ano===anoAtual&&q>trimAtual)break;
-        periodos.push([ano+TRIMESTRES[q][0], ano+TRIMESTRES[q][1]]);
+      for(let mes=1;mes<=12;mes++){
+        // Pula meses futuros
+        if(ano===anoAtual&&mes>mesAtual)break;
+        const mesStr=String(mes).padStart(2,'0');
+        const ultimoDia=new Date(ano,mes,0).getDate();
+        const ini=ano+'-'+mesStr+'-01';
+        const fim=ano+'-'+mesStr+'-'+String(ultimoDia).padStart(2,'0');
+        periodos.push([ini,fim]);
       }
     }
     for(const[ini,fim] of periodos){
       if(periodoJaCacheado(ini,fim)){
-        console.log('[BI] Período '+ini.slice(0,7)+' já no cache — pulando');
+        console.log('[BI] Mês '+ini.slice(0,7)+' já no cache — pulando');
         continue;
       }
       setSyncStatus('Carregando '+ini.slice(0,7)+'...','var(--accent)');
