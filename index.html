@@ -4065,6 +4065,8 @@ function _setarHojeMobile(){
     if(hhmm>=800&&_ultimaCargaCompleta!==diaHoje){
       _ultimaCargaCompleta=diaHoje;
     }
+    // Não inicia nova carga se já houver uma em andamento
+    if(_carregandoPWI)return;
     carregarDoPWI().catch(()=>setSyncStatus('Offline','var(--text3)'));
   }
   // Verifica a cada 1 minuto para não perder o slot
