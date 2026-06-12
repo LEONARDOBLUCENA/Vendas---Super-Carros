@@ -972,12 +972,13 @@ async function carregarDoPWI(){
       // Mês ainda em curso — nunca pular, sempre buscar completo
       if(fim>=hoje)return false;
       const ano=ini.slice(0,4);
-      const raw=localStorage.getItem('bi_vc_v2_'+ano);
+      // Verifica v2 primeiro, depois v1
+      const raw=localStorage.getItem('bi_vc_v2_'+ano)||localStorage.getItem('bi_vc_'+ano);
       if(!raw)return false;
       try{
         const vComp=JSON.parse(raw);
         const diasNoCache=Object.keys(vComp).filter(d=>d>=ini&&d<=fim);
-        return diasNoCache.length>=5; // 5 dias mínimos para considerar mês cacheado
+        return diasNoCache.length>=5;
       }catch(e){return false;}
     }
 
@@ -3967,21 +3968,28 @@ function _setarHojeMobile(){
     if(!anos.length||!cacheAt){carregarDoPWI().catch(()=>{});return;}
     let totalDias=0;
     anos.forEach(function(ano){
-      const raw=localStorage.getItem('bi_vc_v2_'+ano);
+      // Tenta cache v2 (com vendedor) primeiro, cai para v1 (sem vendedor) se não existir
+      const rawV2=localStorage.getItem('bi_vc_v2_'+ano);
+      const rawV1=localStorage.getItem('bi_vc_'+ano);
+      const raw=rawV2||rawV1;
+      const isV2=!!rawV2;
       if(!raw)return;
       const vParsed=JSON.parse(raw);
       Object.keys(vParsed).forEach(function(d){
         V[d]=[];
         Object.keys(vParsed[d]).forEach(function(setor){
           const se=vParsed[d][setor];
-          const vendedores=se.vendedores||{};
-          if(Object.keys(vendedores).length>0){
-            // Expande de volta em itens individuais por vendedor
-            Object.keys(vendedores).forEach(function(vnd){
-              V[d].push({nome:setor,setor:setor,qtd:vendedores[vnd].qtd,vLiq:vendedores[vnd].vLiq,vendedor:vnd});
-            });
+          if(isV2){
+            const vendedores=se.vendedores||{};
+            if(Object.keys(vendedores).length>0){
+              Object.keys(vendedores).forEach(function(vnd){
+                V[d].push({nome:setor,setor:setor,qtd:vendedores[vnd].qtd,vLiq:vendedores[vnd].vLiq,vendedor:vnd});
+              });
+            } else {
+              V[d].push({nome:setor,setor:setor,qtd:se.qtd,vLiq:se.vLiq,vendedor:'(sem vendedor)'});
+            }
           } else {
-            // Cache antigo sem vendedores — compatibilidade
+            // Cache v1 — sem vendedor
             V[d].push({nome:setor,setor:setor,qtd:se.qtd,vLiq:se.vLiq,vendedor:'(sem vendedor)'});
           }
         });
