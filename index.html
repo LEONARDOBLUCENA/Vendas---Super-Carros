@@ -930,6 +930,11 @@ async function carregarDoPWI(){
     function renderParcial(label){
       const _diaAtivo=document.getElementById('fDia')?document.getElementById('fDia').value:'';
       Object.assign(V,_Vtmp);Object.assign(VI,_VItmp);
+      // No mobile, garante que a aba dashboard está ativa antes de renderizar
+      if(window.innerWidth<=768){
+        const scDash=document.getElementById('sc-dash');
+        if(scDash&&!scDash.classList.contains('on'))goTab('dash');
+      }
       renderAll();updFiltros();
       if(_diaAtivo&&document.getElementById('fDia')){
         const _opts=[...(document.getElementById('fDia').options||[])].map(o=>o.value);
