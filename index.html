@@ -99,7 +99,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .hist-scroll{max-height:520px;overflow-y:auto;border-radius:var(--r)}
 .vend-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:13px}
 @media(max-width:1200px){.vend-grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:768px){.vend-grid{grid-template-columns:1fr}.nav-btn-desktop-only{display:none!important}}
+@media(max-width:768px){.vend-grid{grid-template-columns:1fr}}
 .vend-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
 .vend-card-title{padding:12px 14px 10px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:6px}
 .vend-section{padding:10px 14px 6px}
@@ -190,7 +190,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="nav-sec">Resultados</div>
     <button class="nav-btn" onclick="goTab('dash')"><i class="ti ti-chart-bar"></i>Dashboard</button>
     <button class="nav-btn" onclick="goTab('dashext')"><i class="ti ti-chart-dots"></i>Dashboard Externos</button>
-    <button class="nav-btn nav-btn-desktop-only" onclick="goTab('dashvend')"><i class="ti ti-users-group"></i>Dashboard Vendedores</button>
+    <button class="nav-btn" onclick="goTab('dashvend')"><i class="ti ti-users-group"></i>Dashboard Vendedores</button>
   </nav>
   <div class="sidebar-foot">
     <button class="btn btn-p btn-sm" onclick="carregarDoPWI()" id="btnPWI"><i class="ti ti-database-import"></i>Buscar do sistema</button>
@@ -930,11 +930,6 @@ async function carregarDoPWI(){
     function renderParcial(label){
       const _diaAtivo=document.getElementById('fDia')?document.getElementById('fDia').value:'';
       Object.assign(V,_Vtmp);Object.assign(VI,_VItmp);
-      // No mobile, garante que a aba dashboard está ativa antes de renderizar
-      if(window.innerWidth<=768){
-        const scDash=document.getElementById('sc-dash');
-        if(scDash&&!scDash.classList.contains('on'))goTab('dash');
-      }
       renderAll();updFiltros();
       if(_diaAtivo&&document.getElementById('fDia')){
         const _opts=[...(document.getElementById('fDia').options||[])].map(o=>o.value);
@@ -970,35 +965,34 @@ async function carregarDoPWI(){
       processarDados(d);renderParcial('mês atual');salvarCacheLocal();
     }catch(e){console.warn('Erro mês:',e.message);}
 
-    // 4. Períodos anteriores — semestral para anos passados, mensal para ano atual
-    // Pula períodos que já têm dados suficientes no cache local
+    // 4. Períodos anteriores — mensal incremental
+    // Busca mês a mês desde 2025 até o mês anterior ao atual
+    // Pula meses que já têm 10+ dias no cache local
     function periodoJaCacheado(ini,fim){
-      // Período ainda em curso — nunca pular
+      // Mês ainda em curso — nunca pular, sempre buscar completo
       if(fim>=hoje)return false;
       const ano=ini.slice(0,4);
-      const raw=localStorage.getItem('bi_vc_v2_'+ano)||localStorage.getItem('bi_vc_'+ano);
+      const raw=localStorage.getItem('bi_vc_v2_'+ano);
       if(!raw)return false;
       try{
         const vComp=JSON.parse(raw);
         const diasNoCache=Object.keys(vComp).filter(d=>d>=ini&&d<=fim);
-        return diasNoCache.length>=5;
+        return diasNoCache.length>=5; // 5 dias mínimos para considerar mês cacheado
       }catch(e){return false;}
     }
 
     const ANO_INICIO_HISTORICO=2025;
     const periodos=[];
-    // Anos anteriores ao atual: semestral (menos chamadas, menos timeout)
-    for(let ano=ANO_INICIO_HISTORICO;ano<anoAtual;ano++){
-      periodos.push([ano+'-01-01',ano+'-06-30']);
-      periodos.push([ano+'-07-01',ano+'-12-31']);
-    }
-    // Ano atual: mensal (para cobrir meses parciais corretamente)
-    for(let mes=1;mes<=mesAtual;mes++){
-      const mesStr=String(mes).padStart(2,'0');
-      const ultimoDia=new Date(anoAtual,mes,0).getDate();
-      const ini=anoAtual+'-'+mesStr+'-01';
-      const fim=anoAtual+'-'+mesStr+'-'+String(ultimoDia).padStart(2,'0');
-      periodos.push([ini,fim]);
+    for(let ano=ANO_INICIO_HISTORICO;ano<=anoAtual;ano++){
+      for(let mes=1;mes<=12;mes++){
+        // Pula meses futuros
+        if(ano===anoAtual&&mes>mesAtual)break;
+        const mesStr=String(mes).padStart(2,'0');
+        const ultimoDia=new Date(ano,mes,0).getDate();
+        const ini=ano+'-'+mesStr+'-01';
+        const fim=ano+'-'+mesStr+'-'+String(ultimoDia).padStart(2,'0');
+        periodos.push([ini,fim]);
+      }
     }
     for(const[ini,fim] of periodos){
       if(periodoJaCacheado(ini,fim)){
@@ -3926,7 +3920,7 @@ function renderAll(){
   renderFuncs();renderFeriados();renderPrecos();renderHistPrecos();
   updFiltros();
   if(Object.keys(PONTOS).length||Object.keys(SITE).length||Object.keys(DIVERSOS).length)updFiltrosExt();
-  if(document.getElementById('sc-dashvend')&&document.getElementById('sc-dashvend').classList.contains('on')&&window.innerWidth>768){updFiltrosVend();renderDashVend();}
+  if(document.getElementById('sc-dashvend')&&document.getElementById('sc-dashvend').classList.contains('on')){updFiltrosVend();renderDashVend();}
 }
 load();
 document.getElementById('dataVisit').value=hoje();
@@ -3970,41 +3964,28 @@ function _setarHojeMobile(){
     const anos=JSON.parse(localStorage.getItem('bi_cache_anos')||'[]');
     const cacheAt=localStorage.getItem('bi_cache_at');
     console.log('[BI-DEBUG] IIFE iniciou. anos=',anos,'cacheAt=',cacheAt,'V.length=',Object.keys(V).length);
-    if(!anos.length||!cacheAt){
-      if(window.innerWidth<=768)goTab('dash');
-      carregarDoPWI().catch(()=>{});return;
-    }
+    if(!anos.length||!cacheAt){carregarDoPWI().catch(()=>{});return;}
     let totalDias=0;
     anos.forEach(function(ano){
-      // Tenta cache v2 (com vendedor) primeiro, cai para v1 (sem vendedor) se não existir
-      const rawV2=localStorage.getItem('bi_vc_v2_'+ano);
-      const rawV1=localStorage.getItem('bi_vc_'+ano);
-      const raw=rawV2||rawV1;
-      const isV2=!!rawV2;
+      const raw=localStorage.getItem('bi_vc_v2_'+ano);
       if(!raw)return;
       const vParsed=JSON.parse(raw);
       Object.keys(vParsed).forEach(function(d){
         V[d]=[];
         Object.keys(vParsed[d]).forEach(function(setor){
           const se=vParsed[d][setor];
-          if(!se)return; // proteção contra entrada corrompida
-          if(isV2){
-            const vendedores=se.vendedores||{};
-            if(Object.keys(vendedores).length>0){
-              Object.keys(vendedores).forEach(function(vnd){
-                const vd=vendedores[vnd]||{};
-                V[d].push({nome:setor,setor:setor,qtd:vd.qtd||0,vLiq:vd.vLiq||0,vendedor:vnd});
-              });
-            } else {
-              // v2 sem vendedores — usa totais do setor
-              if(se.vLiq||se.qtd)V[d].push({nome:setor,setor:setor,qtd:se.qtd||0,vLiq:se.vLiq||0,vendedor:'(sem vendedor)'});
-            }
+          const vendedores=se.vendedores||{};
+          if(Object.keys(vendedores).length>0){
+            // Expande de volta em itens individuais por vendedor
+            Object.keys(vendedores).forEach(function(vnd){
+              V[d].push({nome:setor,setor:setor,qtd:vendedores[vnd].qtd,vLiq:vendedores[vnd].vLiq,vendedor:vnd});
+            });
           } else {
-            // Cache v1 — formato {qtd, vLiq} direto
-            if(se.vLiq||se.qtd)V[d].push({nome:setor,setor:setor,qtd:se.qtd||0,vLiq:se.vLiq||0,vendedor:'(sem vendedor)'});
+            // Cache antigo sem vendedores — compatibilidade
+            V[d].push({nome:setor,setor:setor,qtd:se.qtd,vLiq:se.vLiq,vendedor:'(sem vendedor)'});
           }
         });
-        if(V[d].length>0)totalDias++;
+        totalDias++;
       });
     });
     const viRaw=localStorage.getItem('bi_vi_cache');
