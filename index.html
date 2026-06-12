@@ -897,7 +897,6 @@ async function carregarDoPWI(){
           Object.keys(V).filter(d=>d.startsWith(ano)).forEach(d=>{
             const bySe={};
             (V[d]||[]).forEach(i=>{
-              if(!bySe[i.setor])bySe[i.setor]={qtd:0,vLiq:0,vendedores:{}};
               bySe[i.setor].qtd+=i.qtd;
               bySe[i.setor].vLiq+=i.vLiq;
               // Agrupa vendedor dentro do setor
@@ -3977,22 +3976,19 @@ function _setarHojeMobile(){
     }
     let totalDias=0;
     anos.forEach(function(ano){
+      // Tenta cache v2 (com vendedor) primeiro, cai para v1 (sem vendedor) se não existir
       const rawV2=localStorage.getItem('bi_vc_v2_'+ano);
       const rawV1=localStorage.getItem('bi_vc_'+ano);
-      if(!rawV2&&!rawV1)return;
-
-      // Mescla os dois caches: v2 tem prioridade por dia, v1 preenche os dias ausentes no v2
-      const parsed2=rawV2?JSON.parse(rawV2):{};
-      const parsed1=rawV1?JSON.parse(rawV1):{};
-      const todosDias=new Set([...Object.keys(parsed2),...Object.keys(parsed1)]);
-
-      todosDias.forEach(function(d){
+      const raw=rawV2||rawV1;
+      const isV2=!!rawV2;
+      if(!raw)return;
+      const vParsed=JSON.parse(raw);
+      Object.keys(vParsed).forEach(function(d){
         V[d]=[];
-        if(parsed2[d]){
-          // Dia existe no v2 — lê com vendedores
-          Object.keys(parsed2[d]).forEach(function(setor){
-            const se=parsed2[d][setor];
-            if(!se)return;
+        Object.keys(vParsed[d]).forEach(function(setor){
+          const se=vParsed[d][setor];
+          if(!se)return; // proteção contra entrada corrompida
+          if(isV2){
             const vendedores=se.vendedores||{};
             if(Object.keys(vendedores).length>0){
               Object.keys(vendedores).forEach(function(vnd){
@@ -4000,17 +3996,14 @@ function _setarHojeMobile(){
                 V[d].push({nome:setor,setor:setor,qtd:vd.qtd||0,vLiq:vd.vLiq||0,vendedor:vnd});
               });
             } else {
+              // v2 sem vendedores — usa totais do setor
               if(se.vLiq||se.qtd)V[d].push({nome:setor,setor:setor,qtd:se.qtd||0,vLiq:se.vLiq||0,vendedor:'(sem vendedor)'});
             }
-          });
-        } else if(parsed1[d]){
-          // Dia só existe no v1 — lê sem vendedor
-          Object.keys(parsed1[d]).forEach(function(setor){
-            const se=parsed1[d][setor];
-            if(!se)return;
+          } else {
+            // Cache v1 — formato {qtd, vLiq} direto
             if(se.vLiq||se.qtd)V[d].push({nome:setor,setor:setor,qtd:se.qtd||0,vLiq:se.vLiq||0,vendedor:'(sem vendedor)'});
-          });
-        }
+          }
+        });
         if(V[d].length>0)totalDias++;
       });
     });
