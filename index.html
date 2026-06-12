@@ -965,6 +965,85 @@ async function carregarDoPWI(){
       processarDados(d);renderParcial('mês atual');salvarCacheLocal();
     }catch(e){console.warn('Erro mês:',e.message);}
 
+    // ── Cache de vendedores: mês atual + mês anterior ──────────────────
+    // Salva dados com vendedor separadamente em bi_vend_AAAA_MM
+    // Mantém apenas os 2 meses necessários, limpa os demais automaticamente
+    function salvarCacheVendedor(){
+      const mesAtualStr=String(mesAtual).padStart(2,'0');
+      const mesAntNum=mesAtual===1?12:mesAtual-1;
+      const anoAntVend=mesAtual===1?anoAtual-1:anoAtual;
+      const mesAntStr=String(mesAntNum).padStart(2,'0');
+      const chaveAtual='bi_vend_'+anoAtual+'_'+mesAtualStr;
+      const chaveAnt='bi_vend_'+anoAntVend+'_'+mesAntStr;
+      const chavesValidas=new Set([chaveAtual,chaveAnt]);
+
+      // Remove chaves de vendedor que não são mais necessárias
+      Object.keys(localStorage).filter(k=>k.startsWith('bi_vend_')).forEach(k=>{
+        if(!chavesValidas.has(k))localStorage.removeItem(k);
+      });
+
+      // Salva mês atual com vendedor
+      const prefAtual=anoAtual+'-'+mesAtualStr;
+      const vMesAtual={};
+      Object.keys(_Vtmp).filter(d=>d.startsWith(prefAtual)).forEach(d=>{
+        vMesAtual[d]=(_Vtmp[d]||[]).map(i=>({setor:i.setor,qtd:i.qtd,vLiq:i.vLiq,vendedor:i.vendedor||'(sem vendedor)'}));
+      });
+      try{localStorage.setItem(chaveAtual,JSON.stringify(vMesAtual));}catch(e){console.warn('Cache vend atual falhou:',e.message);}
+
+      // Salva mês anterior com vendedor (só se não existir ou for do dia da última atualização)
+      const prefAnt=anoAntVend+'-'+mesAntStr;
+      const jaTemAnt=localStorage.getItem(chaveAnt);
+      const ultimaAtualizacaoAnt=localStorage.getItem(chaveAnt+'_at');
+      const jaAtualizouHoje=ultimaAtualizacaoAnt===hoje;
+      if(!jaTemAnt||!jaAtualizouHoje){
+        const vMesAnt={};
+        Object.keys(_Vtmp).filter(d=>d.startsWith(prefAnt)).forEach(d=>{
+          vMesAnt[d]=(_Vtmp[d]||[]).map(i=>({setor:i.setor,qtd:i.qtd,vLiq:i.vLiq,vendedor:i.vendedor||'(sem vendedor)'}));
+        });
+        if(Object.keys(vMesAnt).length>0){
+          try{
+            localStorage.setItem(chaveAnt,JSON.stringify(vMesAnt));
+            localStorage.setItem(chaveAnt+'_at',hoje);
+          }catch(e){console.warn('Cache vend ant falhou:',e.message);}
+        }
+      }
+    }
+
+    function carregarCacheVendedor(){
+      const mesAtualStr=String(mesAtual).padStart(2,'0');
+      const mesAntNum=mesAtual===1?12:mesAtual-1;
+      const anoAntVend=mesAtual===1?anoAtual-1:anoAtual;
+      const mesAntStr=String(mesAntNum).padStart(2,'0');
+      [
+        'bi_vend_'+anoAtual+'_'+mesAtualStr,
+        'bi_vend_'+anoAntVend+'_'+mesAntStr
+      ].forEach(chave=>{
+        const raw=localStorage.getItem(chave);
+        if(!raw)return;
+        try{
+          const dados=JSON.parse(raw);
+          Object.keys(dados).forEach(d=>{
+            // Mescla vendedor nos itens já existentes em V
+            if(!V[d])return;
+            const porSetor={};
+            dados[d].forEach(i=>{
+              if(!porSetor[i.setor])porSetor[i.setor]=[];
+              porSetor[i.setor].push(i);
+            });
+            // Substitui itens do V pelo detalhe de vendedor
+            const novos=[];
+            Object.keys(porSetor).forEach(setor=>{
+              porSetor[setor].forEach(i=>novos.push({nome:setor,setor,qtd:i.qtd,vLiq:i.vLiq,vendedor:i.vendedor}));
+            });
+            if(novos.length>0)V[d]=novos;
+          });
+        }catch(e){console.warn('Erro lendo cache vend:',e.message);}
+      });
+    }
+
+    // Salva cache de vendedor após carregar mês atual e semana
+    salvarCacheVendedor();
+
     // 4. Períodos anteriores — semestral para anos passados, mensal para ano atual
     // Pula períodos que já têm dados suficientes no cache local
     function periodoJaCacheado(ini,fim){
@@ -3993,6 +4072,40 @@ function _setarHojeMobile(){
     });
     const viRaw=localStorage.getItem('bi_vi_cache');
     if(viRaw)VI=JSON.parse(viRaw);
+
+    // Carrega cache de vendedor (mês atual + anterior) e mescla em V
+    (function(){
+      const _hoje=new Date().toISOString().slice(0,10);
+      const _ano=parseInt(_hoje.slice(0,4));
+      const _mes=parseInt(_hoje.slice(5,7));
+      const _mesStr=String(_mes).padStart(2,'0');
+      const _mesAntNum=_mes===1?12:_mes-1;
+      const _anoAnt=_mes===1?_ano-1:_ano;
+      const _mesAntStr=String(_mesAntNum).padStart(2,'0');
+      [
+        'bi_vend_'+_ano+'_'+_mesStr,
+        'bi_vend_'+_anoAnt+'_'+_mesAntStr
+      ].forEach(function(chave){
+        const raw=localStorage.getItem(chave);
+        if(!raw)return;
+        try{
+          const dados=JSON.parse(raw);
+          Object.keys(dados).forEach(function(d){
+            if(!V[d])return;
+            const porSetor={};
+            dados[d].forEach(function(i){
+              if(!porSetor[i.setor])porSetor[i.setor]=[];
+              porSetor[i.setor].push(i);
+            });
+            const novos=[];
+            Object.keys(porSetor).forEach(function(setor){
+              porSetor[setor].forEach(function(i){novos.push({nome:setor,setor:setor,qtd:i.qtd,vLiq:i.vLiq,vendedor:i.vendedor});});
+            });
+            if(novos.length>0)V[d]=novos;
+          });
+        }catch(e){console.warn('Erro lendo cache vend:',e.message);}
+      });
+    })();
     console.log('[BI-DEBUG] Cache lido. totalDias=',totalDias,'VI.length=',Object.keys(VI).length);
     if(totalDias>0){
       console.log('[BI-DEBUG] renderAll() chamado com V.length=',Object.keys(V).length);
