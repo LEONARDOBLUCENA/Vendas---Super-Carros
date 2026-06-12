@@ -897,20 +897,14 @@ async function carregarDoPWI(){
           Object.keys(V).filter(d=>d.startsWith(ano)).forEach(d=>{
             const bySe={};
             (V[d]||[]).forEach(i=>{
-              if(!bySe[i.setor])bySe[i.setor]={qtd:0,vLiq:0,vendedores:{}};
+              if(!bySe[i.setor])bySe[i.setor]={qtd:0,vLiq:0};
               bySe[i.setor].qtd+=i.qtd;
               bySe[i.setor].vLiq+=i.vLiq;
-              // Agrupa vendedor dentro do setor
-              const vnd=i.vendedor||'(sem vendedor)';
-              if(!bySe[i.setor].vendedores[vnd])bySe[i.setor].vendedores[vnd]={qtd:0,vLiq:0};
-              bySe[i.setor].vendedores[vnd].qtd+=i.qtd;
-              bySe[i.setor].vendedores[vnd].vLiq+=i.vLiq;
             });
             vComp[d]=bySe;
           });
-          // Chave v2 — separada do cache antigo para não quebrar sessões anteriores
-          try{localStorage.setItem('bi_vc_v2_'+ano,JSON.stringify(vComp));}catch(e){
-            console.warn('Cache v2 '+ano+' falhou:',e.message);
+          try{localStorage.setItem('bi_vc_'+ano,JSON.stringify(vComp));}catch(e){
+            console.warn('Cache '+ano+' falhou:',e.message);
           }
         });
         try{localStorage.setItem('bi_vi_cache',JSON.stringify(VI));}catch(e){}
@@ -977,7 +971,7 @@ async function carregarDoPWI(){
       // Período ainda em curso — nunca pular
       if(fim>=hoje)return false;
       const ano=ini.slice(0,4);
-      const raw=localStorage.getItem('bi_vc_v2_'+ano)||localStorage.getItem('bi_vc_'+ano);
+      const raw=localStorage.getItem('bi_vc_'+ano);
       if(!raw)return false;
       try{
         const vComp=JSON.parse(raw);
@@ -3977,33 +3971,15 @@ function _setarHojeMobile(){
     }
     let totalDias=0;
     anos.forEach(function(ano){
-      // Tenta cache v2 (com vendedor) primeiro, cai para v1 (sem vendedor) se não existir
-      const rawV2=localStorage.getItem('bi_vc_v2_'+ano);
-      const rawV1=localStorage.getItem('bi_vc_'+ano);
-      const raw=rawV2||rawV1;
-      const isV2=!!rawV2;
+      const raw=localStorage.getItem('bi_vc_'+ano);
       if(!raw)return;
       const vParsed=JSON.parse(raw);
       Object.keys(vParsed).forEach(function(d){
         V[d]=[];
         Object.keys(vParsed[d]).forEach(function(setor){
           const se=vParsed[d][setor];
-          if(!se)return; // proteção contra entrada corrompida
-          if(isV2){
-            const vendedores=se.vendedores||{};
-            if(Object.keys(vendedores).length>0){
-              Object.keys(vendedores).forEach(function(vnd){
-                const vd=vendedores[vnd]||{};
-                V[d].push({nome:setor,setor:setor,qtd:vd.qtd||0,vLiq:vd.vLiq||0,vendedor:vnd});
-              });
-            } else {
-              // v2 sem vendedores — usa totais do setor
-              if(se.vLiq||se.qtd)V[d].push({nome:setor,setor:setor,qtd:se.qtd||0,vLiq:se.vLiq||0,vendedor:'(sem vendedor)'});
-            }
-          } else {
-            // Cache v1 — formato {qtd, vLiq} direto
-            if(se.vLiq||se.qtd)V[d].push({nome:setor,setor:setor,qtd:se.qtd||0,vLiq:se.vLiq||0,vendedor:'(sem vendedor)'});
-          }
+          if(!se)return;
+          if(se.vLiq||se.qtd)V[d].push({nome:setor,setor:setor,qtd:se.qtd||0,vLiq:se.vLiq||0,vendedor:'(sem vendedor)'});
         });
         if(V[d].length>0)totalDias++;
       });
