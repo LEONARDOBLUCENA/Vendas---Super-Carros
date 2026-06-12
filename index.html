@@ -897,6 +897,7 @@ async function carregarDoPWI(){
           Object.keys(V).filter(d=>d.startsWith(ano)).forEach(d=>{
             const bySe={};
             (V[d]||[]).forEach(i=>{
+              if(!bySe[i.setor])bySe[i.setor]={qtd:0,vLiq:0,vendedores:{}};
               bySe[i.setor].qtd+=i.qtd;
               bySe[i.setor].vLiq+=i.vLiq;
               // Agrupa vendedor dentro do setor
