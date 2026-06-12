@@ -3987,21 +3987,24 @@ function _setarHojeMobile(){
         V[d]=[];
         Object.keys(vParsed[d]).forEach(function(setor){
           const se=vParsed[d][setor];
+          if(!se)return; // proteção contra entrada corrompida
           if(isV2){
             const vendedores=se.vendedores||{};
             if(Object.keys(vendedores).length>0){
               Object.keys(vendedores).forEach(function(vnd){
-                V[d].push({nome:setor,setor:setor,qtd:vendedores[vnd].qtd,vLiq:vendedores[vnd].vLiq,vendedor:vnd});
+                const vd=vendedores[vnd]||{};
+                V[d].push({nome:setor,setor:setor,qtd:vd.qtd||0,vLiq:vd.vLiq||0,vendedor:vnd});
               });
             } else {
-              V[d].push({nome:setor,setor:setor,qtd:se.qtd,vLiq:se.vLiq,vendedor:'(sem vendedor)'});
+              // v2 sem vendedores — usa totais do setor
+              if(se.vLiq||se.qtd)V[d].push({nome:setor,setor:setor,qtd:se.qtd||0,vLiq:se.vLiq||0,vendedor:'(sem vendedor)'});
             }
           } else {
-            // Cache v1 — sem vendedor
-            V[d].push({nome:setor,setor:setor,qtd:se.qtd,vLiq:se.vLiq,vendedor:'(sem vendedor)'});
+            // Cache v1 — formato {qtd, vLiq} direto
+            if(se.vLiq||se.qtd)V[d].push({nome:setor,setor:setor,qtd:se.qtd||0,vLiq:se.vLiq||0,vendedor:'(sem vendedor)'});
           }
         });
-        totalDias++;
+        if(V[d].length>0)totalDias++;
       });
     });
     const viRaw=localStorage.getItem('bi_vi_cache');
