@@ -896,8 +896,7 @@ async function carregarDoPWI(){
           const vComp={};
           Object.keys(V).filter(d=>d.startsWith(ano)).forEach(d=>{
             const bySe={};
-            V[d].forEach(i=>{
-              if(!bySe[i.setor])bySe[i.setor]={qtd:0,vLiq:0,vendedores:{}};
+            (V[d]||[]).forEach(i=>{
               bySe[i.setor].qtd+=i.qtd;
               bySe[i.setor].vLiq+=i.vLiq;
               // Agrupa vendedor dentro do setor
@@ -1537,7 +1536,7 @@ function renderHistV(){
     const vi=VI[d]?VI[d].valido:0;
     // agrupa por setor
     const bySe={};
-    V[d].forEach(i=>{const s=setorAdj(i.setor);if(!bySe[s])bySe[s]=0;bySe[s]+=i.vLiq;});
+    (V[d]||[]).forEach(i=>{const s=setorAdj(i.setor);if(!bySe[s])bySe[s]=0;bySe[s]+=i.vLiq;});
     const fatTotal=Object.values(bySe).reduce((a,v)=>a+v,0);
     const setores=Object.keys(bySe).sort();
     // linha de totais do dia (primeira linha)
@@ -1571,7 +1570,7 @@ function exportarVendasExcel(){
   dias.forEach(d=>{
     const vi=VI[d]?VI[d].valido:0;
     const bySe={};
-    V[d].forEach(i=>{const s=setorAdj(i.setor);if(!bySe[s])bySe[s]=0;bySe[s]+=i.vLiq;});
+    (V[d]||[]).forEach(i=>{const s=setorAdj(i.setor);if(!bySe[s])bySe[s]=0;bySe[s]+=i.vLiq;});
     const fatTotal=Object.values(bySe).reduce((a,v)=>a+v,0);
     rows.push([d,'TOTAL',fatTotal.toFixed(2).replace('.',','),vi||'',vi?(fatTotal/vi).toFixed(2).replace('.',','):'']);
     Object.keys(bySe).sort().forEach(s=>{
@@ -2020,7 +2019,7 @@ function getDias(){
 const SETORES_EXCLUIR_DASH=['(não classificado)','Eventos'];
 function getItens(diasKey,setorF){
   const itens=[];
-  diasKey.forEach(d=>V[d].forEach(i=>{
+  diasKey.forEach(d=>(V[d]||[]).forEach(i=>{
     const s=setorAdj(i.setor);
     if(SETORES_EXCLUIR_DASH.includes(s))return;
     if(!setorF||setorF===S_TOTAL||s===setorF)itens.push({...i,setor:s,data:d});
@@ -2039,7 +2038,7 @@ function getAnt(s,anoRef){
     const fat=getItens(diasAno,s).reduce((a,i)=>a+i.vLiq,0);
     return fat>0?fat:null;
   }
-  const fat=diasAno.reduce((a,d)=>a+V[d].reduce((s,i)=>s+i.vLiq,0),0);
+  const fat=diasAno.reduce((a,d)=>a+(V[d]||[]).reduce((s,i)=>s+i.vLiq,0),0);
   return fat>0?fat:null;
 }
 function getAntMes(s,mesFmt){
@@ -2050,7 +2049,7 @@ function getAntMes(s,mesFmt){
     const fat=getItens(diasMes,s).reduce((a,i)=>a+i.vLiq,0);
     return fat>0?fat:null;
   }
-  const fat=diasMes.reduce((a,d)=>a+V[d].reduce((s,i)=>s+i.vLiq,0),0);
+  const fat=diasMes.reduce((a,d)=>a+(V[d]||[]).reduce((s,i)=>s+i.vLiq,0),0);
   return fat>0?fat:null;
 }
 function killCharts(){charts.forEach(c=>{try{c.destroy();}catch(e){}});charts=[];}
@@ -2158,7 +2157,7 @@ function renderDash(){
     }
     // Todos os setores (excluindo externos)
     const fat=diasMes.reduce((a,d)=>{
-      return a+V[d].filter(i=>!SETORES_EXT_EXCLUIR.includes(setorAdj(i.setor))).reduce((s,i)=>s+i.vLiq,0);
+      return a+(V[d]||[]).filter(i=>!SETORES_EXT_EXCLUIR.includes(setorAdj(i.setor))).reduce((s,i)=>s+i.vLiq,0);
     },0);
     return fat>0?fat:null;
   }
@@ -2189,7 +2188,7 @@ function renderDash(){
         });
         if(!diasAnt.length)return;
         const fat=diasAnt.reduce((a,d)=>{
-          return a+V[d].filter(i=>!SETORES_EXCLUIR_DASH.includes(setorAdj(i.setor))&&(!setorF||setorF===S_TOTAL||setorAdj(i.setor)===setorF)).reduce((s,i)=>s+i.vLiq,0);
+          return a+(V[d]||[]).filter(i=>!SETORES_EXCLUIR_DASH.includes(setorAdj(i.setor))&&(!setorF||setorF===S_TOTAL||setorAdj(i.setor)===setorF)).reduce((s,i)=>s+i.vLiq,0);
         },0);
         if(fat>0){soma+=fat;found=true;}
       });
@@ -2204,7 +2203,7 @@ function renderDash(){
         return true;
       });
       diasAnoAnt.forEach(d=>{
-        const fat=V[d].filter(i=>!SETORES_EXCLUIR_DASH.includes(setorAdj(i.setor))&&(!setorF||setorF===S_TOTAL||setorAdj(i.setor)===setorF)).reduce((s,i)=>s+i.vLiq,0);
+        const fat=(V[d]||[]).filter(i=>!SETORES_EXCLUIR_DASH.includes(setorAdj(i.setor))&&(!setorF||setorF===S_TOTAL||setorAdj(i.setor)===setorF)).reduce((s,i)=>s+i.vLiq,0);
         if(fat>0){soma+=fat;found=true;}
       });
       if(found)antGeral=soma;
@@ -2258,7 +2257,7 @@ function renderDash(){
   Object.keys(V).filter(d=>d.startsWith(ano)).forEach(d=>{
     const mm=d.slice(5,7);
     if(!_cacheAno[mm])_cacheAno[mm]={liq:0,vis:0};
-    V[d].forEach(i=>{
+    (V[d]||[]).forEach(i=>{
       const s=setorAdj(i.setor);
       if(SETORES_EXCLUIR_DASH.includes(s))return;
       if(!setorF||setorF===S_TOTAL||s===setorF)_cacheAno[mm].liq+=i.vLiq;
@@ -2292,7 +2291,7 @@ function renderDash(){
   Object.keys(V).filter(d=>d.startsWith(anoAnt)).forEach(d=>{
     const mm=d.slice(5,7);
     if(!_cacheAnt[mm])_cacheAnt[mm]=0;
-    V[d].forEach(i=>{
+    (V[d]||[]).forEach(i=>{
       const s=setorAdj(i.setor);
       if(SETORES_EXCLUIR_DASH.includes(s))return;
       if(!setorF||setorF===S_TOTAL||s===setorF)_cacheAnt[mm]+=i.vLiq;
@@ -3417,7 +3416,7 @@ function gerarMetas(){
       const diasMes=Object.keys(V).filter(d=>d.startsWith(pref));
       if(!diasMes.length)return;
       // total do mês
-      const fatMes=diasMes.reduce((a,d)=>a+V[d].filter(i=>!SETORES_EXCLUIR_DASH.includes(setorAdj(i.setor))).reduce((s,i)=>s+i.vLiq,0),0);
+      const fatMes=diasMes.reduce((a,d)=>a+(V[d]||[]).filter(i=>!SETORES_EXCLUIR_DASH.includes(setorAdj(i.setor))).reduce((s,i)=>s+i.vLiq,0),0);
       fatBase[mm].total.push(fatMes);
       // por setor
       setoresDash.forEach(s=>{
