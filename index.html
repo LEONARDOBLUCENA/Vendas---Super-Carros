@@ -99,7 +99,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .hist-scroll{max-height:520px;overflow-y:auto;border-radius:var(--r)}
 .vend-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:13px}
 @media(max-width:1200px){.vend-grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:768px){.vend-grid{grid-template-columns:1fr}}
+@media(max-width:768px){.vend-grid{grid-template-columns:1fr}.nav-btn-desktop-only{display:none!important}}
 .vend-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
 .vend-card-title{padding:12px 14px 10px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:6px}
 .vend-section{padding:10px 14px 6px}
@@ -190,7 +190,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="nav-sec">Resultados</div>
     <button class="nav-btn" onclick="goTab('dash')"><i class="ti ti-chart-bar"></i>Dashboard</button>
     <button class="nav-btn" onclick="goTab('dashext')"><i class="ti ti-chart-dots"></i>Dashboard Externos</button>
-    <button class="nav-btn" onclick="goTab('dashvend')"><i class="ti ti-users-group"></i>Dashboard Vendedores</button>
+    <button class="nav-btn nav-btn-desktop-only" onclick="goTab('dashvend')"><i class="ti ti-users-group"></i>Dashboard Vendedores</button>
   </nav>
   <div class="sidebar-foot">
     <button class="btn btn-p btn-sm" onclick="carregarDoPWI()" id="btnPWI"><i class="ti ti-database-import"></i>Buscar do sistema</button>
@@ -3921,7 +3921,7 @@ function renderAll(){
   renderFuncs();renderFeriados();renderPrecos();renderHistPrecos();
   updFiltros();
   if(Object.keys(PONTOS).length||Object.keys(SITE).length||Object.keys(DIVERSOS).length)updFiltrosExt();
-  if(document.getElementById('sc-dashvend')&&document.getElementById('sc-dashvend').classList.contains('on')){updFiltrosVend();renderDashVend();}
+  if(document.getElementById('sc-dashvend')&&document.getElementById('sc-dashvend').classList.contains('on')&&window.innerWidth>768){updFiltrosVend();renderDashVend();}
 }
 load();
 document.getElementById('dataVisit').value=hoje();
