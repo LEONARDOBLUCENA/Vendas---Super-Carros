@@ -980,29 +980,36 @@ async function carregarDoPWI(){
       }catch(e){return false;}
     }
 
+    // Monta períodos do mais recente para o mais antigo
     const ANO_INICIO_HISTORICO=2025;
     const periodos=[];
-    // Anos anteriores ao atual: semestral (menos chamadas, menos timeout)
-    for(let ano=ANO_INICIO_HISTORICO;ano<anoAtual;ano++){
-      periodos.push([ano+'-01-01',ano+'-06-30']);
-      periodos.push([ano+'-07-01',ano+'-12-31']);
-    }
-    // Ano atual: mensal (para cobrir meses parciais corretamente)
-    for(let mes=1;mes<=mesAtual;mes++){
+    // Ano atual: mês a mês, do mais recente para o mais antigo
+    for(let mes=mesAtual;mes>=1;mes--){
       const mesStr=String(mes).padStart(2,'0');
       const ultimoDia=new Date(anoAtual,mes,0).getDate();
       const ini=anoAtual+'-'+mesStr+'-01';
       const fim=anoAtual+'-'+mesStr+'-'+String(ultimoDia).padStart(2,'0');
       periodos.push([ini,fim]);
     }
+    // Anos anteriores: semestral, do mais recente para o mais antigo
+    for(let ano=anoAtual-1;ano>=ANO_INICIO_HISTORICO;ano--){
+      periodos.push([ano+'-07-01',ano+'-12-31']);
+      periodos.push([ano+'-01-01',ano+'-06-30']);
+    }
+
     for(const[ini,fim] of periodos){
       if(periodoJaCacheado(ini,fim)){
-        console.log('[BI] Mês '+ini.slice(0,7)+' já no cache — pulando');
+        console.log('[BI] Período '+ini.slice(0,7)+' já no cache — pulando');
         continue;
       }
       setSyncStatus('Carregando '+ini.slice(0,7)+'...','var(--accent)');
-      try{const d=await apiGet('/tudo?inicio='+ini+'&fim='+fim);processarDados(d);}
-      catch(e){console.warn('Erro '+ini+':',e.message);}
+      try{
+        const d=await apiGet('/tudo?inicio='+ini+'&fim='+fim);
+        processarDados(d);
+        // Renderiza e salva após cada período — dados aparecem progressivamente
+        renderParcial(ini.slice(0,7));
+        salvarCacheLocal();
+      }catch(e){console.warn('Erro '+ini+':',e.message);}
     }
     // ── Commit final: move _Vtmp/_VItmp para V/VI e salva ──
     _carregandoPWI=false;
