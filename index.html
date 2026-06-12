@@ -1041,8 +1041,25 @@ async function carregarDoPWI(){
       });
     }
 
-    // Salva cache de vendedor após carregar mês atual e semana
-    salvarCacheVendedor();
+    // Salva cache de vendedor — mês atual já está em _Vtmp
+    // Mês anterior: busca da API se ainda não estiver no cache de vendedor
+    const _mesAntVNum=mesAtual===1?12:mesAtual-1;
+    const _anoAntV=mesAtual===1?anoAtual-1:anoAtual;
+    const _mesAntVStr=String(_mesAntVNum).padStart(2,'0');
+    const _chaveAntV='bi_vend_'+_anoAntV+'_'+_mesAntVStr;
+    const _jaTemAntV=localStorage.getItem(_chaveAntV);
+    const _jaAtualizouHojeV=localStorage.getItem(_chaveAntV+'_at')===hoje;
+    if(!_jaTemAntV||!_jaAtualizouHojeV){
+      setSyncStatus('Carregando vendedores mês anterior...','var(--accent)');
+      try{
+        const _ultimoDiaAnt=new Date(_anoAntV,_mesAntVNum,0).getDate();
+        const _iniAnt=_anoAntV+'-'+_mesAntVStr+'-01';
+        const _fimAnt=_anoAntV+'-'+_mesAntVStr+'-'+String(_ultimoDiaAnt).padStart(2,'0');
+        const _dAnt=await apiGet('/tudo?inicio='+_iniAnt+'&fim='+_fimAnt);
+        processarDados(_dAnt);
+      }catch(e){console.warn('Erro mês anterior vendedor:',e.message);}
+    }
+    if(window.innerWidth>768)salvarCacheVendedor();
 
     // 4. Períodos anteriores — semestral para anos passados, mensal para ano atual
     // Pula períodos que já têm dados suficientes no cache local
