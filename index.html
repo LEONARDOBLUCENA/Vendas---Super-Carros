@@ -4163,28 +4163,33 @@ function _setarHojeMobile(){
 })();
 // Agendador: atualiza nos :00, :15, :30 e :45 de cada hora (sincronizado entre usuários)
 (function agendarCargas(){
-  let _ultimaCargaCompleta=null;
   let _ultimoSlot=null;
   function _verificarAgenda(){
     const agora=new Date();
-    const min=agora.getMinutes();
-    const hhmm=agora.getHours()*100+min;
+    const hhmm=agora.getHours()*100+agora.getMinutes();
     const diaHoje=agora.toISOString().slice(0,10);
-    // Slot atual: :00, :15, :30 ou :45
-    const slot=diaHoje+'T'+agora.getHours()+':'+Math.floor(min/15);
-    if(slot===_ultimoSlot)return; // já atualizou neste slot
-    _ultimoSlot=slot;
-    // Carga das 08h: primeira carga do dia
-    if(hhmm>=800&&_ultimaCargaCompleta!==diaHoje){
-      _ultimaCargaCompleta=diaHoje;
+    const cacheAt=localStorage.getItem('bi_cache_at');
+    const cacheData=cacheAt?cacheAt.slice(0,10):'';
+    const cacheHhmm=cacheAt?parseInt(cacheAt.slice(11,13))*100+parseInt(cacheAt.slice(14,16)):0;
+    // Fora do horario comercial (21h as 09h):
+    // so atualiza se cache estiver desatualizado (outro dia ou anterior as 21h de hoje)
+    if(hhmm<900||hhmm>=2100){
+      const cacheDesatualizado=(!cacheAt)||(cacheData!==diaHoje)||(cacheData===diaHoje&&cacheHhmm<2100);
+      if(cacheDesatualizado&&!_carregandoPWI&&!_ultimoSlot){
+        _ultimoSlot='fora-horario-'+diaHoje;
+        carregarDoPWI().catch(()=>setSyncStatus('Offline','var(--text3)'));
+      }
+      return;
     }
-    // Não inicia nova carga se já houver uma em andamento
+    // Dentro do horario: slot de 45 minutos a partir das 09h
+    const minDesde9=(agora.getHours()-9)*60+agora.getMinutes();
+    const slot=diaHoje+'T'+Math.floor(minDesde9/45);
+    if(slot===_ultimoSlot)return;
+    _ultimoSlot=slot;
     if(_carregandoPWI)return;
     carregarDoPWI().catch(()=>setSyncStatus('Offline','var(--text3)'));
   }
-  // Verifica a cada 1 minuto para não perder o slot
   setInterval(_verificarAgenda, 60*1000);
-  // Também verifica imediatamente ao abrir
   setTimeout(_verificarAgenda, 2000);
 })();
 
