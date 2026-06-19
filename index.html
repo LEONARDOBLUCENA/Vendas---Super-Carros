@@ -1217,7 +1217,11 @@ async function syncBaixar(){
   setSyncStatus('Carregando...','var(--accent)');
   try{
     const ok=await sbLoadAll();
-    if(ok){save();renderAll();setSyncStatus('✓ Atualizado em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');toast('Dados carregados!');}
+    if(ok){
+      // Salva apenas no localStorage — não dispara triggerAutoSave para não sobrescrever o Supabase
+      try{localStorage.setItem('bip',JSON.stringify(P));localStorage.setItem('bimetas',JSON.stringify(METAS));localStorage.setItem('biant',JSON.stringify(ANTERIOR));localStorage.setItem('bipontos',JSON.stringify(PONTOS));localStorage.setItem('bisite',JSON.stringify(SITE));localStorage.setItem('bidiversos',JSON.stringify(DIVERSOS));localStorage.setItem('bifuncs',JSON.stringify(FUNCS));localStorage.setItem('biferiados',JSON.stringify(FERIADOS));localStorage.setItem('bicarros',JSON.stringify(CARROS));}catch(e){}
+      renderAll();setSyncStatus('✓ Atualizado em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');toast('Dados carregados!');
+    }
     else{setSyncStatus('Nuvem vazia','var(--text3)');toast('Nenhum dado na nuvem','err');}
   }catch(e){setSyncStatus('Erro: '+e.message,'var(--red)');}
   finally{if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-cloud-download"></i>Carregar da nuvem';}}
