@@ -799,6 +799,8 @@ async function apiGet(endpoint){
 function normalizarSetor(setor, nomeProduto){
   const nome=(nomeProduto||'').toUpperCase();
   const s=(setor||'').toUpperCase();
+  // Eventos — verificado antes de qualquer outra regra
+  if(nome.includes('EVENTO')||s.includes('EVENTO'))return 'Eventos';
   // Bilheteria
   if(nome.includes('INGRESSO')||nome.includes('COMBO')||nome.includes('CORTESIA')
      ||nome.includes('ING. COMBO')||nome.includes('ING. INDIVIDUAL')||nome.includes('CORTESIAS SUPERCARROS'))return 'Bilheteria';
