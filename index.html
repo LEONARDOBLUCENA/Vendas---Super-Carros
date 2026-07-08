@@ -2065,6 +2065,10 @@ function limparMeses(){
 function aplicarMeses(){
   mesesSelecionados=[...document.querySelectorAll('#mesPickerItems input[type=checkbox]:checked')].map(cb=>cb.value);
   document.getElementById('mesPickerDrop').classList.remove('open');
+  // Reseta o filtro de Dia ao mudar a seleção de meses — evita que um dia
+  // selecionado anteriormente (ex: auto-selecionado no load mobile) fique
+  // "preso" e esconda o KPI comparativo com ano anterior (bug Safari)
+  document.getElementById('fDia').value='';
   updMesPickerLabel();
   updDia();
   renderDash();
