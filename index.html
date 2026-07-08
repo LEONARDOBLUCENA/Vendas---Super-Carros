@@ -1068,14 +1068,14 @@ async function carregarDoPWI(){
     function periodoJaCacheado(ini,fim){
       // Período ainda em curso — nunca pular
       if(fim>=hoje)return false;
-      const ano=ini.slice(0,4);
-      const raw=localStorage.getItem('bi_vc_'+ano);
-      if(!raw)return false;
-      try{
-        const vComp=JSON.parse(raw);
-        const diasNoCache=Object.keys(vComp).filter(d=>d>=ini&&d<=fim);
-        return diasNoCache.length>=5;
-      }catch(e){return false;}
+      // Verifica se os dias já estão carregados em V (memória desta sessão) —
+      // NÃO no blob bruto do localStorage. Checar o disco diretamente causava
+      // um bug: se um ano tivesse blob salvo mas não estivesse listado em
+      // bi_cache_anos (ex: falha silenciosa no boot), o sistema achava que já
+      // tinha o dado e nunca buscava de novo — o ano ficava invisível pra
+      // sempre, mesmo com dado órfão presente no disco.
+      const diasNoCache=Object.keys(V).filter(d=>d>=ini&&d<=fim);
+      return diasNoCache.length>=5;
     }
 
     // Monta períodos do mais recente para o mais antigo
@@ -4086,16 +4086,18 @@ function _setarHojeMobile(){
     anos.forEach(function(ano){
       const raw=localStorage.getItem('bi_vc_'+ano);
       if(!raw)return;
-      const vParsed=JSON.parse(raw);
-      Object.keys(vParsed).forEach(function(d){
-        V[d]=[];
-        Object.keys(vParsed[d]).forEach(function(setor){
-          const se=vParsed[d][setor];
-          if(!se)return;
-          if(se.vLiq||se.qtd)V[d].push({nome:setor,setor:setor,qtd:se.qtd||0,vLiq:se.vLiq||0,vendedor:'(sem vendedor)'});
+      try{
+        const vParsed=JSON.parse(raw);
+        Object.keys(vParsed).forEach(function(d){
+          V[d]=[];
+          Object.keys(vParsed[d]).forEach(function(setor){
+            const se=vParsed[d][setor];
+            if(!se)return;
+            if(se.vLiq||se.qtd)V[d].push({nome:setor,setor:setor,qtd:se.qtd||0,vLiq:se.vLiq||0,vendedor:'(sem vendedor)'});
+          });
+          if(V[d].length>0)totalDias++;
         });
-        if(V[d].length>0)totalDias++;
-      });
+      }catch(e){console.warn('[BI] Cache '+ano+' corrompido, ignorando:',e.message);}
     });
     const viRaw=localStorage.getItem('bi_vi_cache');
     if(viRaw)VI=JSON.parse(viRaw);
