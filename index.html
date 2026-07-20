@@ -790,6 +790,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 // ── API PWI ───────────────────────────────────────────────────────────
 const API_URL='https://bi-server-production.up.railway.app';
 
+function setSyncStatus(msg, color){
+  const el=document.getElementById('syncStatus');
+  if(!el)return;
+  el.textContent=msg||'';
+  el.style.color=color||'var(--text3)';
+  el.style.display=msg?'block':'none';
+}
+
 async function apiGet(endpoint){
   const r=await fetch(API_URL+endpoint);
   if(!r.ok)throw new Error('API '+endpoint+' retornou '+r.status);
@@ -1127,6 +1135,8 @@ async function carregarDoPWI(){
     console.error('Erro PWI:',e);
     setSyncStatus('Erro: '+e.message,'var(--red)');
     toast('Erro ao buscar dados','err');
+  }finally{
+    _carregandoPWI=false;
   }
 }
 // ── GITHUB API (substitui Supabase) ──────────────────────────────────
