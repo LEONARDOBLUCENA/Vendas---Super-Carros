@@ -4097,14 +4097,13 @@ function _setarHojeMobile(){
       document.getElementById('brandSub').textContent=totalDias+' dias (cache local)';
       setSyncStatus('✓ '+new Date(cacheAt).toLocaleTimeString('pt-BR')+' · atualizando...','var(--accent)');
       console.log('[BI-DEBUG] Após renderAll. V.length=',Object.keys(V).length);
-      // Mobile sempre abre no Dashboard; desktop restaura aba salva
+      // Sempre abre no Dashboard, tanto mobile quanto desktop
+      goTab('dash');
       if(window.innerWidth<=768){
-        goTab('dash');
         // Filtra dia atual automaticamente no mobile
         setTimeout(_setarHojeMobile,500);
       }
       else{
-        const _abaAtiva=localStorage.getItem('bi_aba');if(_abaAtiva)goTab(_abaAtiva);
         // Desktop: tenta selecionar o dia atual se houver dados (V ou VI)
         const _hojeDesktop=new Date().toISOString().slice(0,10);
         const _temHoje=V[_hojeDesktop]||VI[_hojeDesktop];
