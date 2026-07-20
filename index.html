@@ -1129,56 +1129,105 @@ async function carregarDoPWI(){
     toast('Erro ao buscar dados','err');
   }
 }
-// ── GITHUB API (substitui Supabase) ──────────────────────────────────
-const GH_TOKEN='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';
-const GH_REPO='leonardoblucena/Vendas---Super-Carros';
-const GH_FILE='dados.json';
-let _ghFileSha=null; // SHA do arquivo para updates
+// ── SUPABASE ──────────────────────────────────────────────────────────
+const SB_URL='https://kbirsoinehvachyjyoin.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiaXJzb2luZWh2YWNoeWp5b2luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MzE0NjAsImV4cCI6MjA5NTAwNzQ2MH0.UO5H-a-EXUmrrd5JFdVekZqoFnqJYbzJwDlVwYPtBmQ';
+const SB_TABLE='bi_data';
 
-async function ghSaveAll(){
+async function sbGet(id){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/'+SB_TABLE+'?id=eq.'+id+'&select=payload',{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+    if(!r.ok)return null;
+    const d=await r.json();
+    return d&&d[0]?d[0].payload:null;
+  }catch(e){return null;}
+}
+
+async function sbSet(id,payload){
+  const r=await fetch(SB_URL+'/rest/v1/'+SB_TABLE,{
+    method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,
+      'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+    body:JSON.stringify({id,payload,updated_at:new Date().toISOString()})
+  });
+  if(!r.ok){const t=await r.text();throw new Error(r.status+': '+t.slice(0,100));}
+}
+
+async function sbSaveAll(){
+  // V e VI não são salvos no Supabase — vêm do banco da PWI via "Buscar do Sistema"
+  // Salva apenas configurações e dados manuais
   const modulos={p:P,metas:METAS,ant:ANTERIOR,pontos:PONTOS,site:SITE,diversos:DIVERSOS,
     funcs:FUNCS,feriados:FERIADOS,carros:CARROS,histprec:HIST_PREC};
-  const content=btoa(unescape(encodeURIComponent(JSON.stringify(modulos))));
-  const body={message:'BI: salvar dados manuais',content};
-  if(_ghFileSha)body.sha=_ghFileSha;
-  const r=await fetch('https://api.github.com/repos/'+GH_REPO+'/contents/'+GH_FILE,{
-    method:'PUT',
-    headers:{'Authorization':'Bearer '+GH_TOKEN,'Content-Type':'application/json'},
-    body:JSON.stringify(body)
-  });
-  if(!r.ok)throw new Error('GitHub save: '+r.status);
-  const d=await r.json();
-  _ghFileSha=d.content?.sha||_ghFileSha;
+  await Promise.all(Object.entries(modulos).map(([k,v])=>sbSet('bi_'+k,v)));
 }
 
-async function ghLoadAll(){
+async function sbLoadAll(){
+  // Carrega apenas configurações e dados manuais (V e VI vêm do banco PWI)
+  const keys=['p','metas','ant','pontos','site','diversos','funcs','feriados','carros','histprec'];
+  const results=await Promise.all(keys.map(k=>sbGet('bi_'+k)));
+  const[p,metas,ant,pontos,site,diversos,funcs,feriados,carros,histprec]=results;
+  if(p)P=p;if(metas)METAS=metas;if(ant)ANTERIOR=ant;
+  if(pontos)PONTOS=pontos;if(site)SITE=site;if(diversos)DIVERSOS=diversos;
+  if(funcs)FUNCS=funcs;if(feriados)FERIADOS=feriados;
+  if(carros)CARROS=carros;if(histprec)HIST_PREC=histprec;
+  return results.some(r=>r!==null);
+}
+
+function setSyncStatus(msg,cor){
+  const el=document.getElementById('syncStatus');
+  if(el){el.style.display='block';el.style.color=cor||'var(--text3)';el.textContent=msg;}
+  // Espelha no dashboard
+  const db=document.getElementById('dashSyncBar');
+  if(db){db.style.display='block';db.style.background=cor==='var(--green)'?'var(--green-bg)':'var(--accent-bg)';db.style.color=cor==='var(--green)'?'var(--green)':'var(--accent-t)';db.textContent=msg;}
+}
+
+let _autoSaveTimer=null;
+function triggerAutoSave(){
+  if(_autoSaveTimer)clearTimeout(_autoSaveTimer);
+  // Só salva se houver dados reais — evita sobrescrever Supabase no boot
+  if(!Object.keys(METAS).length&&!Object.keys(FERIADOS).length&&!Object.keys(PONTOS).length)return;
+  setSyncStatus('Salvando...','var(--amber)');
+  _autoSaveTimer=setTimeout(async()=>{
+    try{
+      await sbSaveAll();
+      setSyncStatus('✓ Salvo em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');
+    }catch(e){setSyncStatus('Erro ao salvar: '+e.message,'var(--red)');}
+  },5000);
+}
+
+async function syncSubir(){
+  const btn=document.getElementById('btnSyncUp');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i>Salvando...';}
+  setSyncStatus('Salvando na nuvem...','var(--accent)');
   try{
-    const r=await fetch('https://api.github.com/repos/'+GH_REPO+'/contents/'+GH_FILE,{
-      headers:{'Authorization':'Bearer '+GH_TOKEN}
-    });
-    if(!r.ok)return false;
-    const d=await r.json();
-    _ghFileSha=d.sha;
-    const content=JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))));
-    if(content.p)P=content.p;
-    if(content.metas)METAS=content.metas;
-    if(content.ant)ANTERIOR=content.ant;
-    if(content.pontos)PONTOS=content.pontos;
-    if(content.site)SITE=content.site;
-    if(content.diversos)DIVERSOS=content.diversos;
-    if(content.funcs)FUNCS=content.funcs;
-    if(content.feriados)FERIADOS=content.feriados;
-    if(content.carros)CARROS=content.carros;
-    if(content.histprec)HIST_PREC=content.histprec;
-    return true;
-  }catch(e){console.warn('ghLoadAll:',e.message);return false;}
+    await sbSaveAll();
+    setSyncStatus('✓ Salvo em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');
+    toast('Dados salvos na nuvem!');
+  }catch(e){
+    setSyncStatus('Erro: '+e.message,'var(--red)');
+    toast('Erro ao salvar: '+e.message,'err');
+  }finally{
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-cloud-upload"></i>Salvar na nuvem';}
+  }
 }
 
-// Aliases para compatibilidade com o código existente
-async function sbSaveAll(){return ghSaveAll();}
-async function sbLoadAll(){return ghLoadAll();}
-
-
+async function syncBaixar(){
+  const btn=document.getElementById('btnSyncDown');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i>Carregando...';}
+  setSyncStatus('Carregando...','var(--accent)');
+  try{
+    const ok=await sbLoadAll();
+    if(ok){
+      // Salva apenas no localStorage — não dispara triggerAutoSave para não sobrescrever o Supabase
+      try{localStorage.setItem('bip',JSON.stringify(P));localStorage.setItem('bimetas',JSON.stringify(METAS));localStorage.setItem('biant',JSON.stringify(ANTERIOR));localStorage.setItem('bipontos',JSON.stringify(PONTOS));localStorage.setItem('bisite',JSON.stringify(SITE));localStorage.setItem('bidiversos',JSON.stringify(DIVERSOS));localStorage.setItem('bifuncs',JSON.stringify(FUNCS));localStorage.setItem('biferiados',JSON.stringify(FERIADOS));localStorage.setItem('bicarros',JSON.stringify(CARROS));}catch(e){}
+      renderAll();setSyncStatus('✓ Atualizado em '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');toast('Dados carregados!');
+    }
+    else{setSyncStatus('Nuvem vazia','var(--text3)');toast('Nenhum dado na nuvem','err');}
+  }catch(e){setSyncStatus('Erro: '+e.message,'var(--red)');}
+  finally{if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-cloud-download"></i>Carregar da nuvem';}}
+}
 // ── ESTADO ────────────────────────────────────────────────────────────
 let P={}, V={}, VI={}, METAS={}, ANTERIOR={}, PONTOS={}, SITE={}, DIVERSOS={}, FUNCS={}, FERIADOS={}, CARROS={}, HIST_PREC=[], pending=null, charts=[], chartsExt=[];
 let _carregandoPWI=false; // flag: não limpar mesesSelecionados durante carregamento
@@ -4018,10 +4067,10 @@ function _setarHojeMobile(){
 
 // Carrega do cache local primeiro (instantâneo) e atualiza em background
 (function(){
-  // Garante que P seja carregado do GitHub se localStorage estiver vazio
+  // Garante que P seja carregado do Supabase se localStorage estiver vazio
   if(!Object.keys(P).length){
     sbLoadAll().then(ok=>{
-      // NÃO chama save() — evita triggerAutoSave sobrescrever GitHub com dados vazios no boot
+      // NÃO chama save() — evita triggerAutoSave sobrescrever Supabase com dados vazios no boot
       if(ok){try{localStorage.setItem('bip',JSON.stringify(P));}catch(e){}}
     }).catch(()=>{});
   }
