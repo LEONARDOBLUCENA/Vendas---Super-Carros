@@ -4032,7 +4032,7 @@ function _setarHojeMobile(){
     const cacheAt=localStorage.getItem('bi_cache_at');
     console.log('[BI-DEBUG] IIFE iniciou. anos=',anos,'cacheAt=',cacheAt,'V.length=',Object.keys(V).length);
     if(!anos.length||!cacheAt){
-      if(window.innerWidth<=768)goTab('dash');
+      goTab('dash');
       carregarDoPWI().catch(()=>{});return;
     }
     let totalDias=0;
@@ -4118,10 +4118,12 @@ function _setarHojeMobile(){
       // Sempre busca em background ao abrir — sem zerar tela
       carregarDoPWI().catch(()=>setSyncStatus('✓ '+new Date(cacheAt).toLocaleTimeString('pt-BR')+' (cache)','var(--text3)'));
     } else {
+      goTab('dash');
       carregarDoPWI().catch(()=>{});
     }
   }catch(e){
     console.error('[BI-DEBUG] ERRO no IIFE:',e);
+    goTab('dash');
     carregarDoPWI().catch(()=>{});
   }
 })();
