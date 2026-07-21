@@ -799,7 +799,7 @@ function setSyncStatus(msg, color){
 }
 
 async function apiGet(endpoint){
-  const r=await fetch(API_URL+endpoint);
+  const r=await fetch(API_URL+endpoint,{cache:'no-store'});
   if(!r.ok)throw new Error('API '+endpoint+' retornou '+r.status);
   return r.json();
 }
@@ -998,7 +998,10 @@ async function carregarDoPWI(){
       Object.keys(_Vtmp).filter(d=>d.startsWith(prefAtual)).forEach(d=>{
         vMesAtual[d]=(_Vtmp[d]||[]).map(i=>({setor:i.setor,qtd:i.qtd,vLiq:i.vLiq,vendedor:i.vendedor||'(sem vendedor)'}));
       });
-      try{localStorage.setItem(chaveAtual,JSON.stringify(vMesAtual));}catch(e){console.warn('Cache vend atual falhou:',e.message);}
+      try{
+        localStorage.setItem(chaveAtual,JSON.stringify(vMesAtual));
+        localStorage.setItem(chaveAtual+'_at',new Date().toISOString());
+      }catch(e){console.warn('Cache vend atual falhou:',e.message);}
 
       // Salva mês anterior com vendedor (só se não existir ou for do dia da última atualização)
       const prefAnt=anoAntVend+'-'+mesAntStr;
@@ -4080,6 +4083,12 @@ function _setarHojeMobile(){
       ].forEach(function(chave){
         const raw=localStorage.getItem(chave);
         if(!raw)return;
+        // Ignora o cache de vendedor se for mais antigo que o cache principal —
+        // evita sobrescrever totais atualizados com um snapshot desatualizado
+        const chaveAt=localStorage.getItem(chave+'_at');
+        // Só compara quando o timestamp salvo tem hora (mês atual) — mês anterior
+        // grava só a data e não muda no mesmo dia, então não precisa dessa checagem
+        if(chaveAt&&chaveAt.length>10&&cacheAt&&chaveAt<cacheAt){console.warn('[BI] Cache vendedor '+chave+' desatualizado, ignorando overlay');return;}
         try{
           const dados=JSON.parse(raw);
           Object.keys(dados).forEach(function(d){
