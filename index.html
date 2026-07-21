@@ -192,11 +192,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="nav-btn" onclick="goTab('dashext')"><i class="ti ti-chart-dots"></i>Dashboard Externos</button>
     <button class="nav-btn nav-btn-desktop-only" onclick="goTab('dashvend')"><i class="ti ti-users-group"></i>Dashboard Vendedores</button>
   </nav>
+  <div id="syncStatus" style="font-size:11px;color:var(--text3);text-align:center;padding:4px 8px;display:none"></div>
   <div class="sidebar-foot">
     <button class="btn btn-p btn-sm" onclick="carregarDoPWI()" id="btnPWI"><i class="ti ti-database-import"></i>Buscar do sistema</button>
     <button class="btn btn-sm" onclick="syncSubir()" id="btnSyncUp"><i class="ti ti-cloud-upload"></i>Salvar na nuvem</button>
     <button class="btn btn-sm" onclick="syncBaixar()" id="btnSyncDown"><i class="ti ti-cloud-download"></i>Carregar da nuvem</button>
-    <div id="syncStatus" style="font-size:11px;color:var(--text3);text-align:center;padding:2px 0;display:none"></div>
     <button class="btn btn-sm" onclick="exportar()"><i class="ti ti-download"></i>Backup local</button>
     <button class="btn btn-sm" onclick="document.getElementById('fileIn').click()"><i class="ti ti-upload"></i>Restaurar</button>
     <input type="file" id="fileIn" accept=".json" style="display:none" onchange="importar(event)">
