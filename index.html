@@ -1306,8 +1306,23 @@ const _dirty={p:false,v:false,vi:false,metas:false,ant:false,pontos:false,
                histprec:false,parceiros:false,comandas:false,nid:false};
 function markDirty(){for(const k in _dirty)_dirty[k]=true;}
 function saveKey(key,data){
-  try{localStorage.setItem(key,typeof data==='string'?data:JSON.stringify(data));}
-  catch(e){console.warn('save error',key,e);}
+  const payload=typeof data==='string'?data:JSON.stringify(data);
+  try{localStorage.setItem(key,payload);return;}catch(e){}
+  // localStorage cheio: libera espaço removendo o(s) ano(s) mais antigo(s) de
+  // vendas em cache (sempre pode ser rebuscado da API) e tenta salvar de novo
+  let tentativas=0;
+  while(tentativas<10){
+    const anos=JSON.parse(localStorage.getItem('bi_cache_anos')||'[]').sort();
+    if(!anos.length)break;
+    const anoMaisAntigo=anos[0];
+    try{localStorage.removeItem('bi_vc_'+anoMaisAntigo);}catch(e){}
+    try{localStorage.setItem('bi_cache_anos',JSON.stringify(anos.filter(a=>a!==anoMaisAntigo)));}catch(e){}
+    console.warn('[BI] Cache local cheio — removido ano '+anoMaisAntigo+' pra liberar espaço pra salvar "'+key+'".');
+    try{localStorage.setItem(key,payload);return;}catch(e){}
+    tentativas++;
+  }
+  console.warn('save error',key,'não foi possível salvar mesmo após liberar espaço');
+  toast('Cache local cheio — "'+key+'" não foi salvo no navegador (mas está seguro na nuvem)','warn');
 }
 function save(modulo){
   // Se passado módulo específico, só salva ele
