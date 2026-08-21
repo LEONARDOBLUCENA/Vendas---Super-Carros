@@ -896,13 +896,23 @@ async function carregarDoPWI(){
 
     function salvarCacheLocal(){
       try{
-        const todosAnos=[...new Set(Object.keys(V).map(d=>d.slice(0,4)))];
+        // Índice de anos conhecidos: nunca "esquece" um ano já salvo antes,
+        // mesmo que ele ainda não esteja carregado em V nesta chamada específica
+        // (evita rebuscar tudo desde 2025 se o ciclo for interrompido antes do
+        // histórico completo carregar).
+        const anosEmV=[...new Set(Object.keys(V).map(d=>d.slice(0,4)))];
+        const anosJaSalvos=JSON.parse(localStorage.getItem('bi_cache_anos')||'[]');
+        const todosAnos=[...new Set([...anosEmV,...anosJaSalvos])];
         // No mobile (iOS), limita aos 2 anos mais recentes para respeitar limite de 2.5MB
         const anoAtualStr=new Date().getFullYear().toString();
         const anoAntStr=String(parseInt(anoAtualStr)-1);
         const isMobile=window.innerWidth<=768||/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        const anos=isMobile?todosAnos.filter(a=>a>=anoAntStr):todosAnos;
-        anos.forEach(ano=>{
+        // IMPORTANTE: só regrava o BLOCO de dados (bi_vc_ANO) dos anos que
+        // realmente estão carregados em V agora — nunca sobrescreve com vazio
+        // um ano que ainda não chegou a ser carregado nesta chamada (isso apagava
+        // o conteúdo real de anos anteriores quando o ciclo era interrompido cedo).
+        const anosParaEscrever=isMobile?anosEmV.filter(a=>a>=anoAntStr):anosEmV;
+        anosParaEscrever.forEach(ano=>{
           const vComp={};
           Object.keys(V).filter(d=>d.startsWith(ano)).forEach(d=>{
             const bySe={};
@@ -917,9 +927,10 @@ async function carregarDoPWI(){
             console.warn('Cache '+ano+' falhou:',e.message);
           }
         });
+        const anosIndice=isMobile?todosAnos.filter(a=>a>=anoAntStr):todosAnos;
         try{localStorage.setItem('bi_vi_cache',JSON.stringify(VI));}catch(e){}
         try{localStorage.setItem('bi_cache_at',new Date().toISOString());}catch(e){}
-        try{localStorage.setItem('bi_cache_anos',JSON.stringify(isMobile?anos:todosAnos));}catch(e){}
+        try{localStorage.setItem('bi_cache_anos',JSON.stringify(anosIndice));}catch(e){}
       }catch(e){console.warn('Cache:',e.message);}
     }
 
@@ -1188,9 +1199,65 @@ async function ghLoadAll(){
   }catch(e){console.warn('ghLoadAll:',e.message);return false;}
 }
 
+// Auto-save real na nuvem: dispara alguns segundos após qualquer edição de dados
+// manuais (metas, feriados, pontos, etc — ver save() em ESTADO), com debounce para
+// não bater no GitHub a cada tecla digitada. Antes disso era só referenciada
+// (if(typeof triggerAutoSave!=='undefined')) mas nunca existia — nada salvava sozinho.
+let _autoSaveTimer=null;
+function triggerAutoSave(){
+  // Proteção: não salva se ainda não carregou nada (evita sobrescrever a nuvem
+  // com dado vazio logo no boot, antes do ghLoadAll() terminar)
+  if(!Object.keys(METAS).length&&!Object.keys(FERIADOS).length&&!Object.keys(PONTOS).length)return;
+  clearTimeout(_autoSaveTimer);
+  setSyncStatus('Alterações pendentes — salvando em breve...','var(--text3)');
+  _autoSaveTimer=setTimeout(function(){
+    ghSaveAll().then(function(){
+      setSyncStatus('✓ Auto-salvo na nuvem às '+new Date().toLocaleTimeString('pt-BR'),'var(--text3)');
+    }).catch(function(e){
+      console.error('triggerAutoSave:',e);
+      setSyncStatus('Erro no auto-save: '+e.message,'var(--red)');
+      toast('Erro ao salvar automaticamente na nuvem','err');
+    });
+  },4000);
+}
+
 // Aliases para compatibilidade com o código existente
 async function sbSaveAll(){return ghSaveAll();}
 async function sbLoadAll(){return ghLoadAll();}
+
+// Funções chamadas pelos botões "Salvar na nuvem" / "Carregar da nuvem"
+// (estavam faltando — os botões não faziam nada até agora)
+async function syncSubir(){
+  try{
+    setSyncStatus('Salvando na nuvem...','var(--accent)');
+    await sbSaveAll();
+    setSyncStatus('✓ Salvo na nuvem às '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');
+    toast('Dados salvos na nuvem!');
+  }catch(e){
+    console.error('syncSubir:',e);
+    setSyncStatus('Erro ao salvar na nuvem: '+e.message,'var(--red)');
+    toast('Erro ao salvar na nuvem','err');
+  }
+}
+async function syncBaixar(){
+  try{
+    setSyncStatus('Carregando da nuvem...','var(--accent)');
+    const ok=await sbLoadAll();
+    if(ok){
+      save();
+      renderAll();updFiltros();
+      setSyncStatus('✓ Carregado da nuvem às '+new Date().toLocaleTimeString('pt-BR'),'var(--green)');
+      toast('Dados carregados da nuvem!');
+    }else{
+      setSyncStatus('Nenhum dado encontrado na nuvem','var(--red)');
+      toast('Nada encontrado na nuvem','err');
+    }
+  }catch(e){
+    console.error('syncBaixar:',e);
+    setSyncStatus('Erro ao carregar da nuvem: '+e.message,'var(--red)');
+    toast('Erro ao carregar da nuvem','err');
+  }
+}
 
 
 // ── ESTADO ────────────────────────────────────────────────────────────
