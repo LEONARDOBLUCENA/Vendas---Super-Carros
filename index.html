@@ -923,8 +923,28 @@ async function carregarDoPWI(){
             });
             vComp[d]=bySe;
           });
-          try{localStorage.setItem('bi_vc_'+ano,JSON.stringify(vComp));}catch(e){
-            console.warn('Cache '+ano+' falhou:',e.message);
+          const payload=JSON.stringify(vComp);
+          let ok=true;
+          try{localStorage.setItem('bi_vc_'+ano,payload);}catch(e){ok=false;}
+          // localStorage cheio: libera espaço removendo do cache o(s) ano(s) mais
+          // antigo(s) salvo(s) (exceto o que estamos tentando salvar agora) até
+          // conseguir salvar. O ano removido não é perdido — só deixa de estar em
+          // cache local e volta a ser buscado da API quando precisar dele de novo.
+          let tentativas=0;
+          while(!ok&&tentativas<10){
+            const outrosAnos=JSON.parse(localStorage.getItem('bi_cache_anos')||'[]').filter(a=>a!==ano).sort();
+            if(!outrosAnos.length)break;
+            const anoMaisAntigo=outrosAnos[0];
+            try{localStorage.removeItem('bi_vc_'+anoMaisAntigo);}catch(e2){}
+            const restante=outrosAnos.filter(a=>a!==anoMaisAntigo);
+            try{localStorage.setItem('bi_cache_anos',JSON.stringify(ano&&!restante.includes(ano)?[...restante,ano]:restante));}catch(e3){}
+            console.warn('[BI] Cache local cheio — removido ano '+anoMaisAntigo+' do cache pra liberar espaço (será rebuscado da API quando precisar).');
+            try{localStorage.setItem('bi_vc_'+ano,payload);ok=true;}catch(e4){ok=false;}
+            tentativas++;
+          }
+          if(!ok){
+            console.warn('Cache '+ano+' falhou mesmo após liberar espaço.');
+            toast('Cache local cheio — alguns dados podem levar mais tempo pra carregar','warn');
           }
         });
         const anosIndice=isMobile?todosAnos.filter(a=>a>=anoAntStr):todosAnos;
@@ -1154,7 +1174,7 @@ async function carregarDoPWI(){
   }
 }
 // ── GITHUB API (substitui Supabase) ──────────────────────────────────
-const GH_TOKEN='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';
+const GH_TOKEN='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';
 const GH_REPO='leonardoblucena/Vendas---Super-Carros';
 const GH_FILE='dados.json';
 let _ghFileSha=null;
