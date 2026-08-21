@@ -1173,38 +1173,35 @@ async function carregarDoPWI(){
     _carregandoPWI=false;
   }
 }
-// ── GITHUB API (substitui Supabase) ──────────────────────────────────
-const GH_TOKEN='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';
-const GH_REPO='leonardoblucena/Vendas---Super-Carros';
-const GH_FILE='dados.json';
+// ── Dados manuais via proxy no Railway (token fica só no servidor) ────
+// Antes chamava api.github.com direto do navegador com um token embutido no
+// código — o GitHub sempre revogava esse token automaticamente por estar
+// visível num repositório público. Agora o bi-server guarda o token como
+// variável de ambiente e faz a gravação no GitHub por trás.
 let _ghFileSha=null;
-function getGhToken(){return GH_TOKEN;}
 
 async function ghSaveAll(){
   const modulos={p:P,metas:METAS,ant:ANTERIOR,pontos:PONTOS,site:SITE,diversos:DIVERSOS,
     funcs:FUNCS,feriados:FERIADOS,carros:CARROS,histprec:HIST_PREC};
-  const content=btoa(unescape(encodeURIComponent(JSON.stringify(modulos))));
-  const body={message:'BI: salvar dados manuais',content};
-  if(_ghFileSha)body.sha=_ghFileSha;
-  const r=await fetch('https://api.github.com/repos/'+GH_REPO+'/contents/'+GH_FILE,{
-    method:'PUT',
-    headers:{'Authorization':'Bearer '+getGhToken(),'Content-Type':'application/json'},
-    body:JSON.stringify(body)
+  const r=await fetch(API_URL+'/dados',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(modulos)
   });
   if(!r.ok)throw new Error('GitHub save: '+r.status);
   const d=await r.json();
-  _ghFileSha=d.content?.sha||_ghFileSha;
+  if(d.error)throw new Error(d.error);
+  _ghFileSha=d.sha||_ghFileSha;
 }
 
 async function ghLoadAll(){
   try{
-    const r=await fetch('https://api.github.com/repos/'+GH_REPO+'/contents/'+GH_FILE,{
-      headers:{'Authorization':'Bearer '+getGhToken()}
-    });
+    const r=await fetch(API_URL+'/dados',{cache:'no-store'});
     if(!r.ok)return false;
     const d=await r.json();
+    if(!d.exists)return false;
     _ghFileSha=d.sha;
-    const content=JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))));
+    const content=d.data;
     if(content.p)P=content.p;
     if(content.metas)METAS=content.metas;
     if(content.ant)ANTERIOR=content.ant;
