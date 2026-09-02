@@ -1231,6 +1231,40 @@ async function ghSaveAll(){
   _ghFileSha=d.sha||_ghFileSha;
 }
 
+// Carregamento seguro pro boot automático: busca a nuvem só pra PREENCHER o
+// que falta localmente (chave que não existe ainda), nunca para substituir
+// dado que já existe no navegador. Evita que uma nuvem desatualizada (ex:
+// auto-save que falhou por um tempo) apague dado mais recente só presente
+// localmente. O botão "Carregar da nuvem" (ghLoadAll) continua substituindo
+// tudo, porque ali é uma ação explícita do usuário que sabe o que está fazendo.
+async function mergeCloudSemSobrescrever(){
+  try{
+    const r=await fetch(API_URL+'/dados',{cache:'no-store'});
+    if(!r.ok)return false;
+    const d=await r.json();
+    if(!d.exists)return false;
+    _ghFileSha=d.sha;
+    const content=d.data||{};
+    function mesclar(localObj,cloudObj){
+      if(!cloudObj)return;
+      Object.keys(cloudObj).forEach(k=>{if(!(k in localObj))localObj[k]=cloudObj[k];});
+    }
+    mesclar(P,content.p);
+    mesclar(METAS,content.metas);
+    mesclar(ANTERIOR,content.ant);
+    mesclar(PONTOS,content.pontos);
+    mesclar(SITE,content.site);
+    mesclar(DIVERSOS,content.diversos);
+    mesclar(FUNCS,content.funcs);
+    mesclar(FERIADOS,content.feriados);
+    mesclar(CARROS,content.carros);
+    // HIST_PREC é uma lista (não um dicionário por chave) — só usa a da nuvem
+    // se ainda não tiver nada local, pra não arriscar duplicar/misturar.
+    if(Array.isArray(content.histprec)&&!HIST_PREC.length)HIST_PREC=content.histprec;
+    return true;
+  }catch(e){console.warn('mergeCloudSemSobrescrever:',e.message);return false;}
+}
+
 async function ghLoadAll(){
   try{
     const r=await fetch(API_URL+'/dados',{cache:'no-store'});
@@ -4176,13 +4210,10 @@ function _setarHojeMobile(){
   }
 }
 
-// Carrega do cache local primeiro (instantâneo) e atualiza em background
+// Carrega do cache local primeiro (instantâneo) e completa com o que houver
+// a mais na nuvem, sem nunca apagar dado local (ver mergeCloudSemSobrescrever)
 (function(){
-  // Sempre busca os dados manuais (metas, feriados, pontos, etc) da nuvem no
-  // boot — antes só rodava se P estivesse vazio, o que significava que uma
-  // correção feita direto no dados.json nunca chegava em navegadores que já
-  // tinham cache local (o cache local sempre "vencia" e nunca era atualizado).
-  sbLoadAll().then(ok=>{
+  mergeCloudSemSobrescrever().then(ok=>{
     // NÃO chama save() — evita triggerAutoSave sobrescrever GitHub com dados
     // vazios/desatualizados por engano
     if(ok){
