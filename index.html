@@ -4178,13 +4178,28 @@ function _setarHojeMobile(){
 
 // Carrega do cache local primeiro (instantâneo) e atualiza em background
 (function(){
-  // Garante que P seja carregado do GitHub se localStorage estiver vazio
-  if(!Object.keys(P).length){
-    sbLoadAll().then(ok=>{
-      // NÃO chama save() — evita triggerAutoSave sobrescrever GitHub com dados vazios no boot
-      if(ok){try{localStorage.setItem('bip',JSON.stringify(P));}catch(e){}}
-    }).catch(()=>{});
-  }
+  // Sempre busca os dados manuais (metas, feriados, pontos, etc) da nuvem no
+  // boot — antes só rodava se P estivesse vazio, o que significava que uma
+  // correção feita direto no dados.json nunca chegava em navegadores que já
+  // tinham cache local (o cache local sempre "vencia" e nunca era atualizado).
+  sbLoadAll().then(ok=>{
+    // NÃO chama save() — evita triggerAutoSave sobrescrever GitHub com dados
+    // vazios/desatualizados por engano
+    if(ok){
+      try{
+        saveKey('bip',P);saveKey('bimetas',METAS);saveKey('biant',ANTERIOR);
+        saveKey('bipontos',PONTOS);saveKey('bisite',SITE);saveKey('bidiversos',DIVERSOS);
+        saveKey('bifuncs',FUNCS);saveKey('biferiados',FERIADOS);saveKey('bicarros',CARROS);
+      }catch(e){}
+      // Atualiza a tela se o usuário já estiver numa aba que depende desses dados
+      try{renderAll();}catch(e){}
+      try{
+        if(Object.keys(PONTOS).length||Object.keys(SITE).length||Object.keys(DIVERSOS).length){
+          updFiltrosExt();renderDashExt();
+        }
+      }catch(e){}
+    }
+  }).catch(()=>{});
   try{
     const anos=JSON.parse(localStorage.getItem('bi_cache_anos')||'[]');
     const cacheAt=localStorage.getItem('bi_cache_at');
