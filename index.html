@@ -168,6 +168,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </head>
 <body>
 
+<div id="lockScreen" style="position:fixed;inset:0;z-index:99999;background:var(--bg,#0d0f14);display:flex;align-items:center;justify-content:center">
+  <div style="width:280px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
+    <div style="font-size:22px;font-weight:700;color:var(--text,#fff);display:flex;align-items:center;gap:8px"><i class="ti ti-steering-wheel"></i>Super Carros</div>
+    <div style="font-size:13px;color:var(--text3,#8a8f98)">Acesso restrito — digite a senha</div>
+    <input type="password" id="lockPass" placeholder="Senha" autocomplete="off"
+      style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border,#2a2d35);background:var(--card,#161920);color:var(--text,#fff);font-size:14px;box-sizing:border-box"
+      onkeydown="if(event.key==='Enter')checkLockPass()">
+    <button class="btn btn-p" style="width:100%" onclick="checkLockPass()"><i class="ti ti-lock-open"></i>Entrar</button>
+    <div id="lockErr" style="display:none;color:#c0392b;font-size:13px">Senha incorreta</div>
+  </div>
+</div>
+
 <aside class="sidebar">
   <div class="brand">
     <div class="brand-logo"><i class="ti ti-steering-wheel"></i>Super Carros</div>
@@ -786,6 +798,31 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <script>
 
+// ── Bloqueio por senha ───────────────────────────────────────────────
+// Fica salvo no localStorage pra não pedir de novo no mesmo navegador.
+const SENHA_BI='supercarros1';
+(function(){
+  try{
+    if(localStorage.getItem('bi_unlocked')==='1'){
+      document.getElementById('lockScreen').style.display='none';
+    }else{
+      document.body.style.overflow='hidden';
+      setTimeout(()=>{const el=document.getElementById('lockPass');if(el)el.focus();},100);
+    }
+  }catch(e){}
+})();
+function checkLockPass(){
+  const v=document.getElementById('lockPass').value;
+  if(v===SENHA_BI){
+    try{localStorage.setItem('bi_unlocked','1');}catch(e){}
+    document.getElementById('lockScreen').style.display='none';
+    document.body.style.overflow='';
+  }else{
+    document.getElementById('lockErr').style.display='block';
+    document.getElementById('lockPass').value='';
+    document.getElementById('lockPass').focus();
+  }
+}
 
 // ── API PWI ───────────────────────────────────────────────────────────
 const API_URL='https://bi-server-production.up.railway.app';
@@ -1893,6 +1930,15 @@ function renderFuncs(){
 
 // ── METAS ─────────────────────────────────────────────────────────────
 function metaKey(s,m){return s+'|'+m;}
+// Normaliza o texto digitado/colado pro nome canônico do setor (ignora
+// maiúscula/minúscula) — evita que "Site oficial" vs "Site Oficial" vire
+// duas chaves diferentes e a meta pareça "sumida" no dashboard.
+const SETORES_META_CANONICOS=['Bilheteria','Passeios','Fotos','Simuladores','Vídeos','Eventos','Salão Total','Pontos Externos','Site Oficial'];
+function normalizarSetorMeta(s){
+  s=(s||'').trim();
+  const achado=SETORES_META_CANONICOS.find(c=>c.toLowerCase()===s.toLowerCase());
+  return achado||s;
+}
 function addMeta(){
   const setor=document.getElementById('metaSetor').value;
   const mes=document.getElementById('metaMes').value;
@@ -1912,7 +1958,7 @@ function impMetas(){
   let ok=0;
   lines.forEach(l=>{
     const p=l.split('\t');if(p.length<3)return;
-    const setor=(p[0]||'').trim();
+    const setor=normalizarSetorMeta((p[0]||'').trim());
     let mesRaw=(p[1]||'').trim();
     const val=parseN(p[2]);
     if(!setor||!mesRaw||!val)return;
@@ -1978,7 +2024,7 @@ function impAnterior(){
   lines.forEach(l=>{
     const p=l.split('\t');if(p.length<3)return;
     const mes=parseMesAnt((p[0]||'').trim());
-    const setor=(p[1]||'').trim();
+    const setor=normalizarSetorMeta((p[1]||'').trim());
     const val=parseN(p[2]);
     if(!mes||!setor||!val)return;
     ANTERIOR[antKey(mes,setor)]={mes,setor,val};ok++;
