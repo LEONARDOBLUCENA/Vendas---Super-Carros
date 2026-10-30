@@ -3482,6 +3482,10 @@ function renderDashVend(){
   // Sempre mostra também o ranking do DIA atual separado
   const hojeStr=new Date().toISOString().slice(0,10);
   const diasHoje=V[hojeStr]?[hojeStr]:[];
+  const ontemDate=new Date(hojeStr+'T00:00:00');
+  ontemDate.setDate(ontemDate.getDate()-1);
+  const ontemStr=ontemDate.toISOString().slice(0,10);
+  const diasOntem=V[ontemStr]?[ontemStr]:[];
 
   function rankingVendedor(diasArr,setor){
     const map={};
@@ -3557,10 +3561,12 @@ function renderDashVend(){
 
   // Visitantes válidos do dia e do período
   const visitHoje=diasHoje.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);
+  const visitOntem=diasOntem.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);
   const visitSel=diasSel.reduce((a,d)=>a+(VI[d]?VI[d].valido:0),0);
 
   function cardSetor(setor,cor_){
     const rankDia=rankingVendedor(diasHoje,setor);
+    const rankDiaAnt=rankingVendedor(diasOntem,setor);
     const rankPer=rankingVendedor(diasSel,setor);
     const c=cor_||cor(setor);
     return `<div class="vend-card">
@@ -3573,6 +3579,11 @@ function renderDashVend(){
       </div>
       <div class="sep" style="margin:0 14px"></div>
       <div class="vend-section">
+        <div class="vend-section-label">↩️ Ranking do Dia Anterior</div>
+        ${htmlRanking(rankDiaAnt,visitOntem)}
+      </div>
+      <div class="sep" style="margin:0 14px"></div>
+      <div class="vend-section">
         <div class="vend-section-label">📅 Ranking do Período</div>
         ${htmlRanking(rankPer,visitSel)}
       </div>
@@ -3581,6 +3592,7 @@ function renderDashVend(){
 
   // Card "outros" para setores não classificados
   const rankOutrosDia=rankingNaoClass(diasHoje);
+  const rankOutrosDiaAnt=rankingNaoClass(diasOntem);
   const rankOutrosPer=rankingNaoClass(diasSel);
   const cardOutros=`<div class="vend-card">
     <div class="vend-card-title" style="border-top:3px solid var(--text3)">
@@ -3589,6 +3601,11 @@ function renderDashVend(){
     <div class="vend-section">
       <div class="vend-section-label">🗓 Ranking do Dia</div>
       ${htmlRanking(rankOutrosDia,visitHoje)}
+    </div>
+    <div class="sep" style="margin:0 14px"></div>
+    <div class="vend-section">
+      <div class="vend-section-label">↩️ Ranking do Dia Anterior</div>
+      ${htmlRanking(rankOutrosDiaAnt,visitOntem)}
     </div>
     <div class="sep" style="margin:0 14px"></div>
     <div class="vend-section">
