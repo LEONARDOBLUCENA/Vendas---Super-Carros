@@ -692,6 +692,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <option value="">Todos</option>
       </select>
     </div>
+    <div class="fbar-item">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap">
+        <input type="checkbox" id="fVendOcultarDia" onchange="renderDashVend()" style="width:16px;height:16px;cursor:pointer">
+        Ocultar Ranking do Dia
+      </label>
+    </div>
   </div>
   <div id="dashvendContent"><div class="empty"><i class="ti ti-users-group"></i><p>Aguardando dados de vendas...</p></div></div>
 </div>
@@ -3486,6 +3492,7 @@ function renderDashVend(){
   ontemDate.setDate(ontemDate.getDate()-1);
   const ontemStr=ontemDate.toISOString().slice(0,10);
   const diasOntem=V[ontemStr]?[ontemStr]:[];
+  const ocultarRankDia=document.getElementById('fVendOcultarDia')?document.getElementById('fVendOcultarDia').checked:false;
 
   function rankingVendedor(diasArr,setor){
     const map={};
@@ -3573,11 +3580,11 @@ function renderDashVend(){
       <div class="vend-card-title" style="border-top:3px solid ${c}">
         <span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}28">${setor}</span>
       </div>
-      <div class="vend-section">
+      ${ocultarRankDia?'':`<div class="vend-section">
         <div class="vend-section-label">🗓 Ranking do Dia</div>
         ${htmlRanking(rankDia,visitHoje)}
       </div>
-      <div class="sep" style="margin:0 14px"></div>
+      <div class="sep" style="margin:0 14px"></div>`}
       <div class="vend-section">
         <div class="vend-section-label">↩️ Ranking do Dia Anterior</div>
         ${htmlRanking(rankDiaAnt,visitOntem)}
@@ -3598,11 +3605,11 @@ function renderDashVend(){
     <div class="vend-card-title" style="border-top:3px solid var(--text3)">
       <span class="badge" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border2)">Outros / Não classificados</span>
     </div>
-    <div class="vend-section">
+    ${ocultarRankDia?'':`<div class="vend-section">
       <div class="vend-section-label">🗓 Ranking do Dia</div>
       ${htmlRanking(rankOutrosDia,visitHoje)}
     </div>
-    <div class="sep" style="margin:0 14px"></div>
+    <div class="sep" style="margin:0 14px"></div>`}
     <div class="vend-section">
       <div class="vend-section-label">↩️ Ranking do Dia Anterior</div>
       ${htmlRanking(rankOutrosDiaAnt,visitOntem)}
