@@ -1131,20 +1131,31 @@ async function carregarDoPWI(){
     // Salva cache de vendedor — mês atual já está em _Vtmp
     // Mês anterior: SEMPRE busca o mês completo da API a cada carregamento,
     // garantindo que o Dashboard Vendedores mostre os dois últimos meses
-    // (atual + anterior) completos. Antes isso só rodava se o cache local
-    // ainda não estivesse marcado como "atualizado hoje" — o que podia
-    // deixar o mês anterior com dias faltando caso o cache tivesse sido
-    // marcado como atualizado sem ter concluído a busca do mês inteiro.
+    // (atual + anterior) completos. Busca em blocos de 7 dias (em vez de
+    // pedir o mês inteiro numa única chamada) porque o endpoint /tudo
+    // estava estourando o timeout de 120s do Railway para um range de
+    // ~31 dias — confirmado via DevTools: {"error":"Timeout: Request
+    // failed to complete in 120000ms"}. Blocos pequenos (mesmo tamanho
+    // da busca de "semana atual", que já funciona de forma confiável)
+    // evitam esse timeout e ainda assim cobrem o mês inteiro.
     const _mesAntVNum=mesAtual===1?12:mesAtual-1;
     const _anoAntV=mesAtual===1?anoAtual-1:anoAtual;
     const _mesAntVStr=String(_mesAntVNum).padStart(2,'0');
     setSyncStatus('Carregando vendedores mês anterior...','var(--accent)');
     try{
       const _ultimoDiaAnt=new Date(_anoAntV,_mesAntVNum,0).getDate();
-      const _iniAnt=_anoAntV+'-'+_mesAntVStr+'-01';
-      const _fimAnt=_anoAntV+'-'+_mesAntVStr+'-'+String(_ultimoDiaAnt).padStart(2,'0');
-      const _dAnt=await apiGet('/tudo?inicio='+_iniAnt+'&fim='+_fimAnt);
-      processarDados(_dAnt);
+      let _diaIniV=1;
+      while(_diaIniV<=_ultimoDiaAnt){
+        const _diaFimV=Math.min(_diaIniV+6,_ultimoDiaAnt);
+        const _iniBlocoV=_anoAntV+'-'+_mesAntVStr+'-'+String(_diaIniV).padStart(2,'0');
+        const _fimBlocoV=_anoAntV+'-'+_mesAntVStr+'-'+String(_diaFimV).padStart(2,'0');
+        setSyncStatus('Carregando vendedores '+_iniBlocoV+' a '+_fimBlocoV+'...','var(--accent)');
+        try{
+          const _dBlocoV=await apiGet('/tudo?inicio='+_iniBlocoV+'&fim='+_fimBlocoV);
+          processarDados(_dBlocoV);
+        }catch(e){console.warn('Erro bloco '+_iniBlocoV+' a '+_fimBlocoV+' (vendedor):',e.message);}
+        _diaIniV=_diaFimV+1;
+      }
     }catch(e){console.warn('Erro mês anterior vendedor:',e.message);}
     if(window.innerWidth>768)salvarCacheVendedor();
 
